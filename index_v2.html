@@ -25,228 +25,223 @@
         </div>
     </header>
 
-    <main class="max-w-[100%] mx-auto px-4 sm:px-8 xl:px-12 mt-8 space-y-8">
+    <main class="max-w-[100%] mx-auto px-4 sm:px-8 xl:px-12 mt-8 grid grid-cols-1 lg:grid-cols-12 gap-8">
 
-        <!-- Two Column Layout for Controls & Analytics -->
-        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+        <!-- Left Column: Controls & Card Management (3/12 width) -->
+        <div class="space-y-6 lg:col-span-3">
 
-            <!-- Left Column: Controls & Card Management (3/12 width) -->
-            <div class="space-y-6 lg:col-span-3">
-
-                <!-- Excel File Upload & Add Transaction Section -->
-                <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-                    <div class="flex items-center justify-between mb-2">
-                        <h2 class="text-base font-bold text-slate-900 flex items-center gap-2">
-                            <span>📁</span> Import Excel / CSV Data
-                        </h2>
-                    </div>
-                    <p class="text-xs text-slate-500 mb-4">Upload your existing spreadsheet to automatically import history.</p>
-                    
-                    <input type="file" id="excel-file-input" accept=".xlsx, .xls, .csv" class="block w-full text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 cursor-pointer mb-4"/>
-
-                    <div class="pt-3 border-t border-slate-100">
-                        <button onclick="openTxModal()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-xs font-semibold px-4 py-2.5 rounded-lg text-white transition duration-150 shadow-sm flex items-center justify-center gap-2">
-                            <span>➕</span> Add Transaction Manually
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Card Manager Form -->
-                <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-                    <h2 id="card-form-title" class="text-base font-bold text-slate-900 mb-4 flex items-center gap-2">
-                        <span>💳</span> Add / Manage Cards
+            <!-- Excel File Upload & Add Transaction Section -->
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                <div class="flex items-center justify-between mb-2">
+                    <h2 class="text-base font-bold text-slate-900 flex items-center gap-2">
+                        <span>📁</span> Import Excel / CSV Data
                     </h2>
-                    <form id="card-form" class="space-y-4">
-                        <input type="hidden" id="editing-card-id" value="">
-                        <div>
-                            <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Card Name</label>
-                            <input type="text" id="card-name" placeholder="e.g., ADCB - 365" required class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-sm">
-                        </div>
-                        <div>
-                            <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Available Limit (AED)</label>
-                            <input type="number" step="any" id="card-limit" placeholder="e.g., 15000" required class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-sm">
-                        </div>
-                        <div>
-                            <label class="block text-xs font-semibold text-slate-600 uppercase mb-2">Category Rates (%)</label>
-                            <div class="grid grid-cols-2 gap-2 text-xs">
-                                <div>
-                                    <span class="text-slate-500">Dining</span>
-                                    <input type="number" step="any" id="rate-dining" placeholder="6" class="w-full px-3 py-1.5 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none mt-1">
-                                </div>
-                                <div>
-                                    <span class="text-slate-500">Grocery</span>
-                                    <input type="number" step="any" id="rate-grocery" placeholder="5" class="w-full px-3 py-1.5 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none mt-1">
-                                </div>
-                                <div>
-                                    <span class="text-slate-500">Travel</span>
-                                    <input type="number" step="any" id="rate-travel" placeholder="3" class="w-full px-3 py-1.5 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none mt-1">
-                                </div>
-                                <div>
-                                    <span class="text-slate-500">Gas/Fuel</span>
-                                    <input type="number" step="any" id="rate-gas" placeholder="2" class="w-full px-3 py-1.5 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none mt-1">
-                                </div>
-                                <div>
-                                    <span class="text-slate-500">Online Shop</span>
-                                    <input type="number" step="any" id="rate-online" placeholder="3" class="w-full px-3 py-1.5 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none mt-1">
-                                </div>
-                                <div>
-                                    <span class="text-slate-500">Govt</span>
-                                    <input type="number" step="any" id="rate-govt" placeholder="0.15" class="w-full px-3 py-1.5 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none mt-1">
-                                </div>
-                                <div class="col-span-2">
-                                    <span class="text-slate-500">Other Spend</span>
-                                    <input type="number" step="any" id="rate-other" placeholder="1" required class="w-full px-3 py-1.5 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none mt-1">
-                                </div>
-                            </div>
-                        </div>
-                        <div class="flex gap-2">
-                            <button type="submit" id="card-submit-btn" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 rounded-lg transition text-sm">Save Card</button>
-                            <button type="button" id="cancel-edit-btn" onclick="cancelEditCard()" class="hidden bg-slate-200 hover:bg-slate-300 text-slate-700 font-medium px-3 py-2 rounded-lg transition text-sm">Cancel</button>
-                        </div>
-                    </form>
                 </div>
+                <p class="text-xs text-slate-500 mb-4">Upload your existing spreadsheet to automatically import history.</p>
+                
+                <input type="file" id="excel-file-input" accept=".xlsx, .xls, .csv" class="block w-full text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 cursor-pointer mb-4"/>
 
-                <!-- Best Card Optimizer -->
-                <div class="bg-indigo-50 p-6 rounded-xl border border-indigo-100 shadow-sm">
-                    <h2 class="text-base font-bold text-indigo-950 mb-1 flex items-center gap-2">
-                        <span>🎯</span> Best Card Recommender
-                    </h2>
-                    <p class="text-xs text-indigo-700 mb-4">Select category to identify highest reward card.</p>
-                    <div class="space-y-3">
-                        <select id="rec-category" onchange="recommendBestCard()" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-sm bg-white">
-                            <option value="Dining">Dining</option>
-                            <option value="Grocery">Grocery</option>
-                            <option value="Travel">Travel</option>
-                            <option value="Gas/Fuel">Gas/Fuel</option>
-                            <option value="Online Shopping">Online Shopping</option>
-                            <option value="Govt">Govt</option>
-                            <option value="All Other Spend">All Other Spend</option>
-                        </select>
-                        <div id="recommendation-result" class="p-3 bg-white rounded-lg border border-indigo-200 text-sm font-medium text-indigo-900">
-                            Select category to calculate.
-                        </div>
-                    </div>
+                <div class="pt-3 border-t border-slate-100">
+                    <button onclick="openTxModal()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-xs font-semibold px-4 py-2.5 rounded-lg text-white transition duration-150 shadow-sm flex items-center justify-center gap-2">
+                        <span>➕</span> Add Transaction Manually
+                    </button>
                 </div>
-
             </div>
 
-            <!-- Right Column: Analytics & History (9/12 width) -->
-            <div class="space-y-6 lg:col-span-9">
-
-                <!-- Overview Metrics -->
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
-                        <p class="text-xs font-semibold text-slate-500 uppercase">Total Spend (AED)</p>
-                        <p id="metric-spend" class="text-2xl font-bold text-slate-900 mt-1">0.00</p>
+            <!-- Card Manager Form -->
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                <h2 id="card-form-title" class="text-base font-bold text-slate-900 mb-4 flex items-center gap-2">
+                    <span>💳</span> Add / Manage Cards
+                </h2>
+                <form id="card-form" class="space-y-4">
+                    <input type="hidden" id="editing-card-id" value="">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Card Name</label>
+                        <input type="text" id="card-name" placeholder="e.g., ADCB - 365" required class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-sm">
                     </div>
-                    <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
-                        <p class="text-xs font-semibold text-slate-500 uppercase">Total Cashback Earned (AED)</p>
-                        <p id="metric-cashback" class="text-2xl font-bold text-emerald-600 mt-1">0.00</p>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Available Limit (AED)</label>
+                        <input type="number" step="any" id="card-limit" placeholder="e.g., 15000" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-sm">
                     </div>
-                    <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
-                        <p class="text-xs font-semibold text-slate-500 uppercase">Effective Return</p>
-                        <p id="metric-return" class="text-2xl font-bold text-indigo-600 mt-1">0.00%</p>
-                    </div>
-                </div>
-
-                <!-- Saved Cards & Monthly Spend Section -->
-                <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
-                        <div>
-                            <h2 class="text-base font-bold text-slate-900 flex items-center gap-2">
-                                <span>💳</span> Saved Cards & Monthly Spend (97% Cap)
-                            </h2>
-                            <p class="text-xs text-slate-500">Overview of all active cards, limits, and current month spend tracking.</p>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 uppercase mb-2">Category Rates (%)</label>
+                        <div class="grid grid-cols-2 gap-2 text-xs">
+                            <div>
+                                <span class="text-slate-500">Dining</span>
+                                <input type="number" step="any" id="rate-dining" placeholder="6" class="w-full px-3 py-1.5 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none mt-1">
+                            </div>
+                            <div>
+                                <span class="text-slate-500">Grocery</span>
+                                <input type="number" step="any" id="rate-grocery" placeholder="5" class="w-full px-3 py-1.5 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none mt-1">
+                            </div>
+                            <div>
+                                <span class="text-slate-500">Travel</span>
+                                <input type="number" step="any" id="rate-travel" placeholder="3" class="w-full px-3 py-1.5 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none mt-1">
+                            </div>
+                            <div>
+                                <span class="text-slate-500">Gas/Fuel</span>
+                                <input type="number" step="any" id="rate-gas" placeholder="2" class="w-full px-3 py-1.5 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none mt-1">
+                            </div>
+                            <div>
+                                <span class="text-slate-500">Online Shop</span>
+                                <input type="number" step="any" id="rate-online" placeholder="3" class="w-full px-3 py-1.5 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none mt-1">
+                            </div>
+                            <div>
+                                <span class="text-slate-500">Govt</span>
+                                <input type="number" step="any" id="rate-govt" placeholder="0.15" class="w-full px-3 py-1.5 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none mt-1">
+                            </div>
+                            <div class="col-span-2">
+                                <span class="text-slate-500">Other Spend</span>
+                                <input type="number" step="any" id="rate-other" placeholder="1" required class="w-full px-3 py-1.5 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none mt-1">
+                            </div>
                         </div>
                     </div>
-                    <div id="cards-list" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4"></div>
+                    <div class="flex gap-2">
+                        <button type="submit" id="card-submit-btn" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 rounded-lg transition text-sm">Save Card</button>
+                        <button type="button" id="cancel-edit-btn" onclick="cancelEditCard()" class="hidden bg-slate-200 hover:bg-slate-300 text-slate-700 font-medium px-3 py-2 rounded-lg transition text-sm">Cancel</button>
+                    </div>
+                </form>
+
+                <div class="mt-6">
+                    <h3 class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Saved Cards & Limits</h3>
+                    <div id="cards-list" class="space-y-2 max-h-56 overflow-y-auto pr-1"></div>
                 </div>
+            </div>
 
-                <!-- Month-Wise Multi-Metric Chart & Filters -->
-                <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-4">
-                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                        <div>
-                            <h3 class="text-base font-bold text-slate-800">Month-Wise Financial Performance</h3>
-                            <p class="text-xs text-slate-500">Breakdown of purchases, cash withdrawals, repayments, fees, cashback & net rewards</p>
-                        </div>
-                    </div>
-
-                    <!-- CARD, CATEGORY & MONTH FILTER BUTTONS -->
-                    <div class="space-y-2 pt-2 border-t border-slate-100">
-                        <div class="flex items-center gap-2 overflow-x-auto pb-1" id="card-filter-container"></div>
-                        <div id="category-filter-wrapper" class="hidden flex items-center gap-2 overflow-x-auto pb-1 pt-1 border-t border-dashed border-slate-100"></div>
-                        <div id="month-filter-container" class="flex items-center gap-2 overflow-x-auto pb-1 pt-1 border-t border-dashed border-slate-100"></div>
-                    </div>
-
-                    <div class="h-80">
-                        <canvas id="monthlyChart"></canvas>
-                    </div>
-                </div>
-
-                <!-- Aggregated Summary Table (Non-Monthly Breakdown) -->
-                <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-                    <div class="px-6 py-4 border-b border-slate-100 flex justify-between items-center">
-                        <h3 id="summary-table-title" class="font-semibold text-slate-900">Summary Table</h3>
-                        <span id="active-filter-label" class="text-xs font-semibold text-indigo-600 bg-indigo-50 px-2.5 py-1 rounded-md">Filter: All Cards</span>
-                    </div>
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-left border-collapse text-xs">
-                            <thead>
-                                <tr id="summary-table-header" class="bg-slate-50 text-slate-500 uppercase tracking-wider border-b border-slate-100"></tr>
-                            </thead>
-                            <tbody id="monthly-table-body" class="divide-y divide-slate-100"></tbody>
-                        </table>
+            <!-- Best Card Optimizer -->
+            <div class="bg-indigo-50 p-6 rounded-xl border border-indigo-100 shadow-sm">
+                <h2 class="text-base font-bold text-indigo-950 mb-1 flex items-center gap-2">
+                    <span>🎯</span> Best Card Recommender
+                </h2>
+                <p class="text-xs text-indigo-700 mb-4">Select category to identify highest reward card.</p>
+                <div class="space-y-3">
+                    <select id="rec-category" onchange="recommendBestCard()" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-sm bg-white">
+                        <option value="Dining">Dining</option>
+                        <option value="Grocery">Grocery</option>
+                        <option value="Travel">Travel</option>
+                        <option value="Gas/Fuel">Gas/Fuel</option>
+                        <option value="Online Shopping">Online Shopping</option>
+                        <option value="Govt">Govt</option>
+                        <option value="All Other Spend">All Other Spend</option>
+                    </select>
+                    <div id="recommendation-result" class="p-3 bg-white rounded-lg border border-indigo-200 text-sm font-medium text-indigo-900">
+                        Select category to calculate.
                     </div>
                 </div>
+            </div>
 
-                <!-- Side-by-Side Donut Charts for Category & Card Cashback -->
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between">
-                        <h3 class="text-sm font-semibold text-slate-700 mb-4">Cashback Earned by Category (AED)</h3>
-                        <div class="h-64 relative flex items-center justify-center">
-                            <canvas id="categoryDonutChart"></canvas>
-                        </div>
-                    </div>
-                    <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between">
-                        <h3 class="text-sm font-semibold text-slate-700 mb-4">Cashback Earned by Cards (AED)</h3>
-                        <div class="h-64 relative flex items-center justify-center">
-                            <canvas id="cardDonutChart"></canvas>
-                        </div>
-                    </div>
+        </div>
+
+        <!-- Right Column: Analytics & History (9/12 width) -->
+        <div class="space-y-6 lg:col-span-9">
+
+            <!-- Overview Metrics -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+                    <p class="text-xs font-semibold text-slate-500 uppercase">Total Spend (AED)</p>
+                    <p id="metric-spend" class="text-2xl font-bold text-slate-900 mt-1">0.00</p>
                 </div>
+                <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+                    <p class="text-xs font-semibold text-slate-500 uppercase">Total Cashback Earned (AED)</p>
+                    <p id="metric-cashback" class="text-2xl font-bold text-emerald-600 mt-1">0.00</p>
+                </div>
+                <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+                    <p class="text-xs font-semibold text-slate-500 uppercase">Effective Return</p>
+                    <p id="metric-return" class="text-2xl font-bold text-indigo-600 mt-1">0.00%</p>
+                </div>
+            </div>
 
-                <!-- History Table -->
-                <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-                    <div class="px-6 py-4 border-b border-slate-100 flex justify-between items-center">
-                        <div class="flex items-center gap-3">
-                            <h3 class="font-semibold text-slate-900">Transaction History</h3>
-                            <span id="tx-count" class="text-xs bg-slate-100 text-slate-600 px-2.5 py-1 rounded-full font-medium">0 entries</span>
-                        </div>
-                        <button onclick="openTxModal()" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-medium px-3 py-1.5 rounded-lg transition">
-                            + Log Entry
-                        </button>
-                    </div>
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-left border-collapse text-xs">
-                            <thead>
-                                <tr class="bg-slate-50 text-slate-500 uppercase tracking-wider border-b border-slate-100">
-                                    <th class="py-3.5 px-6">Date</th>
-                                    <th class="py-3.5 px-6">Card</th>
-                                    <th class="py-3.5 px-6">Type</th>
-                                    <th class="py-3.5 px-6">Description</th>
-                                    <th class="py-3.5 px-6">Category</th>
-                                    <th class="py-3.5 px-6 text-right">Amount (AED)</th>
-                                    <th class="py-3.5 px-6 text-right">Service Fee (AED)</th>
-                                    <th class="py-3.5 px-6 text-right">Cashback (AED)</th>
-                                    <th class="py-3.5 px-6 text-right">Net Rewards (AED)</th>
-                                    <th class="py-3.5 px-6 text-center">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody id="tx-table-body" class="divide-y divide-slate-100"></tbody>
-                        </table>
+            <!-- Month-Wise Multi-Metric Chart & Filter -->
+            <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-4">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div>
+                        <h3 class="text-base font-bold text-slate-800">Month-Wise Financial Performance</h3>
+                        <p class="text-xs text-slate-500">Breakdown of purchases, cash withdrawals, repayments, fees, cashback & net rewards</p>
                     </div>
                 </div>
 
+                <!-- CARD & CATEGORY FILTER BUTTONS -->
+                <div class="space-y-2 pt-2 border-t border-slate-100">
+                    <div class="flex items-center gap-2 overflow-x-auto pb-1" id="card-filter-container"></div>
+                    <div id="category-filter-wrapper" class="hidden flex items-center gap-2 overflow-x-auto pb-1 pt-1 border-t border-dashed border-slate-100"></div>
+                </div>
+
+                <div class="h-80">
+                    <canvas id="monthlyChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Month-Wise Summary Table -->
+            <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                <div class="px-6 py-4 border-b border-slate-100 flex justify-between items-center">
+                    <h3 class="font-semibold text-slate-900">Monthly Summary Table</h3>
+                    <span id="active-filter-label" class="text-xs font-semibold text-indigo-600 bg-indigo-50 px-2.5 py-1 rounded-md">Filter: All Cards</span>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse text-xs">
+                        <thead>
+                            <tr class="bg-slate-50 text-slate-500 uppercase tracking-wider border-b border-slate-100">
+                                <th class="py-3 px-6">Month</th>
+                                <th class="py-3 px-6 text-right">Purchase (AED)</th>
+                                <th class="py-3 px-6 text-right">Cash Withdrawal (AED)</th>
+                                <th class="py-3 px-6 text-right">Repaid (AED)</th>
+                                <th class="py-3 px-6 text-right">Service Charges (AED)</th>
+                                <th class="py-3 px-6 text-right">Cashback (AED)</th>
+                                <th class="py-3 px-6 text-right">Remaining Pay (AED)</th>
+                                <th class="py-3 px-6 text-right">Net Rewards (AED)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="monthly-table-body" class="divide-y divide-slate-100"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Side-by-Side Donut Charts for Category & Card Cashback -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between">
+                    <h3 class="text-sm font-semibold text-slate-700 mb-4">Cashback Earned by Category (AED)</h3>
+                    <div class="h-64 relative flex items-center justify-center">
+                        <canvas id="categoryDonutChart"></canvas>
+                    </div>
+                </div>
+                <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between">
+                    <h3 class="text-sm font-semibold text-slate-700 mb-4">Cashback Earned by Cards (AED)</h3>
+                    <div class="h-64 relative flex items-center justify-center">
+                        <canvas id="cardDonutChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- History Table -->
+            <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                <div class="px-6 py-4 border-b border-slate-100 flex justify-between items-center">
+                    <div class="flex items-center gap-3">
+                        <h3 class="font-semibold text-slate-900">Transaction History</h3>
+                        <span id="tx-count" class="text-xs bg-slate-100 text-slate-600 px-2.5 py-1 rounded-full font-medium">0 entries</span>
+                    </div>
+                    <button onclick="openTxModal()" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-medium px-3 py-1.5 rounded-lg transition">
+                        + Log Entry
+                    </button>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse text-xs">
+                        <thead>
+                            <tr class="bg-slate-50 text-slate-500 uppercase tracking-wider border-b border-slate-100">
+                                <th class="py-3.5 px-6">Date</th>
+                                <th class="py-3.5 px-6">Card</th>
+                                <th class="py-3.5 px-6">Type</th>
+                                <th class="py-3.5 px-6">Description</th>
+                                <th class="py-3.5 px-6">Category</th>
+                                <th class="py-3.5 px-6 text-right">Amount (AED)</th>
+                                <th class="py-3.5 px-6 text-right">Service Fee (AED)</th>
+                                <th class="py-3.5 px-6 text-right">Cashback (AED)</th>
+                                <th class="py-3.5 px-6 text-right">Net Rewards (AED)</th>
+                                <th class="py-3.5 px-6 text-center">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tx-table-body" class="divide-y divide-slate-100"></tbody>
+                    </table>
+                </div>
             </div>
 
         </div>
@@ -332,7 +327,7 @@
     </div>
 
     <script>
-        // Set up Supabase Connection
+        // Set up Supabase Connection (Replace with your actual keys from Supabase project settings)
         const SUPABASE_URL = 'https://eghvqigfmcohvlstnajw.supabase.co';
         const SUPABASE_ANON_KEY = 'sb_publishable_SB6dXxf5bfzdpKL69IOMqQ_F9ETe580';
         const _supabase = (SUPABASE_URL !== 'YOUR_SUPABASE_URL') ? supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
@@ -344,7 +339,6 @@
         let monthlyChartInstance = null;
         let activeCardFilter = 'ALL';
         let activeCategoryFilter = 'ALL';
-        let activeMonthFilter = 'ALL';
 
         async function initData() {
             if (_supabase) {
@@ -361,7 +355,7 @@
                 } else {
                     cards = [
                         { id: '1', name: 'ADCB - 365', availableLimit: 15000, rates: { 'Dining': 6, 'Grocery': 5, 'Travel': 1, 'Gas/Fuel': 1, 'Online Shopping': 1, 'Govt': 0.15, 'All Other Spend': 1 } },
-                        { id: '2', name: 'MASHREQ - NEO', availableLimit: 22000, rates: { 'Dining': 5, 'Grocery': 1, 'Travel': 1, 'Gas/Fuel': 1, 'Online Shopping': 1, 'Govt': 0.15, 'All Other Spend': 1 } }
+                        { id: '2', name: 'MASHREQ - NEO', availableLimit: 10000, rates: { 'Dining': 5, 'Grocery': 1, 'Travel': 1, 'Gas/Fuel': 1, 'Online Shopping': 1, 'Govt': 0.15, 'All Other Spend': 1 } }
                     ];
                 }
 
@@ -382,7 +376,7 @@
             } else {
                 cards = JSON.parse(localStorage.getItem('cb_cards')) || [
                     { id: '1', name: 'ADCB - 365', availableLimit: 15000, rates: { 'Dining': 6, 'Grocery': 5, 'Travel': 1, 'Gas/Fuel': 1, 'Online Shopping': 1, 'Govt': 0.15, 'All Other Spend': 1 } },
-                    { id: '2', name: 'MASHREQ - NEO', availableLimit: 22000, rates: { 'Dining': 5, 'Grocery': 1, 'Travel': 1, 'Gas/Fuel': 1, 'Online Shopping': 1, 'Govt': 0.15, 'All Other Spend': 1 } }
+                    { id: '2', name: 'MASHREQ - NEO', availableLimit: 10000, rates: { 'Dining': 5, 'Grocery': 1, 'Travel': 1, 'Gas/Fuel': 1, 'Online Shopping': 1, 'Govt': 0.15, 'All Other Spend': 1 } }
                 ];
                 transactions = JSON.parse(localStorage.getItem('cb_transactions')) || [];
             }
@@ -450,7 +444,6 @@
             const cardId = document.getElementById('exp-card').value;
             const cashbackInput = document.getElementById('exp-cashback');
 
-            // Force cashback to 0.00 for Repaid entries regardless of category selection
             if (type === 'Repaid') {
                 cashbackInput.value = '0.00';
                 return;
@@ -495,9 +488,14 @@
 
         function syncCategoryState(typeVal) {
             const catSelect = document.getElementById('exp-category');
-            // Enable category dropdown for Repaid transactions as well
-            catSelect.disabled = false;
-            catSelect.classList.remove('bg-slate-100', 'cursor-not-allowed');
+            if (typeVal === 'Repaid') {
+                catSelect.value = '';
+                catSelect.disabled = true;
+                catSelect.classList.add('bg-slate-100', 'cursor-not-allowed');
+            } else {
+                catSelect.disabled = false;
+                catSelect.classList.remove('bg-slate-100', 'cursor-not-allowed');
+            }
             calculateDynamicCashback();
         }
 
@@ -536,18 +534,18 @@
                     const cardName = row['Card'] || 'Unknown Card';
                     const type = row['Type'] || 'Purchase';
                     const desc = row['Description'] || row['Desc'] || '';
-                    const category = row['Category'] || '';
+                    const category = (type === 'Repaid') ? '' : (row['Category'] || '');
                     const amount = parseFloat(row['Amount (AED)']) || 0;
                     const serviceCharge = parseFloat(row['Service Charge (AED)']) || parseFloat(row['Service Fee (AED)']) || 0;
                     const cashbackRaw = row['Cashback (AED)'];
-                    const cashback = (type === 'Repaid' || cashbackRaw === '-' || cashbackRaw === '' || cashbackRaw === undefined) ? 0 : parseFloat(cashbackRaw);
+                    const cashback = (cashbackRaw === '-' || cashbackRaw === '' || cashbackRaw === undefined) ? 0 : parseFloat(cashbackRaw);
                     const notes = row['Notes'] || '';
 
                     if (cardName && !cards.some(c => c.name.trim().toLowerCase() === cardName.trim().toLowerCase())) {
                         const newCard = {
                             id: Date.now().toString() + Math.random(),
                             name: cardName.trim(),
-                            availableLimit: 20000,
+                            availableLimit: 0,
                             rates: { 'Dining': 1, 'Grocery': 1, 'Travel': 1, 'Gas/Fuel': 1, 'Online Shopping': 1, 'Govt': 0.15, 'All Other Spend': 1 }
                         };
                         cards.push(newCard);
@@ -645,29 +643,12 @@
             const type = document.getElementById('exp-type').value;
             const desc = document.getElementById('exp-desc').value;
             const amount = parseFloat(document.getElementById('exp-amount').value) || 0;
-            const category = document.getElementById('exp-category').value;
+            const category = type === 'Repaid' ? '' : document.getElementById('exp-category').value;
             const serviceCharge = parseFloat(document.getElementById('exp-service').value) || 0;
-            const cashback = type === 'Repaid' ? 0 : (parseFloat(document.getElementById('exp-cashback').value) || 0);
+            const cashback = parseFloat(document.getElementById('exp-cashback').value) || 0;
             const cardId = document.getElementById('exp-card').value;
 
             const selectedCard = cards.find(c => c.id === cardId);
-
-            if (selectedCard && (type === 'Purchase' || type === 'Cash Withdrawal')) {
-                const maxAllowedSpend = (selectedCard.availableLimit || 0) * 0.97;
-                const monthKey = date ? date.substring(0, 7) : new Date().toISOString().substring(0, 7);
-                
-                const currentMonthCardSpend = transactions
-                    .filter(t => t.id !== editingTxId &&
-                                 t.cardName.trim().toLowerCase() === selectedCard.name.trim().toLowerCase() && 
-                                 t.date && t.date.startsWith(monthKey) && 
-                                 (t.type === 'Purchase' || t.type === 'Cash Withdrawal'))
-                    .reduce((sum, t) => sum + (parseFloat(t.amount) || 0), 0);
-
-                if (currentMonthCardSpend + amount > maxAllowedSpend) {
-                    const proceed = confirm(`Warning: This transaction pushes ${selectedCard.name}'s monthly spend past the 97% target limit (AED ${maxAllowedSpend.toFixed(2)}). Do you still want to proceed?`);
-                    if (!proceed) return;
-                }
-            }
 
             const txObj = {
                 id: editingTxId || Date.now().toString(),
@@ -710,7 +691,10 @@
             }
 
             syncCategoryState(tx.type);
-            document.getElementById('exp-category').value = tx.category || '';
+            if (tx.type !== 'Repaid') {
+                document.getElementById('exp-category').value = tx.category || '';
+            }
+
             document.getElementById('exp-cashback').value = tx.cashback || '0.00';
 
             document.getElementById('exp-form-title').innerHTML = `<span>✏️</span> Edit Transaction`;
@@ -747,7 +731,6 @@
                 transactions = [];
                 activeCardFilter = 'ALL';
                 activeCategoryFilter = 'ALL';
-                activeMonthFilter = 'ALL';
                 render();
             }
         }
@@ -789,62 +772,26 @@
         function renderCardsList() {
             const container = document.getElementById('cards-list');
             if (cards.length === 0) {
-                container.innerHTML = `<p class="text-xs text-slate-400 col-span-full">No cards configured.</p>`;
+                container.innerHTML = `<p class="text-xs text-slate-400">No cards configured.</p>`;
                 return;
             }
-
-            const currentMonthKey = new Date().toISOString().substring(0, 7);
-
-            container.innerHTML = cards.map(c => {
-                const totalLimit = Number(c.availableLimit) || 0;
-                const targetLimit = totalLimit * 0.97;
-
-                const currentMonthSpend = transactions
-                    .filter(t => t.cardName.trim().toLowerCase() === c.name.trim().toLowerCase() && 
-                                 t.date && t.date.startsWith(currentMonthKey) && 
-                                 (t.type === 'Purchase' || t.type === 'Cash Withdrawal'))
-                    .reduce((sum, t) => sum + (parseFloat(t.amount) || 0), 0);
-
-                const percentage = targetLimit > 0 ? Math.min(Math.round((currentMonthSpend / targetLimit) * 100), 100) : 0;
-                const rawPercentageOfTotal = totalLimit > 0 ? (currentMonthSpend / totalLimit) * 100 : 0;
-
-                let barColor = 'bg-emerald-500';
-                if (rawPercentageOfTotal >= 90 && rawPercentageOfTotal < 97) {
-                    barColor = 'bg-amber-500';
-                } else if (rawPercentageOfTotal >= 97) {
-                    barColor = 'bg-red-500';
-                }
-
-                return `
-                    <div class="p-4 bg-slate-50 rounded-xl border border-slate-200 text-xs space-y-3 shadow-sm">
-                        <div class="flex justify-between items-start">
-                            <div>
-                                <span class="font-bold text-slate-900 text-sm block">${c.name}</span>
-                                <span class="text-slate-500 text-[11px]">Limit: AED ${totalLimit.toLocaleString()} (97% Cap: AED ${targetLimit.toLocaleString()})</span>
-                            </div>
-                            <div class="flex items-center gap-2">
-                                <button onclick="editCard('${c.id}')" class="text-indigo-600 hover:text-indigo-800 font-semibold">Edit</button>
-                                <button onclick="deleteCard('${c.id}')" class="text-red-500 hover:text-red-700 font-bold">✕</button>
-                            </div>
-                        </div>
-                        <div class="space-y-1">
-                            <div class="flex justify-between text-[11px] font-medium">
-                                <span class="text-slate-600">Current Spend: AED ${currentMonthSpend.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
-                                <span class="${rawPercentageOfTotal >= 97 ? 'text-red-600 font-bold' : 'text-slate-500'}">${rawPercentageOfTotal.toFixed(1)}% of limit</span>
-                            </div>
-                            <div class="w-full bg-slate-200 rounded-full h-2 overflow-hidden">
-                                <div class="${barColor} h-2 rounded-full transition-all duration-300" style="width: ${percentage}%"></div>
-                            </div>
-                        </div>
+            container.innerHTML = cards.map(c => `
+                <div class="flex justify-between items-center p-2.5 bg-slate-50 rounded-lg border border-slate-100 text-xs">
+                    <div>
+                        <span class="font-medium text-slate-800 block">${c.name}</span>
+                        <span class="text-slate-400">Limit: AED ${c.availableLimit ? Number(c.availableLimit).toLocaleString() : '0'}</span>
                     </div>
-                `;
-            }).join('');
+                    <div class="flex items-center gap-1">
+                        <button onclick="editCard('${c.id}')" class="text-indigo-600 hover:text-indigo-800 px-1 font-semibold">Edit</button>
+                        <button onclick="deleteCard('${c.id}')" class="text-red-500 hover:text-red-700 px-1 font-bold">✕</button>
+                    </div>
+                </div>
+            `).join('');
         }
 
         function renderCardFilters() {
             const container = document.getElementById('card-filter-container');
             const categoryWrapper = document.getElementById('category-filter-wrapper');
-            const monthWrapper = document.getElementById('month-filter-container');
             const uniqueCardNames = Array.from(new Set(transactions.map(t => t.cardName.trim()))).filter(Boolean);
 
             let html = `
@@ -893,40 +840,9 @@
                 categoryWrapper.innerHTML = catHtml;
             }
 
-            const uniqueMonths = Array.from(new Set(
-                transactions
-                    .filter(t => {
-                        const matchesCard = (activeCardFilter === 'ALL' || t.cardName.trim() === activeCardFilter);
-                        const matchesCategory = (activeCategoryFilter === 'ALL' || (t.category && t.category.trim() === activeCategoryFilter));
-                        return matchesCard && matchesCategory;
-                    })
-                    .map(t => t.date ? t.date.substring(0, 7) : '')
-                    .filter(Boolean)
-            )).sort().reverse();
-
-            let monthHtml = `
-                <button onclick="setMonthFilter('ALL')" class="px-2.5 py-1 text-[11px] font-medium rounded-md transition whitespace-nowrap ${activeMonthFilter === 'ALL' ? 'bg-indigo-500 text-white shadow-sm' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}">
-                    All Months
-                </button>
-            `;
-
-            uniqueMonths.forEach(m => {
-                const isMonthActive = activeMonthFilter === m;
-                monthHtml += `
-                    <button onclick="setMonthFilter('${m}')" class="px-2.5 py-1 text-[11px] font-medium rounded-md transition whitespace-nowrap ${isMonthActive ? 'bg-indigo-500 text-white shadow-sm' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}">
-                        📅 ${m}
-                    </button>
-                `;
-            });
-
-            monthWrapper.innerHTML = monthHtml;
-
             let filterText = `Filter: ${activeCardFilter === 'ALL' ? 'All Cards' : activeCardFilter}`;
             if (activeCardFilter !== 'ALL' && activeCategoryFilter !== 'ALL') {
                 filterText += ` → ${activeCategoryFilter}`;
-            }
-            if (activeMonthFilter !== 'ALL') {
-                filterText += ` (${activeMonthFilter})`;
             }
             document.getElementById('active-filter-label').textContent = filterText;
         }
@@ -944,12 +860,6 @@
             renderTransactionsAndMetrics();
         }
 
-        function setMonthFilter(month) {
-            activeMonthFilter = month;
-            renderCardFilters();
-            renderTransactionsAndMetrics();
-        }
-
         function renderTransactionsAndMetrics() {
             const tbody = document.getElementById('tx-table-body');
             document.getElementById('tx-count').textContent = `${transactions.length} entries`;
@@ -961,8 +871,7 @@
                 document.getElementById('metric-return').textContent = '0.00%';
                 renderDonutCharts({}, {});
                 renderMonthlyChart({});
-                renderSummaryTable();
-                renderCardsList();
+                renderMonthlyTable({});
                 return;
             }
 
@@ -983,28 +892,28 @@
                 const amount = parseFloat(t.amount) || 0;
                 const cashback = parseFloat(t.cashback) || 0;
                 const fee = parseFloat(t.serviceCharge) || 0;
+
+                if (t.type === 'Purchase' || t.type === 'Cash Withdrawal') {
+                    totalSpend += amount;
+                }
+                totalCashback += cashback;
+
+                const displayCategory = t.category ? t.category : 'Uncategorized';
+                if (cashback > 0) {
+                    categoryMap[displayCategory] = (categoryMap[displayCategory] || 0) + cashback;
+                }
+
+                const displayCard = t.cardName ? t.cardName.trim() : 'Unknown Card';
+                if (cashback > 0) {
+                    cardMap[displayCard] = (cardMap[displayCard] || 0) + cashback;
+                }
+
                 let netReward = (t.type === 'Repaid') ? 0 : (cashback - fee);
 
                 const matchesCard = (activeCardFilter === 'ALL' || t.cardName.trim() === activeCardFilter);
                 const matchesCategory = (activeCategoryFilter === 'ALL' || (t.category && t.category.trim() === activeCategoryFilter));
-                const matchesMonth = (activeMonthFilter === 'ALL' || (t.date && t.date.startsWith(activeMonthFilter)));
 
-                if (matchesCard && matchesCategory && matchesMonth) {
-                    if (t.type === 'Purchase' || t.type === 'Cash Withdrawal') {
-                        totalSpend += amount;
-                    }
-                    totalCashback += cashback;
-
-                    const displayCategory = t.category ? t.category : 'Uncategorized';
-                    if (cashback > 0) {
-                        categoryMap[displayCategory] = (categoryMap[displayCategory] || 0) + cashback;
-                    }
-
-                    const displayCard = t.cardName ? t.cardName.trim() : 'Unknown Card';
-                    if (cashback > 0) {
-                        cardMap[displayCard] = (cardMap[displayCard] || 0) + cashback;
-                    }
-
+                if (matchesCard && matchesCategory) {
                     const monthKey = t.date ? t.date.substring(0, 7) : 'Unknown';
                     if (!monthlyData[monthKey]) {
                         monthlyData[monthKey] = { purchase: 0, withdrawal: 0, repaid: 0, fee: 0, cashback: 0, netReward: 0 };
@@ -1047,8 +956,7 @@
 
             renderDonutCharts(categoryMap, cardMap);
             renderMonthlyChart(monthlyData);
-            renderSummaryTable();
-            renderCardsList();
+            renderMonthlyTable(monthlyData);
         }
 
         function renderMonthlyChart(monthlyData) {
@@ -1092,199 +1000,32 @@
             });
         }
 
-        function renderSummaryTable() {
+        function renderMonthlyTable(monthlyData) {
             const tbody = document.getElementById('monthly-table-body');
-            const titleEl = document.getElementById('summary-table-title');
-            const headerTr = document.getElementById('summary-table-header');
+            const months = Object.keys(monthlyData).sort().reverse();
 
-            const filteredTx = transactions.filter(t => {
-                const matchesCard = (activeCardFilter === 'ALL' || t.cardName.trim() === activeCardFilter);
-                const matchesCategory = (activeCategoryFilter === 'ALL' || (t.category && t.category.trim() === activeCategoryFilter));
-                const matchesMonth = (activeMonthFilter === 'ALL' || (t.date && t.date.startsWith(activeMonthFilter)));
-                return matchesCard && matchesCategory && matchesMonth;
-            });
-
-            if (filteredTx.length === 0) {
-                headerTr.innerHTML = `
-                    <th class="py-3 px-6">Summary</th>
-                    <th class="py-3 px-6 text-right">Purchase (AED)</th>
-                    <th class="py-3 px-6 text-right">Cash Withdrawal (AED)</th>
-                    <th class="py-3 px-6 text-right">Repaid (AED)</th>
-                    <th class="py-3 px-6 text-right">Service Charges (AED)</th>
-                    <th class="py-3 px-6 text-right">Cashback (AED)</th>
-                    <th class="py-3 px-6 text-right">Remaining Pay (AED)</th>
-                    <th class="py-3 px-6 text-right">Net Rewards (AED)</th>
-                `;
-                tbody.innerHTML = `<tr><td colspan="8" class="p-4 text-center text-xs text-slate-400">No data available for selected filter.</td></tr>`;
+            if (months.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="8" class="p-4 text-center text-xs text-slate-400">No monthly data for selected filter.</td></tr>`;
                 return;
             }
 
-            if (activeCardFilter === 'ALL') {
-                titleEl.textContent = 'Summary Breakdown by Card (Complete Data)';
-                headerTr.innerHTML = `
-                    <th class="py-3 px-6">Card Name</th>
-                    <th class="py-3 px-6 text-right">Purchase (AED)</th>
-                    <th class="py-3 px-6 text-right">Cash Withdrawal (AED)</th>
-                    <th class="py-3 px-6 text-right">Repaid (AED)</th>
-                    <th class="py-3 px-6 text-right">Service Charges (AED)</th>
-                    <th class="py-3 px-6 text-right">Cashback (AED)</th>
-                    <th class="py-3 px-6 text-right">Remaining Pay (AED)</th>
-                    <th class="py-3 px-6 text-right">Net Rewards (AED)</th>
-                `;
-
-                const cardAgg = {};
-                filteredTx.forEach(t => {
-                    const cName = t.cardName ? t.cardName.trim() : 'Unknown Card';
-                    if (!cardAgg[cName]) {
-                        cardAgg[cName] = { purchase: 0, withdrawal: 0, repaid: 0, fee: 0, cashback: 0, netReward: 0 };
-                    }
-                    const amount = parseFloat(t.amount) || 0;
-                    const cashback = parseFloat(t.cashback) || 0;
-                    const fee = parseFloat(t.serviceCharge) || 0;
-                    const netReward = (t.type === 'Repaid') ? 0 : (cashback - fee);
-
-                    if (t.type === 'Purchase') cardAgg[cName].purchase += amount;
-                    if (t.type === 'Cash Withdrawal') cardAgg[cName].withdrawal += amount;
-                    if (t.type === 'Repaid') cardAgg[cName].repaid += amount;
-                    cardAgg[cName].fee += fee;
-                    cardAgg[cName].cashback += cashback;
-                    cardAgg[cName].netReward += netReward;
-                });
-
-                let totalPurchase = 0;
-                let totalWithdrawal = 0;
-                let totalRepaid = 0;
-                let totalFee = 0;
-                let totalCashback = 0;
-                let totalRemainingPay = 0;
-                let totalNetReward = 0;
-
-                const rowsHtml = Object.keys(cardAgg).sort().map(cName => {
-                    const d = cardAgg[cName];
-                    const remainingPay = (d.purchase + d.withdrawal) - d.repaid - d.cashback;
-                    
-                    totalPurchase += d.purchase;
-                    totalWithdrawal += d.withdrawal;
-                    totalRepaid += d.repaid;
-                    totalFee += d.fee;
-                    totalCashback += d.cashback;
-                    totalRemainingPay += remainingPay;
-                    totalNetReward += d.netReward;
-
-                    const netClass = d.netReward < 0 ? 'text-red-600 font-bold' : 'text-emerald-600 font-bold';
-                    return `
-                        <tr class="hover:bg-slate-50 transition">
-                            <td class="py-3 px-6 font-semibold text-slate-800">💳 ${cName}</td>
-                            <td class="py-3 px-6 text-right text-slate-700">${d.purchase.toFixed(2)}</td>
-                            <td class="py-3 px-6 text-right text-amber-600">${d.withdrawal.toFixed(2)}</td>
-                            <td class="py-3 px-6 text-right text-emerald-600 font-medium">${d.repaid.toFixed(2)}</td>
-                            <td class="py-3 px-6 text-right text-red-600">${d.fee.toFixed(2)}</td>
-                            <td class="py-3 px-6 text-right text-emerald-600 font-semibold">${d.cashback.toFixed(2)}</td>
-                            <td class="py-3 px-6 text-right font-semibold text-slate-900">${remainingPay.toFixed(2)}</td>
-                            <td class="py-3 px-6 text-right ${netClass}">${d.netReward.toFixed(2)}</td>
-                        </tr>
-                    `;
-                }).join('');
-
-                const totalNetClass = totalNetReward < 0 ? 'text-red-600 font-bold' : 'text-emerald-600 font-bold';
-                const totalRowHtml = `
-                    <tr class="bg-slate-100 font-bold border-t-2 border-slate-200">
-                        <td class="py-3 px-6 text-slate-900">Total</td>
-                        <td class="py-3 px-6 text-right text-slate-900">${totalPurchase.toFixed(2)}</td>
-                        <td class="py-3 px-6 text-right text-amber-700">${totalWithdrawal.toFixed(2)}</td>
-                        <td class="py-3 px-6 text-right text-emerald-700">${totalRepaid.toFixed(2)}</td>
-                        <td class="py-3 px-6 text-right text-red-700">${totalFee.toFixed(2)}</td>
-                        <td class="py-3 px-6 text-right text-emerald-700">${totalCashback.toFixed(2)}</td>
-                        <td class="py-3 px-6 text-right text-slate-900">${totalRemainingPay.toFixed(2)}</td>
-                        <td class="py-3 px-6 text-right ${totalNetClass}">${totalNetReward.toFixed(2)}</td>
+            tbody.innerHTML = months.map(m => {
+                const d = monthlyData[m];
+                const remainingPay = (d.purchase + d.withdrawal) - (d.repaid) - (d.cashback);
+                const netClass = d.netReward < 0 ? 'text-red-600 font-bold' : 'text-emerald-600 font-bold';
+                return `
+                    <tr class="hover:bg-slate-50 transition">
+                        <td class="py-3 px-6 font-semibold text-slate-800">${m}</td>
+                        <td class="py-3 px-6 text-right text-slate-700">${d.purchase.toFixed(2)}</td>
+                        <td class="py-3 px-6 text-right text-amber-600">${d.withdrawal.toFixed(2)}</td>
+                        <td class="py-3 px-6 text-right text-emerald-600 font-medium">${d.repaid.toFixed(2)}</td>
+                        <td class="py-3 px-6 text-right text-red-600">${d.fee.toFixed(2)}</td>
+                        <td class="py-3 px-6 text-right text-emerald-600 font-semibold">${d.cashback.toFixed(2)}</td>
+                        <td class="py-3 px-6 text-right font-semibold text-slate-900">${remainingPay.toFixed(2)}</td>
+                        <td class="py-3 px-6 text-right ${netClass}">${d.netReward.toFixed(2)}</td>
                     </tr>
                 `;
-
-                tbody.innerHTML = rowsHtml + totalRowHtml;
-
-            } else {
-                titleEl.textContent = `Summary Breakdown by Category for ${activeCardFilter} (Complete Data)`;
-                headerTr.innerHTML = `
-                    <th class="py-3 px-6">Category</th>
-                    <th class="py-3 px-6 text-right">Purchase (AED)</th>
-                    <th class="py-3 px-6 text-right">Cash Withdrawal (AED)</th>
-                    <th class="py-3 px-6 text-right">Repaid (AED)</th>
-                    <th class="py-3 px-6 text-right">Service Charges (AED)</th>
-                    <th class="py-3 px-6 text-right">Cashback (AED)</th>
-                    <th class="py-3 px-6 text-right">Remaining Pay (AED)</th>
-                    <th class="py-3 px-6 text-right">Net Rewards (AED)</th>
-                `;
-
-                const catAgg = {};
-                filteredTx.forEach(t => {
-                    const catName = t.category ? t.category.trim() : 'Uncategorized';
-                    if (!catAgg[catName]) {
-                        catAgg[catName] = { purchase: 0, withdrawal: 0, repaid: 0, fee: 0, cashback: 0, netReward: 0 };
-                    }
-                    const amount = parseFloat(t.amount) || 0;
-                    const cashback = parseFloat(t.cashback) || 0;
-                    const fee = parseFloat(t.serviceCharge) || 0;
-                    const netReward = (t.type === 'Repaid') ? 0 : (cashback - fee);
-
-                    if (t.type === 'Purchase') catAgg[catName].purchase += amount;
-                    if (t.type === 'Cash Withdrawal') catAgg[catName].withdrawal += amount;
-                    if (t.type === 'Repaid') catAgg[catName].repaid += amount;
-                    catAgg[catName].fee += fee;
-                    catAgg[catName].cashback += cashback;
-                    catAgg[catName].netReward += netReward;
-                });
-
-                let totalPurchase = 0;
-                let totalWithdrawal = 0;
-                let totalRepaid = 0;
-                let totalFee = 0;
-                let totalCashback = 0;
-                let totalRemainingPay = 0;
-                let totalNetReward = 0;
-
-                const rowsHtml = Object.keys(catAgg).sort().map(catName => {
-                    const d = catAgg[catName];
-                    const remainingPay = (d.purchase + d.withdrawal) - d.repaid - d.cashback;
-                    
-                    totalPurchase += d.purchase;
-                    totalWithdrawal += d.withdrawal;
-                    totalRepaid += d.repaid;
-                    totalFee += d.fee;
-                    totalCashback += d.cashback;
-                    totalRemainingPay += remainingPay;
-                    totalNetReward += d.netReward;
-
-                    const netClass = d.netReward < 0 ? 'text-red-600 font-bold' : 'text-emerald-600 font-bold';
-                    return `
-                        <tr class="hover:bg-slate-50 transition">
-                            <td class="py-3 px-6 font-semibold text-slate-800">🏷️ ${catName}</td>
-                            <td class="py-3 px-6 text-right text-slate-700">${d.purchase.toFixed(2)}</td>
-                            <td class="py-3 px-6 text-right text-amber-600">${d.withdrawal.toFixed(2)}</td>
-                            <td class="py-3 px-6 text-right text-emerald-600 font-medium">${d.repaid.toFixed(2)}</td>
-                            <td class="py-3 px-6 text-right text-red-600">${d.fee.toFixed(2)}</td>
-                            <td class="py-3 px-6 text-right text-emerald-600 font-semibold">${d.cashback.toFixed(2)}</td>
-                            <td class="py-3 px-6 text-right font-semibold text-slate-900">${remainingPay.toFixed(2)}</td>
-                            <td class="py-3 px-6 text-right ${netClass}">${d.netReward.toFixed(2)}</td>
-                        </tr>
-                    `;
-                }).join('');
-
-                const totalNetClass = totalNetReward < 0 ? 'text-red-600 font-bold' : 'text-emerald-600 font-bold';
-                const totalRowHtml = `
-                    <tr class="bg-slate-100 font-bold border-t-2 border-slate-200">
-                        <td class="py-3 px-6 text-slate-900">Total</td>
-                        <td class="py-3 px-6 text-right text-slate-900">${totalPurchase.toFixed(2)}</td>
-                        <td class="py-3 px-6 text-right text-amber-700">${totalWithdrawal.toFixed(2)}</td>
-                        <td class="py-3 px-6 text-right text-emerald-700">${totalRepaid.toFixed(2)}</td>
-                        <td class="py-3 px-6 text-right text-red-700">${totalFee.toFixed(2)}</td>
-                        <td class="py-3 px-6 text-right text-emerald-700">${totalCashback.toFixed(2)}</td>
-                        <td class="py-3 px-6 text-right text-slate-900">${totalRemainingPay.toFixed(2)}</td>
-                        <td class="py-3 px-6 text-right ${totalNetClass}">${totalNetReward.toFixed(2)}</td>
-                    </tr>
-                `;
-
-                tbody.innerHTML = rowsHtml + totalRowHtml;
-            }
+            }).join('');
         }
 
         function renderDonutCharts(categoryMap, cardMap) {

@@ -149,7 +149,7 @@
                     </div>
                 </div>
 
-                <!-- Saved Cards & Monthly Spend Section -->
+                <!-- Saved Cards & Monthly Spend Section (Moved down right below Total Spend metrics) -->
                 <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
                     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
                         <div>
@@ -159,10 +159,11 @@
                             <p class="text-xs text-slate-500">Overview of all active cards, limits, and current month spend tracking.</p>
                         </div>
                     </div>
+                    <!-- Expanded Full-Width Cards Container -->
                     <div id="cards-list" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4"></div>
                 </div>
 
-                <!-- Month-Wise Multi-Metric Chart & Filters -->
+                <!-- Month-Wise Multi-Metric Chart & Filter -->
                 <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-4">
                     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                         <div>
@@ -171,11 +172,10 @@
                         </div>
                     </div>
 
-                    <!-- CARD, CATEGORY & MONTH FILTER BUTTONS -->
+                    <!-- CARD & CATEGORY FILTER BUTTONS -->
                     <div class="space-y-2 pt-2 border-t border-slate-100">
                         <div class="flex items-center gap-2 overflow-x-auto pb-1" id="card-filter-container"></div>
                         <div id="category-filter-wrapper" class="hidden flex items-center gap-2 overflow-x-auto pb-1 pt-1 border-t border-dashed border-slate-100"></div>
-                        <div id="month-filter-container" class="flex items-center gap-2 overflow-x-auto pb-1 pt-1 border-t border-dashed border-slate-100"></div>
                     </div>
 
                     <div class="h-80">
@@ -183,16 +183,25 @@
                     </div>
                 </div>
 
-                <!-- Aggregated Summary Table (Non-Monthly Breakdown) -->
+                <!-- Month-Wise Summary Table -->
                 <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
                     <div class="px-6 py-4 border-b border-slate-100 flex justify-between items-center">
-                        <h3 id="summary-table-title" class="font-semibold text-slate-900">Summary Table</h3>
+                        <h3 class="font-semibold text-slate-900">Monthly Summary Table</h3>
                         <span id="active-filter-label" class="text-xs font-semibold text-indigo-600 bg-indigo-50 px-2.5 py-1 rounded-md">Filter: All Cards</span>
                     </div>
                     <div class="overflow-x-auto">
                         <table class="w-full text-left border-collapse text-xs">
                             <thead>
-                                <tr id="summary-table-header" class="bg-slate-50 text-slate-500 uppercase tracking-wider border-b border-slate-100"></tr>
+                                <tr class="bg-slate-50 text-slate-500 uppercase tracking-wider border-b border-slate-100">
+                                    <th class="py-3 px-6">Month</th>
+                                    <th class="py-3 px-6 text-right">Purchase (AED)</th>
+                                    <th class="py-3 px-6 text-right">Cash Withdrawal (AED)</th>
+                                    <th class="py-3 px-6 text-right">Repaid (AED)</th>
+                                    <th class="py-3 px-6 text-right">Service Charges (AED)</th>
+                                    <th class="py-3 px-6 text-right">Cashback (AED)</th>
+                                    <th class="py-3 px-6 text-right">Remaining Pay (AED)</th>
+                                    <th class="py-3 px-6 text-right">Net Rewards (AED)</th>
+                                </tr>
                             </thead>
                             <tbody id="monthly-table-body" class="divide-y divide-slate-100"></tbody>
                         </table>
@@ -332,7 +341,7 @@
     </div>
 
     <script>
-        // Set up Supabase Connection
+        // Set up Supabase Connection (Replace with your actual keys from Supabase project settings)
         const SUPABASE_URL = 'https://eghvqigfmcohvlstnajw.supabase.co';
         const SUPABASE_ANON_KEY = 'sb_publishable_SB6dXxf5bfzdpKL69IOMqQ_F9ETe580';
         const _supabase = (SUPABASE_URL !== 'YOUR_SUPABASE_URL') ? supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
@@ -344,7 +353,6 @@
         let monthlyChartInstance = null;
         let activeCardFilter = 'ALL';
         let activeCategoryFilter = 'ALL';
-        let activeMonthFilter = 'ALL';
 
         async function initData() {
             if (_supabase) {
@@ -450,7 +458,6 @@
             const cardId = document.getElementById('exp-card').value;
             const cashbackInput = document.getElementById('exp-cashback');
 
-            // Force cashback to 0.00 for Repaid entries regardless of category selection
             if (type === 'Repaid') {
                 cashbackInput.value = '0.00';
                 return;
@@ -495,9 +502,14 @@
 
         function syncCategoryState(typeVal) {
             const catSelect = document.getElementById('exp-category');
-            // Enable category dropdown for Repaid transactions as well
-            catSelect.disabled = false;
-            catSelect.classList.remove('bg-slate-100', 'cursor-not-allowed');
+            if (typeVal === 'Repaid') {
+                catSelect.value = '';
+                catSelect.disabled = true;
+                catSelect.classList.add('bg-slate-100', 'cursor-not-allowed');
+            } else {
+                catSelect.disabled = false;
+                catSelect.classList.remove('bg-slate-100', 'cursor-not-allowed');
+            }
             calculateDynamicCashback();
         }
 
@@ -536,11 +548,11 @@
                     const cardName = row['Card'] || 'Unknown Card';
                     const type = row['Type'] || 'Purchase';
                     const desc = row['Description'] || row['Desc'] || '';
-                    const category = row['Category'] || '';
+                    const category = (type === 'Repaid') ? '' : (row['Category'] || '');
                     const amount = parseFloat(row['Amount (AED)']) || 0;
                     const serviceCharge = parseFloat(row['Service Charge (AED)']) || parseFloat(row['Service Fee (AED)']) || 0;
                     const cashbackRaw = row['Cashback (AED)'];
-                    const cashback = (type === 'Repaid' || cashbackRaw === '-' || cashbackRaw === '' || cashbackRaw === undefined) ? 0 : parseFloat(cashbackRaw);
+                    const cashback = (cashbackRaw === '-' || cashbackRaw === '' || cashbackRaw === undefined) ? 0 : parseFloat(cashbackRaw);
                     const notes = row['Notes'] || '';
 
                     if (cardName && !cards.some(c => c.name.trim().toLowerCase() === cardName.trim().toLowerCase())) {
@@ -645,9 +657,9 @@
             const type = document.getElementById('exp-type').value;
             const desc = document.getElementById('exp-desc').value;
             const amount = parseFloat(document.getElementById('exp-amount').value) || 0;
-            const category = document.getElementById('exp-category').value;
+            const category = type === 'Repaid' ? '' : document.getElementById('exp-category').value;
             const serviceCharge = parseFloat(document.getElementById('exp-service').value) || 0;
-            const cashback = type === 'Repaid' ? 0 : (parseFloat(document.getElementById('exp-cashback').value) || 0);
+            const cashback = parseFloat(document.getElementById('exp-cashback').value) || 0;
             const cardId = document.getElementById('exp-card').value;
 
             const selectedCard = cards.find(c => c.id === cardId);
@@ -710,7 +722,10 @@
             }
 
             syncCategoryState(tx.type);
-            document.getElementById('exp-category').value = tx.category || '';
+            if (tx.type !== 'Repaid') {
+                document.getElementById('exp-category').value = tx.category || '';
+            }
+
             document.getElementById('exp-cashback').value = tx.cashback || '0.00';
 
             document.getElementById('exp-form-title').innerHTML = `<span>✏️</span> Edit Transaction`;
@@ -747,7 +762,6 @@
                 transactions = [];
                 activeCardFilter = 'ALL';
                 activeCategoryFilter = 'ALL';
-                activeMonthFilter = 'ALL';
                 render();
             }
         }
@@ -799,15 +813,18 @@
                 const totalLimit = Number(c.availableLimit) || 0;
                 const targetLimit = totalLimit * 0.97;
 
+                // Calculate current month's spend for this card
                 const currentMonthSpend = transactions
                     .filter(t => t.cardName.trim().toLowerCase() === c.name.trim().toLowerCase() && 
                                  t.date && t.date.startsWith(currentMonthKey) && 
                                  (t.type === 'Purchase' || t.type === 'Cash Withdrawal'))
                     .reduce((sum, t) => sum + (parseFloat(t.amount) || 0), 0);
 
+                // Calculate percentage relative to the 97% limit target (or total limit)
                 const percentage = targetLimit > 0 ? Math.min(Math.round((currentMonthSpend / targetLimit) * 100), 100) : 0;
                 const rawPercentageOfTotal = totalLimit > 0 ? (currentMonthSpend / totalLimit) * 100 : 0;
 
+                // Dynamic bar color mapping based on 97% threshold usage
                 let barColor = 'bg-emerald-500';
                 if (rawPercentageOfTotal >= 90 && rawPercentageOfTotal < 97) {
                     barColor = 'bg-amber-500';
@@ -844,7 +861,6 @@
         function renderCardFilters() {
             const container = document.getElementById('card-filter-container');
             const categoryWrapper = document.getElementById('category-filter-wrapper');
-            const monthWrapper = document.getElementById('month-filter-container');
             const uniqueCardNames = Array.from(new Set(transactions.map(t => t.cardName.trim()))).filter(Boolean);
 
             let html = `
@@ -893,40 +909,9 @@
                 categoryWrapper.innerHTML = catHtml;
             }
 
-            const uniqueMonths = Array.from(new Set(
-                transactions
-                    .filter(t => {
-                        const matchesCard = (activeCardFilter === 'ALL' || t.cardName.trim() === activeCardFilter);
-                        const matchesCategory = (activeCategoryFilter === 'ALL' || (t.category && t.category.trim() === activeCategoryFilter));
-                        return matchesCard && matchesCategory;
-                    })
-                    .map(t => t.date ? t.date.substring(0, 7) : '')
-                    .filter(Boolean)
-            )).sort().reverse();
-
-            let monthHtml = `
-                <button onclick="setMonthFilter('ALL')" class="px-2.5 py-1 text-[11px] font-medium rounded-md transition whitespace-nowrap ${activeMonthFilter === 'ALL' ? 'bg-indigo-500 text-white shadow-sm' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}">
-                    All Months
-                </button>
-            `;
-
-            uniqueMonths.forEach(m => {
-                const isMonthActive = activeMonthFilter === m;
-                monthHtml += `
-                    <button onclick="setMonthFilter('${m}')" class="px-2.5 py-1 text-[11px] font-medium rounded-md transition whitespace-nowrap ${isMonthActive ? 'bg-indigo-500 text-white shadow-sm' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}">
-                        📅 ${m}
-                    </button>
-                `;
-            });
-
-            monthWrapper.innerHTML = monthHtml;
-
             let filterText = `Filter: ${activeCardFilter === 'ALL' ? 'All Cards' : activeCardFilter}`;
             if (activeCardFilter !== 'ALL' && activeCategoryFilter !== 'ALL') {
                 filterText += ` → ${activeCategoryFilter}`;
-            }
-            if (activeMonthFilter !== 'ALL') {
-                filterText += ` (${activeMonthFilter})`;
             }
             document.getElementById('active-filter-label').textContent = filterText;
         }
@@ -944,12 +929,6 @@
             renderTransactionsAndMetrics();
         }
 
-        function setMonthFilter(month) {
-            activeMonthFilter = month;
-            renderCardFilters();
-            renderTransactionsAndMetrics();
-        }
-
         function renderTransactionsAndMetrics() {
             const tbody = document.getElementById('tx-table-body');
             document.getElementById('tx-count').textContent = `${transactions.length} entries`;
@@ -961,7 +940,7 @@
                 document.getElementById('metric-return').textContent = '0.00%';
                 renderDonutCharts({}, {});
                 renderMonthlyChart({});
-                renderSummaryTable();
+                renderMonthlyTable({});
                 renderCardsList();
                 return;
             }
@@ -983,28 +962,28 @@
                 const amount = parseFloat(t.amount) || 0;
                 const cashback = parseFloat(t.cashback) || 0;
                 const fee = parseFloat(t.serviceCharge) || 0;
+
+                if (t.type === 'Purchase' || t.type === 'Cash Withdrawal') {
+                    totalSpend += amount;
+                }
+                totalCashback += cashback;
+
+                const displayCategory = t.category ? t.category : 'Uncategorized';
+                if (cashback > 0) {
+                    categoryMap[displayCategory] = (categoryMap[displayCategory] || 0) + cashback;
+                }
+
+                const displayCard = t.cardName ? t.cardName.trim() : 'Unknown Card';
+                if (cashback > 0) {
+                    cardMap[displayCard] = (cardMap[displayCard] || 0) + cashback;
+                }
+
                 let netReward = (t.type === 'Repaid') ? 0 : (cashback - fee);
 
                 const matchesCard = (activeCardFilter === 'ALL' || t.cardName.trim() === activeCardFilter);
                 const matchesCategory = (activeCategoryFilter === 'ALL' || (t.category && t.category.trim() === activeCategoryFilter));
-                const matchesMonth = (activeMonthFilter === 'ALL' || (t.date && t.date.startsWith(activeMonthFilter)));
 
-                if (matchesCard && matchesCategory && matchesMonth) {
-                    if (t.type === 'Purchase' || t.type === 'Cash Withdrawal') {
-                        totalSpend += amount;
-                    }
-                    totalCashback += cashback;
-
-                    const displayCategory = t.category ? t.category : 'Uncategorized';
-                    if (cashback > 0) {
-                        categoryMap[displayCategory] = (categoryMap[displayCategory] || 0) + cashback;
-                    }
-
-                    const displayCard = t.cardName ? t.cardName.trim() : 'Unknown Card';
-                    if (cashback > 0) {
-                        cardMap[displayCard] = (cardMap[displayCard] || 0) + cashback;
-                    }
-
+                if (matchesCard && matchesCategory) {
                     const monthKey = t.date ? t.date.substring(0, 7) : 'Unknown';
                     if (!monthlyData[monthKey]) {
                         monthlyData[monthKey] = { purchase: 0, withdrawal: 0, repaid: 0, fee: 0, cashback: 0, netReward: 0 };
@@ -1047,7 +1026,7 @@
 
             renderDonutCharts(categoryMap, cardMap);
             renderMonthlyChart(monthlyData);
-            renderSummaryTable();
+            renderMonthlyTable(monthlyData);
             renderCardsList();
         }
 
@@ -1092,199 +1071,32 @@
             });
         }
 
-        function renderSummaryTable() {
+        function renderMonthlyTable(monthlyData) {
             const tbody = document.getElementById('monthly-table-body');
-            const titleEl = document.getElementById('summary-table-title');
-            const headerTr = document.getElementById('summary-table-header');
+            const months = Object.keys(monthlyData).sort().reverse();
 
-            const filteredTx = transactions.filter(t => {
-                const matchesCard = (activeCardFilter === 'ALL' || t.cardName.trim() === activeCardFilter);
-                const matchesCategory = (activeCategoryFilter === 'ALL' || (t.category && t.category.trim() === activeCategoryFilter));
-                const matchesMonth = (activeMonthFilter === 'ALL' || (t.date && t.date.startsWith(activeMonthFilter)));
-                return matchesCard && matchesCategory && matchesMonth;
-            });
-
-            if (filteredTx.length === 0) {
-                headerTr.innerHTML = `
-                    <th class="py-3 px-6">Summary</th>
-                    <th class="py-3 px-6 text-right">Purchase (AED)</th>
-                    <th class="py-3 px-6 text-right">Cash Withdrawal (AED)</th>
-                    <th class="py-3 px-6 text-right">Repaid (AED)</th>
-                    <th class="py-3 px-6 text-right">Service Charges (AED)</th>
-                    <th class="py-3 px-6 text-right">Cashback (AED)</th>
-                    <th class="py-3 px-6 text-right">Remaining Pay (AED)</th>
-                    <th class="py-3 px-6 text-right">Net Rewards (AED)</th>
-                `;
-                tbody.innerHTML = `<tr><td colspan="8" class="p-4 text-center text-xs text-slate-400">No data available for selected filter.</td></tr>`;
+            if (months.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="8" class="p-4 text-center text-xs text-slate-400">No monthly data for selected filter.</td></tr>`;
                 return;
             }
 
-            if (activeCardFilter === 'ALL') {
-                titleEl.textContent = 'Summary Breakdown by Card (Complete Data)';
-                headerTr.innerHTML = `
-                    <th class="py-3 px-6">Card Name</th>
-                    <th class="py-3 px-6 text-right">Purchase (AED)</th>
-                    <th class="py-3 px-6 text-right">Cash Withdrawal (AED)</th>
-                    <th class="py-3 px-6 text-right">Repaid (AED)</th>
-                    <th class="py-3 px-6 text-right">Service Charges (AED)</th>
-                    <th class="py-3 px-6 text-right">Cashback (AED)</th>
-                    <th class="py-3 px-6 text-right">Remaining Pay (AED)</th>
-                    <th class="py-3 px-6 text-right">Net Rewards (AED)</th>
-                `;
-
-                const cardAgg = {};
-                filteredTx.forEach(t => {
-                    const cName = t.cardName ? t.cardName.trim() : 'Unknown Card';
-                    if (!cardAgg[cName]) {
-                        cardAgg[cName] = { purchase: 0, withdrawal: 0, repaid: 0, fee: 0, cashback: 0, netReward: 0 };
-                    }
-                    const amount = parseFloat(t.amount) || 0;
-                    const cashback = parseFloat(t.cashback) || 0;
-                    const fee = parseFloat(t.serviceCharge) || 0;
-                    const netReward = (t.type === 'Repaid') ? 0 : (cashback - fee);
-
-                    if (t.type === 'Purchase') cardAgg[cName].purchase += amount;
-                    if (t.type === 'Cash Withdrawal') cardAgg[cName].withdrawal += amount;
-                    if (t.type === 'Repaid') cardAgg[cName].repaid += amount;
-                    cardAgg[cName].fee += fee;
-                    cardAgg[cName].cashback += cashback;
-                    cardAgg[cName].netReward += netReward;
-                });
-
-                let totalPurchase = 0;
-                let totalWithdrawal = 0;
-                let totalRepaid = 0;
-                let totalFee = 0;
-                let totalCashback = 0;
-                let totalRemainingPay = 0;
-                let totalNetReward = 0;
-
-                const rowsHtml = Object.keys(cardAgg).sort().map(cName => {
-                    const d = cardAgg[cName];
-                    const remainingPay = (d.purchase + d.withdrawal) - d.repaid - d.cashback;
-                    
-                    totalPurchase += d.purchase;
-                    totalWithdrawal += d.withdrawal;
-                    totalRepaid += d.repaid;
-                    totalFee += d.fee;
-                    totalCashback += d.cashback;
-                    totalRemainingPay += remainingPay;
-                    totalNetReward += d.netReward;
-
-                    const netClass = d.netReward < 0 ? 'text-red-600 font-bold' : 'text-emerald-600 font-bold';
-                    return `
-                        <tr class="hover:bg-slate-50 transition">
-                            <td class="py-3 px-6 font-semibold text-slate-800">💳 ${cName}</td>
-                            <td class="py-3 px-6 text-right text-slate-700">${d.purchase.toFixed(2)}</td>
-                            <td class="py-3 px-6 text-right text-amber-600">${d.withdrawal.toFixed(2)}</td>
-                            <td class="py-3 px-6 text-right text-emerald-600 font-medium">${d.repaid.toFixed(2)}</td>
-                            <td class="py-3 px-6 text-right text-red-600">${d.fee.toFixed(2)}</td>
-                            <td class="py-3 px-6 text-right text-emerald-600 font-semibold">${d.cashback.toFixed(2)}</td>
-                            <td class="py-3 px-6 text-right font-semibold text-slate-900">${remainingPay.toFixed(2)}</td>
-                            <td class="py-3 px-6 text-right ${netClass}">${d.netReward.toFixed(2)}</td>
-                        </tr>
-                    `;
-                }).join('');
-
-                const totalNetClass = totalNetReward < 0 ? 'text-red-600 font-bold' : 'text-emerald-600 font-bold';
-                const totalRowHtml = `
-                    <tr class="bg-slate-100 font-bold border-t-2 border-slate-200">
-                        <td class="py-3 px-6 text-slate-900">Total</td>
-                        <td class="py-3 px-6 text-right text-slate-900">${totalPurchase.toFixed(2)}</td>
-                        <td class="py-3 px-6 text-right text-amber-700">${totalWithdrawal.toFixed(2)}</td>
-                        <td class="py-3 px-6 text-right text-emerald-700">${totalRepaid.toFixed(2)}</td>
-                        <td class="py-3 px-6 text-right text-red-700">${totalFee.toFixed(2)}</td>
-                        <td class="py-3 px-6 text-right text-emerald-700">${totalCashback.toFixed(2)}</td>
-                        <td class="py-3 px-6 text-right text-slate-900">${totalRemainingPay.toFixed(2)}</td>
-                        <td class="py-3 px-6 text-right ${totalNetClass}">${totalNetReward.toFixed(2)}</td>
+            tbody.innerHTML = months.map(m => {
+                const d = monthlyData[m];
+                const remainingPay = (d.purchase + d.withdrawal) - (d.repaid) - (d.cashback);
+                const netClass = d.netReward < 0 ? 'text-red-600 font-bold' : 'text-emerald-600 font-bold';
+                return `
+                    <tr class="hover:bg-slate-50 transition">
+                        <td class="py-3 px-6 font-semibold text-slate-800">${m}</td>
+                        <td class="py-3 px-6 text-right text-slate-700">${d.purchase.toFixed(2)}</td>
+                        <td class="py-3 px-6 text-right text-amber-600">${d.withdrawal.toFixed(2)}</td>
+                        <td class="py-3 px-6 text-right text-emerald-600 font-medium">${d.repaid.toFixed(2)}</td>
+                        <td class="py-3 px-6 text-right text-red-600">${d.fee.toFixed(2)}</td>
+                        <td class="py-3 px-6 text-right text-emerald-600 font-semibold">${d.cashback.toFixed(2)}</td>
+                        <td class="py-3 px-6 text-right font-semibold text-slate-900">${remainingPay.toFixed(2)}</td>
+                        <td class="py-3 px-6 text-right ${netClass}">${d.netReward.toFixed(2)}</td>
                     </tr>
                 `;
-
-                tbody.innerHTML = rowsHtml + totalRowHtml;
-
-            } else {
-                titleEl.textContent = `Summary Breakdown by Category for ${activeCardFilter} (Complete Data)`;
-                headerTr.innerHTML = `
-                    <th class="py-3 px-6">Category</th>
-                    <th class="py-3 px-6 text-right">Purchase (AED)</th>
-                    <th class="py-3 px-6 text-right">Cash Withdrawal (AED)</th>
-                    <th class="py-3 px-6 text-right">Repaid (AED)</th>
-                    <th class="py-3 px-6 text-right">Service Charges (AED)</th>
-                    <th class="py-3 px-6 text-right">Cashback (AED)</th>
-                    <th class="py-3 px-6 text-right">Remaining Pay (AED)</th>
-                    <th class="py-3 px-6 text-right">Net Rewards (AED)</th>
-                `;
-
-                const catAgg = {};
-                filteredTx.forEach(t => {
-                    const catName = t.category ? t.category.trim() : 'Uncategorized';
-                    if (!catAgg[catName]) {
-                        catAgg[catName] = { purchase: 0, withdrawal: 0, repaid: 0, fee: 0, cashback: 0, netReward: 0 };
-                    }
-                    const amount = parseFloat(t.amount) || 0;
-                    const cashback = parseFloat(t.cashback) || 0;
-                    const fee = parseFloat(t.serviceCharge) || 0;
-                    const netReward = (t.type === 'Repaid') ? 0 : (cashback - fee);
-
-                    if (t.type === 'Purchase') catAgg[catName].purchase += amount;
-                    if (t.type === 'Cash Withdrawal') catAgg[catName].withdrawal += amount;
-                    if (t.type === 'Repaid') catAgg[catName].repaid += amount;
-                    catAgg[catName].fee += fee;
-                    catAgg[catName].cashback += cashback;
-                    catAgg[catName].netReward += netReward;
-                });
-
-                let totalPurchase = 0;
-                let totalWithdrawal = 0;
-                let totalRepaid = 0;
-                let totalFee = 0;
-                let totalCashback = 0;
-                let totalRemainingPay = 0;
-                let totalNetReward = 0;
-
-                const rowsHtml = Object.keys(catAgg).sort().map(catName => {
-                    const d = catAgg[catName];
-                    const remainingPay = (d.purchase + d.withdrawal) - d.repaid - d.cashback;
-                    
-                    totalPurchase += d.purchase;
-                    totalWithdrawal += d.withdrawal;
-                    totalRepaid += d.repaid;
-                    totalFee += d.fee;
-                    totalCashback += d.cashback;
-                    totalRemainingPay += remainingPay;
-                    totalNetReward += d.netReward;
-
-                    const netClass = d.netReward < 0 ? 'text-red-600 font-bold' : 'text-emerald-600 font-bold';
-                    return `
-                        <tr class="hover:bg-slate-50 transition">
-                            <td class="py-3 px-6 font-semibold text-slate-800">🏷️ ${catName}</td>
-                            <td class="py-3 px-6 text-right text-slate-700">${d.purchase.toFixed(2)}</td>
-                            <td class="py-3 px-6 text-right text-amber-600">${d.withdrawal.toFixed(2)}</td>
-                            <td class="py-3 px-6 text-right text-emerald-600 font-medium">${d.repaid.toFixed(2)}</td>
-                            <td class="py-3 px-6 text-right text-red-600">${d.fee.toFixed(2)}</td>
-                            <td class="py-3 px-6 text-right text-emerald-600 font-semibold">${d.cashback.toFixed(2)}</td>
-                            <td class="py-3 px-6 text-right font-semibold text-slate-900">${remainingPay.toFixed(2)}</td>
-                            <td class="py-3 px-6 text-right ${netClass}">${d.netReward.toFixed(2)}</td>
-                        </tr>
-                    `;
-                }).join('');
-
-                const totalNetClass = totalNetReward < 0 ? 'text-red-600 font-bold' : 'text-emerald-600 font-bold';
-                const totalRowHtml = `
-                    <tr class="bg-slate-100 font-bold border-t-2 border-slate-200">
-                        <td class="py-3 px-6 text-slate-900">Total</td>
-                        <td class="py-3 px-6 text-right text-slate-900">${totalPurchase.toFixed(2)}</td>
-                        <td class="py-3 px-6 text-right text-amber-700">${totalWithdrawal.toFixed(2)}</td>
-                        <td class="py-3 px-6 text-right text-emerald-700">${totalRepaid.toFixed(2)}</td>
-                        <td class="py-3 px-6 text-right text-red-700">${totalFee.toFixed(2)}</td>
-                        <td class="py-3 px-6 text-right text-emerald-700">${totalCashback.toFixed(2)}</td>
-                        <td class="py-3 px-6 text-right text-slate-900">${totalRemainingPay.toFixed(2)}</td>
-                        <td class="py-3 px-6 text-right ${totalNetClass}">${totalNetReward.toFixed(2)}</td>
-                    </tr>
-                `;
-
-                tbody.innerHTML = rowsHtml + totalRowHtml;
-            }
+            }).join('');
         }
 
         function renderDonutCharts(categoryMap, cardMap) {
