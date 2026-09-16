@@ -144,11 +144,21 @@
                         </div>
                     </div>
 
-                    <!-- CARD, CATEGORY & MONTH FILTER BUTTONS -->
+                    <!-- CARD, CATEGORY, MONTH & DATE-RANGE FILTERS -->
                     <div class="space-y-2 pt-2 border-t border-slate-100">
                         <div class="flex items-center gap-2 overflow-x-auto pb-1" id="card-filter-container"></div>
                         <div id="category-filter-wrapper" class="hidden flex items-center gap-2 overflow-x-auto pb-1 pt-1 border-t border-dashed border-slate-100"></div>
                         <div id="month-filter-container" class="flex items-center gap-2 overflow-x-auto pb-1 pt-1 border-t border-dashed border-slate-100"></div>
+                        <div class="flex items-center gap-2 flex-wrap pb-1 pt-1 border-t border-dashed border-slate-100 text-xs">
+                            <span class="text-slate-400 font-semibold uppercase text-[10px]">Date range</span>
+                            <label class="text-slate-500">From
+                                <input type="date" id="date-from-filter" onchange="setDateRangeFilter()" class="ml-1 px-2 py-1 border rounded-md text-xs focus:ring-2 focus:ring-indigo-500 outline-none">
+                            </label>
+                            <label class="text-slate-500">To
+                                <input type="date" id="date-to-filter" onchange="setDateRangeFilter()" class="ml-1 px-2 py-1 border rounded-md text-xs focus:ring-2 focus:ring-indigo-500 outline-none">
+                            </label>
+                            <button onclick="clearDateRangeFilter()" class="px-2.5 py-1 text-[11px] font-medium rounded-md bg-slate-100 text-slate-600 hover:bg-slate-200 transition">Clear Dates</button>
+                        </div>
                     </div>
 
                     <div class="h-80">
@@ -335,6 +345,17 @@
         let activeCardFilter = 'ALL';
         let activeCategoryFilter = 'ALL';
         let activeMonthFilter = 'ALL';
+        let dateFromFilter = '';
+        let dateToFilter = '';
+
+        function transactionMatchesFilters(t) {
+            const matchesCard = (activeCardFilter === 'ALL' || t.cardName.trim() === activeCardFilter);
+            const matchesCategory = (activeCategoryFilter === 'ALL' || (t.category && t.category.trim() === activeCategoryFilter));
+            const matchesMonth = (activeMonthFilter === 'ALL' || (t.date && t.date.startsWith(activeMonthFilter)));
+            const matchesFrom = (!dateFromFilter || (t.date && t.date >= dateFromFilter));
+            const matchesTo = (!dateToFilter || (t.date && t.date <= dateToFilter));
+            return matchesCard && matchesCategory && matchesMonth && matchesFrom && matchesTo;
+        }
         let currentUserId = null;
 
         // ---- SINGLE SOURCE OF TRUTH FOR CATEGORIES ----
@@ -952,6 +973,10 @@
                 activeCardFilter = 'ALL';
                 activeCategoryFilter = 'ALL';
                 activeMonthFilter = 'ALL';
+                dateFromFilter = '';
+                dateToFilter = '';
+                document.getElementById('date-from-filter').value = '';
+                document.getElementById('date-to-filter').value = '';
                 render();
             }
         }
@@ -1137,6 +1162,9 @@
             if (activeMonthFilter !== 'ALL') {
                 filterText += ` (${activeMonthFilter})`;
             }
+            if (dateFromFilter || dateToFilter) {
+                filterText += ` (${dateFromFilter || '…'} to ${dateToFilter || '…'})`;
+            }
             document.getElementById('active-filter-label').textContent = filterText;
         }
 
@@ -1155,6 +1183,31 @@
 
         function setMonthFilter(month) {
             activeMonthFilter = month;
+            dateFromFilter = '';
+            dateToFilter = '';
+            document.getElementById('date-from-filter').value = '';
+            document.getElementById('date-to-filter').value = '';
+            renderCardFilters();
+            renderTransactionsAndMetrics();
+        }
+
+        function setDateRangeFilter() {
+            dateFromFilter = document.getElementById('date-from-filter').value || '';
+            dateToFilter = document.getElementById('date-to-filter').value || '';
+            if (dateFromFilter && dateToFilter && dateFromFilter > dateToFilter) {
+                alert('"From" date is after "To" date — swap them.');
+                return;
+            }
+            activeMonthFilter = 'ALL'; // custom range replaces the month chips rather than stacking with them
+            renderCardFilters();
+            renderTransactionsAndMetrics();
+        }
+
+        function clearDateRangeFilter() {
+            dateFromFilter = '';
+            dateToFilter = '';
+            document.getElementById('date-from-filter').value = '';
+            document.getElementById('date-to-filter').value = '';
             renderCardFilters();
             renderTransactionsAndMetrics();
         }
@@ -1177,12 +1230,18 @@
 
 
 
-            const sortedTransactions = [...transactions].sort((a, b) => {
-                const dateA = new Date(a.date || '1970-01-01');
-                const dateB = new Date(b.date || '1970-01-01');
-                if (dateB - dateA !== 0) return dateB - dateA;
-                return String(b.id).localeCompare(String(a.id));
-            });
+            const sortedTransactions = [...transactions]
+                .filter(transactionMatchesFilters)
+                .sort((a, b) => {
+                    const dateA = new Date(a.date || '1970-01-01');
+                    const dateB = new Date(b.date || '1970-01-01');
+                    if (dateB - dateA !== 0) return dateB - dateA;
+                    return String(b.id).localeCompare(String(a.id));
+                });
+
+            if (sortedTransactions.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="10" class="p-6 text-center text-xs text-slate-400">No transactions match the current filter.</td></tr>`;
+            }
 
             let totalSpend = 0;
             let totalCashback = 0;
@@ -1190,17 +1249,13 @@
             const cardMap = {};
             const monthlyData = {};
 
-            tbody.innerHTML = sortedTransactions.map(t => {
+            const rowsHtml = sortedTransactions.map(t => {
                 const amount = parseFloat(t.amount) || 0;
                 const cashback = parseFloat(t.cashback) || 0;
                 const fee = parseFloat(t.serviceCharge) || 0;
                 let netReward = (t.type === 'Repaid') ? 0 : (cashback - fee);
 
-                const matchesCard = (activeCardFilter === 'ALL' || t.cardName.trim() === activeCardFilter);
-                const matchesCategory = (activeCategoryFilter === 'ALL' || (t.category && t.category.trim() === activeCategoryFilter));
-                const matchesMonth = (activeMonthFilter === 'ALL' || (t.date && t.date.startsWith(activeMonthFilter)));
-
-                if (matchesCard && matchesCategory && matchesMonth) {
+                {
                     if (t.type === 'Purchase' || t.type === 'Cash Withdrawal') {
                         totalSpend += amount;
                     }
@@ -1249,6 +1304,10 @@
                     </tr>
                 `;
             }).join('');
+
+            if (sortedTransactions.length > 0) {
+                tbody.innerHTML = rowsHtml;
+            }
 
             const effRate = totalSpend > 0 ? ((totalCashback / totalSpend) * 100).toFixed(2) : '0.00';
 
@@ -1308,12 +1367,7 @@
             const titleEl = document.getElementById('summary-table-title');
             const headerTr = document.getElementById('summary-table-header');
 
-            const filteredTx = transactions.filter(t => {
-                const matchesCard = (activeCardFilter === 'ALL' || t.cardName.trim() === activeCardFilter);
-                const matchesCategory = (activeCategoryFilter === 'ALL' || (t.category && t.category.trim() === activeCategoryFilter));
-                const matchesMonth = (activeMonthFilter === 'ALL' || (t.date && t.date.startsWith(activeMonthFilter)));
-                return matchesCard && matchesCategory && matchesMonth;
-            });
+            const filteredTx = transactions.filter(transactionMatchesFilters);
 
             if (filteredTx.length === 0) {
                 headerTr.innerHTML = `
