@@ -1128,6 +1128,7 @@
                 </button>
             `;
 
+            <!--
             if (uniqueMonths.length >= 2) {
                 monthHtml += `
                     <button onclick="selectLastNMonths(2)" class="px-2.5 py-1 text-[11px] font-medium rounded-md transition whitespace-nowrap bg-slate-100 text-slate-600 hover:bg-slate-200">
@@ -1140,7 +1141,8 @@
                         Last 3 Months
                     </button>`;
             }
-
+            -->
+            
             uniqueMonths.forEach(m => {
                 const isMonthActive = selectedMonths.includes(m);
                 monthHtml += `
