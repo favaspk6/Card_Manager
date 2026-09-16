@@ -22,6 +22,11 @@
             <div class="flex items-center gap-3">
                 <span id="user-email-label" class="text-xs text-indigo-200 hidden"></span>
                 <button id="sign-out-btn" onclick="signOut()" class="hidden bg-indigo-800 hover:bg-indigo-900 text-xs px-3 py-2 rounded text-indigo-100 transition duration-150">Sign Out</button>
+                <button onclick="exportBackup()" class="bg-indigo-800 hover:bg-indigo-900 text-xs px-3 py-2 rounded text-indigo-100 transition duration-150">Export Backup</button>
+                <label class="bg-indigo-800 hover:bg-indigo-900 text-xs px-3 py-2 rounded text-indigo-100 transition duration-150 cursor-pointer">
+                    Import Backup
+                    <input type="file" id="backup-file-input" accept="application/json" class="hidden">
+                </label>
                 <button onclick="clearAllData()" class="bg-indigo-800 hover:bg-red-600 text-xs px-3 py-2 rounded text-indigo-100 transition duration-150">Reset Data</button>
             </div>
         </div>
@@ -66,39 +71,12 @@
                         </div>
                         <div>
                             <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Available Limit (AED)</label>
-                            <input type="number" step="any" id="card-limit" placeholder="e.g., 15000" required class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-sm">
+                            <input type="number" step="any" min="0" id="card-limit" placeholder="e.g., 15000" required class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-sm">
                         </div>
                         <div>
                             <label class="block text-xs font-semibold text-slate-600 uppercase mb-2">Category Rates (%)</label>
-                            <div class="grid grid-cols-2 gap-2 text-xs">
-                                <div>
-                                    <span class="text-slate-500">Dining</span>
-                                    <input type="number" step="any" id="rate-dining" placeholder="6" class="w-full px-3 py-1.5 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none mt-1">
-                                </div>
-                                <div>
-                                    <span class="text-slate-500">Grocery</span>
-                                    <input type="number" step="any" id="rate-grocery" placeholder="5" class="w-full px-3 py-1.5 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none mt-1">
-                                </div>
-                                <div>
-                                    <span class="text-slate-500">Travel</span>
-                                    <input type="number" step="any" id="rate-travel" placeholder="3" class="w-full px-3 py-1.5 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none mt-1">
-                                </div>
-                                <div>
-                                    <span class="text-slate-500">Gas/Fuel</span>
-                                    <input type="number" step="any" id="rate-gas" placeholder="2" class="w-full px-3 py-1.5 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none mt-1">
-                                </div>
-                                <div>
-                                    <span class="text-slate-500">Online Shop</span>
-                                    <input type="number" step="any" id="rate-online" placeholder="3" class="w-full px-3 py-1.5 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none mt-1">
-                                </div>
-                                <div>
-                                    <span class="text-slate-500">Govt</span>
-                                    <input type="number" step="any" id="rate-govt" placeholder="0.15" class="w-full px-3 py-1.5 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none mt-1">
-                                </div>
-                                <div class="col-span-2">
-                                    <span class="text-slate-500">Other Spend</span>
-                                    <input type="number" step="any" id="rate-other" placeholder="1" required class="w-full px-3 py-1.5 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none mt-1">
-                                </div>
+                            <div id="rate-inputs-container" class="grid grid-cols-2 gap-2 text-xs">
+                                <!-- populated by renderRateInputs() from RATE_CATEGORIES -->
                             </div>
                         </div>
                         <div class="flex gap-2">
@@ -116,13 +94,6 @@
                     <p class="text-xs text-indigo-700 mb-4">Select category to identify highest reward card.</p>
                     <div class="space-y-3">
                         <select id="rec-category" onchange="recommendBestCard()" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-sm bg-white">
-                            <option value="Dining">Dining</option>
-                            <option value="Grocery">Grocery</option>
-                            <option value="Travel">Travel</option>
-                            <option value="Gas/Fuel">Gas/Fuel</option>
-                            <option value="Online Shopping">Online Shopping</option>
-                            <option value="Govt">Govt</option>
-                            <option value="All Other Spend">All Other Spend</option>
                         </select>
                         <div id="recommendation-result" class="p-3 bg-white rounded-lg border border-indigo-200 text-sm font-medium text-indigo-900">
                             Select category to calculate.
@@ -292,22 +263,11 @@
                 <div class="grid grid-cols-2 gap-3">
                     <div>
                         <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Amount (AED)</label>
-                        <input type="number" step="0.01" id="exp-amount" placeholder="0.00" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-sm">
+                        <input type="number" step="0.01" min="0.01" id="exp-amount" placeholder="0.00" required class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-sm">
                     </div>
                     <div>
                         <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Category (Optional)</label>
                         <select id="exp-category" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-sm bg-white">
-                            <option value="">None / Default</option>
-                            <option value="Dining">Dining</option>
-                            <option value="Grocery">Grocery</option>
-                            <option value="Travel">Travel</option>
-                            <option value="Gas/Fuel">Gas/Fuel</option>
-                            <option value="Online Shopping">Online Shopping</option>
-                            <option value="Govt">Govt</option>
-                            <option value="Cashback">Cashback</option>
-                            <option value="Monthly Payment">Monthly Payment</option>
-                            <option value="Annual Fee">Annual Fee</option>
-                            <option value="All Other Spend">All Other Spend</option>
                         </select>
                     </div>
                 </div>
@@ -376,6 +336,59 @@
         let activeCategoryFilter = 'ALL';
         let activeMonthFilter = 'ALL';
         let currentUserId = null;
+
+        // ---- SINGLE SOURCE OF TRUTH FOR CATEGORIES ----
+        // Add/remove/rename a category here ONLY. Every dropdown and the
+        // card rate-input grid are generated from these two lists, so
+        // nothing can drift out of sync again.
+        const RATE_CATEGORIES = ['Dining', 'Grocery', 'Travel', 'Gas/Fuel', 'Online Shopping', 'Govt', 'All Other Spend'];
+        const TX_ONLY_CATEGORIES = ['Cashback', 'Monthly Payment', 'Annual Fee']; // bookkeeping labels, not spend rates
+
+        function categorySlug(cat) {
+            return cat.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+        }
+
+        function defaultRates(fallbackRate = 1) {
+            const rates = {};
+            RATE_CATEGORIES.forEach(cat => { rates[cat] = cat === 'Govt' ? 0.15 : fallbackRate; });
+            return rates;
+        }
+
+        function renderRateInputs(existingRates = {}) {
+            const container = document.getElementById('rate-inputs-container');
+            container.innerHTML = RATE_CATEGORIES.map(cat => {
+                const isLast = cat === 'All Other Spend';
+                const val = existingRates[cat] ?? '';
+                return `
+                    <div class="${isLast ? 'col-span-2' : ''}">
+                        <span class="text-slate-500">${cat}</span>
+                        <input type="number" step="any" min="0" data-rate-category="${cat}"
+                            id="rate-${categorySlug(cat)}" placeholder="0" value="${val}"
+                            ${isLast ? 'required' : ''}
+                            class="w-full px-3 py-1.5 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none mt-1">
+                    </div>`;
+            }).join('');
+        }
+
+        function getCardRatesFromForm() {
+            const rates = {};
+            RATE_CATEGORIES.forEach(cat => {
+                const input = document.querySelector(`[data-rate-category="${cat}"]`);
+                const parsed = parseFloat(input ? input.value : '');
+                rates[cat] = isNaN(parsed) || parsed < 0 ? 0 : parsed;
+            });
+            return rates;
+        }
+
+        function populateCategorySelects() {
+            document.getElementById('rec-category').innerHTML =
+                RATE_CATEGORIES.map(cat => `<option value="${cat}">${cat}</option>`).join('');
+
+            document.getElementById('exp-category').innerHTML =
+                `<option value="">None / Default</option>` +
+                RATE_CATEGORIES.map(cat => `<option value="${cat}">${cat}</option>`).join('') +
+                TX_ONLY_CATEGORIES.map(cat => `<option value="${cat}">${cat}</option>`).join('');
+        }
 
         // ---- AUTH GATE ----
         // With Row Level Security enabled on 'cards' and 'transactions' (see the
@@ -488,6 +501,8 @@
                 ];
                 transactions = JSON.parse(localStorage.getItem('cb_transactions')) || [];
             }
+            populateCategorySelects();
+            renderRateInputs({});
             render();
         }
 
@@ -533,7 +548,6 @@
                     service_charge: t.serviceCharge,
                     cashback: t.cashback,
                     notes: t.notes,
-                    card_id: t.card_id, 
                     user_id: currentUserId
                 });
             }
@@ -636,46 +650,64 @@
                 const worksheet = workbook.Sheets[firstSheetName];
                 const rawData = XLSX.utils.sheet_to_json(worksheet, { defval: '' });
 
-                for (let row of rawData) {
-                    const date = formatExcelDate(row['Date']);
-                    const cardName = row['Card'] || 'Unknown Card';
-                    const type = row['Type'] || 'Purchase';
-                    const desc = row['Description'] || row['Desc'] || '';
-                    const category = row['Category'] || '';
-                    const amount = parseFloat(row['Amount (AED)']) || 0;
-                    const serviceCharge = parseFloat(row['Service Charge (AED)']) || parseFloat(row['Service Fee (AED)']) || 0;
-                    const cashbackRaw = row['Cashback (AED)'];
-                    const cashback = (type === 'Repaid' || cashbackRaw === '-' || cashbackRaw === '' || cashbackRaw === undefined) ? 0 : parseFloat(cashbackRaw);
-                    const notes = row['Notes'] || '';
+                const knownCategories = new Set([...RATE_CATEGORIES, ...TX_ONLY_CATEGORIES]);
+                let imported = 0, skipped = 0, unknownCategoryRows = 0;
 
-                    if (cardName && !cards.some(c => c.name.trim().toLowerCase() === cardName.trim().toLowerCase())) {
-                        const newCard = {
+                for (let i = 0; i < rawData.length; i++) {
+                    const row = rawData[i];
+                    try {
+                        const date = formatExcelDate(row['Date']);
+                        const cardName = String(row['Card'] || '').trim();
+                        const type = row['Type'] || 'Purchase';
+                        const desc = row['Description'] || row['Desc'] || '';
+                        let category = String(row['Category'] || '').trim();
+                        const amount = parseFloat(row['Amount (AED)']);
+                        const serviceCharge = parseFloat(row['Service Charge (AED)']) || parseFloat(row['Service Fee (AED)']) || 0;
+                        const cashbackRaw = row['Cashback (AED)'];
+                        const cashback = (type === 'Repaid' || cashbackRaw === '-' || cashbackRaw === '' || cashbackRaw === undefined) ? 0 : parseFloat(cashbackRaw);
+                        const notes = row['Notes'] || '';
+
+                        // A row with no card name and no usable amount is not salvageable — skip it
+                        // rather than silently recording a zero-amount "Unknown Card" transaction.
+                        if (!cardName || isNaN(amount)) {
+                            skipped++;
+                            continue;
+                        }
+
+                        if (category && !knownCategories.has(category)) {
+                            unknownCategoryRows++;
+                            category = ''; // falls back to "All Other Spend" rate at calculation time
+                        }
+
+                        if (!cards.some(c => c.name.trim().toLowerCase() === cardName.toLowerCase())) {
+                            const newCard = {
+                                id: Date.now().toString() + Math.random(),
+                                name: cardName,
+                                availableLimit: 20000,
+                                rates: defaultRates(1)
+                            };
+                            cards.push(newCard);
+                            await saveCardToDB(newCard);
+                        }
+
+                        const newTx = {
                             id: Date.now().toString() + Math.random(),
-                            name: cardName.trim(),
-                            availableLimit: 20000,
-                            rates: { 'Dining': 1, 'Grocery': 1, 'Travel': 1, 'Gas/Fuel': 1, 'Online Shopping': 1, 'Govt': 0.15, 'All Other Spend': 1 }
+                            date, cardName, type, desc, category, amount,
+                            serviceCharge, cashback, notes
                         };
-                        cards.push(newCard);
-                        await saveCardToDB(newCard);
+                        transactions.push(newTx);
+                        await saveTransactionToDB(newTx);
+                        imported++;
+                    } catch (err) {
+                        console.error(`Row ${i + 2} failed to import:`, err);
+                        skipped++;
                     }
-
-                    const newTx = {
-                        id: Date.now().toString() + Math.random(),
-                        date,
-                        cardName,
-                        type,
-                        desc,
-                        category,
-                        amount,
-                        serviceCharge,
-                        cashback,
-                        notes
-                    };
-                    transactions.push(newTx);
-                    await saveTransactionToDB(newTx);
                 }
 
-                alert(`Successfully imported ${rawData.length} records!`);
+                let summary = `Imported ${imported} of ${rawData.length} rows.`;
+                if (skipped > 0) summary += `\n${skipped} row(s) skipped — missing a Card name or a valid Amount.`;
+                if (unknownCategoryRows > 0) summary += `\n${unknownCategoryRows} row(s) had a Category not in the app's list — filed as "All Other Spend".`;
+                alert(summary);
                 e.target.value = '';
                 render();
             };
@@ -685,17 +717,22 @@
         document.getElementById('card-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             const editingId = document.getElementById('editing-card-id').value;
-            const name = document.getElementById('card-name').value;
-            const availableLimit = parseFloat(document.getElementById('card-limit').value) || 0;
-            const rates = {
-                'Dining': parseFloat(document.getElementById('rate-dining').value) || 0,
-                'Grocery': parseFloat(document.getElementById('rate-grocery').value) || 0,
-                'Travel': parseFloat(document.getElementById('rate-travel').value) || 0,
-                'Gas/Fuel': parseFloat(document.getElementById('rate-gas').value) || 0,
-                'Online Shopping': parseFloat(document.getElementById('rate-online').value) || 0,
-                'Govt': parseFloat(document.getElementById('rate-govt').value) || 0,
-                'All Other Spend': parseFloat(document.getElementById('rate-other').value) || 0,
-            };
+            const name = document.getElementById('card-name').value.trim();
+            const limitInput = document.getElementById('card-limit');
+            const availableLimit = parseFloat(limitInput.value);
+
+            if (!name) { alert('Please enter a card name.'); return; }
+            if (isNaN(availableLimit) || availableLimit < 0) {
+                alert('Available Limit must be a number of 0 or more.');
+                limitInput.focus();
+                return;
+            }
+            if (cards.some(c => c.id !== editingId && c.name.trim().toLowerCase() === name.toLowerCase())) {
+                alert('A card with this name already exists. Use a distinct name so transactions link to the right card.');
+                return;
+            }
+
+            const rates = getCardRatesFromForm();
 
             let cardObj;
             if (editingId) {
@@ -722,13 +759,7 @@
             document.getElementById('editing-card-id').value = card.id;
             document.getElementById('card-name').value = card.name;
             document.getElementById('card-limit').value = card.availableLimit ?? '';
-            document.getElementById('rate-dining').value = card.rates['Dining'] ?? 0;
-            document.getElementById('rate-grocery').value = card.rates['Grocery'] ?? 0;
-            document.getElementById('rate-travel').value = card.rates['Travel'] ?? 0;
-            document.getElementById('rate-gas').value = card.rates['Gas/Fuel'] ?? 0;
-            document.getElementById('rate-online').value = card.rates['Online Shopping'] ?? 0;
-            document.getElementById('rate-govt').value = card.rates['Govt'] ?? 0;
-            document.getElementById('rate-other').value = card.rates['All Other Spend'] ?? 0;
+            renderRateInputs(card.rates || {});
 
             document.getElementById('card-form-title').innerHTML = `<span>✏️</span> Edit Card`;
             document.getElementById('card-submit-btn').textContent = "Update Card";
@@ -738,6 +769,7 @@
         function cancelEditCard() {
             document.getElementById('editing-card-id').value = "";
             document.getElementById('card-form').reset();
+            renderRateInputs({});
             document.getElementById('card-form-title').innerHTML = `<span>💳</span> Add / Manage Cards`;
             document.getElementById('card-submit-btn').textContent = "Save Card";
             document.getElementById('cancel-edit-btn').classList.add('hidden');
@@ -841,6 +873,70 @@
             }
         }
 
+        // ---- BACKUP: EXPORT / IMPORT (independent of localStorage vs Supabase) ----
+        function exportBackup() {
+            const backup = {
+                exportedAt: new Date().toISOString(),
+                cards,
+                transactions
+            };
+            const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `cashback-tracker-backup-${new Date().toISOString().slice(0, 10)}.json`;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            URL.revokeObjectURL(url);
+        }
+
+        document.getElementById('backup-file-input').addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = async (evt) => {
+                let parsed;
+                try {
+                    parsed = JSON.parse(evt.target.result);
+                } catch (err) {
+                    alert('That file is not valid JSON — please choose a backup exported from this app.');
+                    e.target.value = '';
+                    return;
+                }
+
+                if (!Array.isArray(parsed.cards) || !Array.isArray(parsed.transactions)) {
+                    alert('This file does not look like a Cashback Tracker backup (missing cards/transactions arrays).');
+                    e.target.value = '';
+                    return;
+                }
+
+                if (!confirm(`This backup has ${parsed.cards.length} card(s) and ${parsed.transactions.length} transaction(s). Importing will ADD to what you already have (duplicates possible if you import the same backup twice). Continue?`)) {
+                    e.target.value = '';
+                    return;
+                }
+
+                for (const c of parsed.cards) {
+                    if (!cards.some(existing => existing.id === c.id)) {
+                        cards.push(c);
+                        await saveCardToDB(c);
+                    }
+                }
+                for (const t of parsed.transactions) {
+                    if (!transactions.some(existing => existing.id === t.id)) {
+                        transactions.push(t);
+                        await saveTransactionToDB(t);
+                    }
+                }
+
+                alert('Backup imported.');
+                e.target.value = '';
+                render();
+            };
+            reader.readAsText(file);
+        });
+
         async function clearAllData() {
             if (confirm('Clear all stored cards and transaction history?')) {
                 if (_supabase) {
@@ -869,20 +965,25 @@
                 return;
             }
 
-            let bestCard = null;
-            let maxRate = -1;
+            const ranked = cards
+                .map(card => ({
+                    name: card.name,
+                    rate: card.rates && card.rates[cat] !== undefined ? card.rates[cat] : (card.rates ? card.rates['All Other Spend'] : 0)
+                }))
+                .sort((a, b) => b.rate - a.rate);
 
-            cards.forEach(card => {
-                const rate = card.rates && card.rates[cat] !== undefined ? card.rates[cat] : (card.rates ? card.rates['All Other Spend'] : 0);
-                if (rate > maxRate) {
-                    maxRate = rate;
-                    bestCard = card;
-                }
-            });
+            const best = ranked[0];
+            const rowsHtml = ranked.map((c, i) => `
+                <div class="flex justify-between items-center py-1 ${i === 0 ? 'font-bold text-indigo-700' : 'text-slate-500'}">
+                    <span>${i === 0 ? '🏆 ' : ''}${c.name}</span>
+                    <span>${c.rate}%</span>
+                </div>`).join('');
 
-            if (bestCard) {
-                resultDiv.innerHTML = `Use <strong class="text-indigo-600">${bestCard.name}</strong> for <span class="font-bold text-emerald-600">${maxRate}% cashback</span> on ${cat}.`;
-            }
+            resultDiv.innerHTML = `
+                <div class="mb-2">Use <strong class="text-indigo-600">${best.name}</strong> for <span class="font-bold text-emerald-600">${best.rate}% cashback</span> on ${cat}.</div>
+                <div class="border-t border-indigo-100 pt-2 text-xs">${rowsHtml}</div>
+                <div class="text-[10px] text-slate-400 mt-2">Ranked by the rate you entered for this category on each card — caps or minimum spend rules aren't tracked yet, so double-check those against your actual card terms.</div>
+            `;
         }
 
         function updateCardDropdowns() {
