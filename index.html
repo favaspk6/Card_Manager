@@ -333,12 +333,12 @@
         let cardDonutInstance = null;
         let monthlyChartInstance = null;
         let activeCardFilter = 'ALL';
-        let activeCategoryFilter = 'ALL';
+        let selectedCategories = []; // empty array = "All Categories"; otherwise one or more category names
         let selectedMonths = []; // empty array = "All Months"; otherwise one or more 'YYYY-MM' keys, e.g. last 2 months
 
         function transactionMatchesFilters(t) {
             const matchesCard = (activeCardFilter === 'ALL' || t.cardName.trim() === activeCardFilter);
-            const matchesCategory = (activeCategoryFilter === 'ALL' || (t.category && t.category.trim() === activeCategoryFilter));
+            const matchesCategory = (selectedCategories.length === 0 || (t.category && selectedCategories.includes(t.category.trim())));
             const matchesMonth = (selectedMonths.length === 0 || (t.date && selectedMonths.includes(t.date.substring(0, 7))));
             return matchesCard && matchesCategory && matchesMonth;
         }
@@ -957,7 +957,7 @@
                 cards = [];
                 transactions = [];
                 activeCardFilter = 'ALL';
-                activeCategoryFilter = 'ALL';
+                selectedCategories = [];
                 selectedMonths = [];
                 render();
             }
@@ -1082,7 +1082,7 @@
 
             if (activeCardFilter === 'ALL') {
                 categoryWrapper.classList.add('hidden');
-                activeCategoryFilter = 'ALL';
+                selectedCategories = [];
             } else {
                 categoryWrapper.classList.remove('hidden');
                 const cardCategories = Array.from(new Set(
@@ -1091,17 +1091,18 @@
                         .map(t => t.category.trim())
                 ));
 
+                const allCatsSelected = selectedCategories.length === 0;
                 let catHtml = `
-                    <button onclick="setCategoryFilter('ALL')" class="px-2.5 py-1 text-[11px] font-medium rounded-md transition whitespace-nowrap ${activeCategoryFilter === 'ALL' ? 'bg-indigo-500 text-white shadow-sm' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}">
+                    <button onclick="clearCategoryFilter()" class="px-2.5 py-1 text-[11px] font-medium rounded-md transition whitespace-nowrap ${allCatsSelected ? 'bg-indigo-500 text-white shadow-sm' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}">
                         All Categories
                     </button>
                 `;
 
                 cardCategories.forEach(cat => {
-                    const isCatActive = activeCategoryFilter === cat;
+                    const isCatActive = selectedCategories.includes(cat);
                     catHtml += `
-                        <button onclick="setCategoryFilter('${cat.replace(/'/g, "\\'")}')" class="px-2.5 py-1 text-[11px] font-medium rounded-md transition whitespace-nowrap ${isCatActive ? 'bg-indigo-500 text-white shadow-sm' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}">
-                            🏷️ ${cat}
+                        <button onclick="toggleCategoryFilter('${cat.replace(/'/g, "\\'")}')" class="px-2.5 py-1 text-[11px] font-medium rounded-md transition whitespace-nowrap ${isCatActive ? 'bg-indigo-500 text-white shadow-sm' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}">
+                            ${isCatActive ? '✓ ' : '🏷️ '}${cat}
                         </button>
                     `;
                 });
@@ -1113,7 +1114,7 @@
                 transactions
                     .filter(t => {
                         const matchesCard = (activeCardFilter === 'ALL' || t.cardName.trim() === activeCardFilter);
-                        const matchesCategory = (activeCategoryFilter === 'ALL' || (t.category && t.category.trim() === activeCategoryFilter));
+                        const matchesCategory = (selectedCategories.length === 0 || (t.category && selectedCategories.includes(t.category.trim())));
                         return matchesCard && matchesCategory;
                     })
                     .map(t => t.date ? t.date.substring(0, 7) : '')
@@ -1128,7 +1129,6 @@
                 </button>
             `;
 
-            /*
             if (uniqueMonths.length >= 2) {
                 monthHtml += `
                     <button onclick="selectLastNMonths(2)" class="px-2.5 py-1 text-[11px] font-medium rounded-md transition whitespace-nowrap bg-slate-100 text-slate-600 hover:bg-slate-200">
@@ -1141,8 +1141,7 @@
                         Last 3 Months
                     </button>`;
             }
-            */
-            
+
             uniqueMonths.forEach(m => {
                 const isMonthActive = selectedMonths.includes(m);
                 monthHtml += `
@@ -1155,8 +1154,8 @@
             monthWrapper.innerHTML = monthHtml;
 
             let filterText = `Filter: ${activeCardFilter === 'ALL' ? 'All Cards' : activeCardFilter}`;
-            if (activeCardFilter !== 'ALL' && activeCategoryFilter !== 'ALL') {
-                filterText += ` → ${activeCategoryFilter}`;
+            if (activeCardFilter !== 'ALL' && selectedCategories.length > 0) {
+                filterText += ` → ${[...selectedCategories].sort().join(', ')}`;
             }
             if (selectedMonths.length > 0) {
                 filterText += ` (${[...selectedMonths].sort().join(', ')})`;
@@ -1166,13 +1165,23 @@
 
         function setCardFilter(cardName) {
             activeCardFilter = cardName;
-            activeCategoryFilter = 'ALL';
+            selectedCategories = [];
             renderCardFilters();
             renderTransactionsAndMetrics();
         }
 
-        function setCategoryFilter(categoryName) {
-            activeCategoryFilter = categoryName;
+        function toggleCategoryFilter(categoryName) {
+            if (selectedCategories.includes(categoryName)) {
+                selectedCategories = selectedCategories.filter(c => c !== categoryName);
+            } else {
+                selectedCategories = [...selectedCategories, categoryName];
+            }
+            renderCardFilters();
+            renderTransactionsAndMetrics();
+        }
+
+        function clearCategoryFilter() {
+            selectedCategories = [];
             renderCardFilters();
             renderTransactionsAndMetrics();
         }
@@ -1198,7 +1207,7 @@
                 transactions
                     .filter(t => {
                         const matchesCard = (activeCardFilter === 'ALL' || t.cardName.trim() === activeCardFilter);
-                        const matchesCategory = (activeCategoryFilter === 'ALL' || (t.category && t.category.trim() === activeCategoryFilter));
+                        const matchesCategory = (selectedCategories.length === 0 || (t.category && selectedCategories.includes(t.category.trim())));
                         return matchesCard && matchesCategory;
                     })
                     .map(t => t.date ? t.date.substring(0, 7) : '')
