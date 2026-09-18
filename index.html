@@ -22,8 +22,8 @@
     <header class="bg-indigo-700 text-white shadow-md">
         <div class="max-w-[100%] mx-auto px-4 sm:px-8 xl:px-12 py-5 flex justify-between items-center">
             <div>
-                <h1 class="text-2xl font-bold tracking-tight">Cashback & Spend Analyzer</h1>
-                <p class="text-indigo-200 text-xs mt-0.5">Credit Card & Cashback Manager</p>
+                <h1 class="text-2xl font-bold tracking-tight">Cashback & Spend Optimizer</h1>
+                <p class="text-indigo-200 text-xs mt-0.5">AED Credit Card & Cashback Manager</p>
             </div>
             <div class="flex items-center gap-3">
                 <span id="user-email-label" class="text-xs text-indigo-200 hidden"></span>
@@ -120,7 +120,7 @@
                             <span class="text-lg">💳</span>
                         </div>
                         <p id="metric-spend" class="text-3xl font-bold text-slate-900 dark:text-slate-100 mt-1">0.00</p>
-                        <p class="text-[10px] text-slate-400 dark:text-slate-500 mt-1">Current filter</p>
+                        <p class="text-[10px] text-slate-400 dark:text-slate-500 mt-1">AED, current filter</p>
                     </div>
                     <div class="bg-emerald-50 dark:bg-emerald-950 p-5 rounded-xl border border-emerald-100 dark:border-emerald-800 shadow-sm relative overflow-hidden">
                         <div class="flex items-center justify-between">
@@ -128,7 +128,7 @@
                             <span class="text-lg">💰</span>
                         </div>
                         <p id="metric-cashback" class="text-3xl font-bold text-emerald-600 dark:text-emerald-400 mt-1">0.00</p>
-                        <p class="text-[10px] text-emerald-600/70 dark:text-emerald-500/70 mt-1">Current filter</p>
+                        <p class="text-[10px] text-emerald-600/70 dark:text-emerald-500/70 mt-1">AED, current filter</p>
                     </div>
                     <div class="bg-indigo-50 dark:bg-indigo-950 p-5 rounded-xl border border-indigo-100 dark:border-indigo-800 shadow-sm relative overflow-hidden">
                         <div class="flex items-center justify-between">
@@ -240,10 +240,10 @@
                                     <th class="py-3.5 px-6">Type</th>
                                     <th class="py-3.5 px-6">Description</th>
                                     <th class="py-3.5 px-6">Category</th>
-                                    <th class="py-3.5 px-6 text-right">Amount</th>
-                                    <th class="py-3.5 px-6 text-right">Service Fee</th>
-                                    <th class="py-3.5 px-6 text-right">Cashback</th>
-                                    <th class="py-3.5 px-6 text-right">Net Rewards</th>
+                                    <th class="py-3.5 px-6 text-right">Amount (AED)</th>
+                                    <th class="py-3.5 px-6 text-right">Service Fee (AED)</th>
+                                    <th class="py-3.5 px-6 text-right">Cashback (AED)</th>
+                                    <th class="py-3.5 px-6 text-right">Net Rewards (AED)</th>
                                     <th class="py-3.5 px-6 text-center">Actions</th>
                                 </tr>
                             </thead>
@@ -492,7 +492,9 @@
             document.getElementById('auth-gate').classList.add('hidden');
             document.getElementById('sign-out-btn').classList.remove('hidden');
             const label = document.getElementById('user-email-label');
-            label.textContent = email.split('@')[0];
+            const email = session.user.email || '';
+            label.textContent = email.split('@')[0]; // show just the username part, not the full address
+            label.title = email; // full email still available on hover
             label.classList.remove('hidden');
             await initData();
             hideLoadingOverlay();
@@ -1296,7 +1298,6 @@
                 </button>
             `;
 
-            /*
             if (uniqueMonths.length >= 2) {
                 monthHtml += `
                     <button onclick="selectLastNMonths(2)" class="px-2.5 py-1 text-[11px] font-medium rounded-md transition whitespace-nowrap bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-600">
@@ -1309,7 +1310,6 @@
                         Last 3 Months
                     </button>`;
             }
-            */
 
             uniqueMonths.forEach(m => {
                 const isMonthActive = selectedMonths.includes(m);
@@ -1568,13 +1568,13 @@
             if (filteredTx.length === 0) {
                 headerTr.innerHTML = `
                     <th class="py-3 px-6">Summary</th>
-                    <th class="py-3 px-6 text-right">Purchase</th>
-                    <th class="py-3 px-6 text-right">Cash Withdrawal</th>
-                    <th class="py-3 px-6 text-right">Repaid</th>
-                    <th class="py-3 px-6 text-right">Service Charges</th>
-                    <th class="py-3 px-6 text-right">Cashback</th>
-                    <th class="py-3 px-6 text-right">Remaining Pay</th>
-                    <th class="py-3 px-6 text-right">Net Rewards</th>
+                    <th class="py-3 px-6 text-right">Purchase (AED)</th>
+                    <th class="py-3 px-6 text-right">Cash Withdrawal (AED)</th>
+                    <th class="py-3 px-6 text-right">Repaid (AED)</th>
+                    <th class="py-3 px-6 text-right">Service Charges (AED)</th>
+                    <th class="py-3 px-6 text-right">Cashback (AED)</th>
+                    <th class="py-3 px-6 text-right">Remaining Pay (AED)</th>
+                    <th class="py-3 px-6 text-right">Net Rewards (AED)</th>
                 `;
                 tbody.innerHTML = `<tr><td colspan="8" class="p-4 text-center text-xs text-slate-400 dark:text-slate-500">No data available for selected filter.</td></tr>`;
                 return;
@@ -1584,13 +1584,13 @@
                 titleEl.textContent = 'Summary for All Cards';
                 headerTr.innerHTML = `
                     <th class="py-3 px-6">Card Name</th>
-                    <th class="py-3 px-6 text-right">Purchase</th>
-                    <th class="py-3 px-6 text-right">Cash Withdrawal</th>
-                    <th class="py-3 px-6 text-right">Repaid</th>
-                    <th class="py-3 px-6 text-right">Service Charges</th>
-                    <th class="py-3 px-6 text-right">Cashback</th>
-                    <th class="py-3 px-6 text-right">Remaining Pay</th>
-                    <th class="py-3 px-6 text-right">Net Rewards</th>
+                    <th class="py-3 px-6 text-right">Purchase (AED)</th>
+                    <th class="py-3 px-6 text-right">Cash Withdrawal (AED)</th>
+                    <th class="py-3 px-6 text-right">Repaid (AED)</th>
+                    <th class="py-3 px-6 text-right">Service Charges (AED)</th>
+                    <th class="py-3 px-6 text-right">Cashback (AED)</th>
+                    <th class="py-3 px-6 text-right">Remaining Pay (AED)</th>
+                    <th class="py-3 px-6 text-right">Net Rewards (AED)</th>
                 `;
 
                 const cardAgg = {};
@@ -1667,13 +1667,13 @@
                 titleEl.textContent = `Summary for ${activeCardFilter}`;
                 headerTr.innerHTML = `
                     <th class="py-3 px-6">Category</th>
-                    <th class="py-3 px-6 text-right">Purchase</th>
-                    <th class="py-3 px-6 text-right">Cash Withdrawal</th>
-                    <th class="py-3 px-6 text-right">Repaid</th>
-                    <th class="py-3 px-6 text-right">Service Charges</th>
-                    <th class="py-3 px-6 text-right">Cashback</th>
-                    <th class="py-3 px-6 text-right">Remaining Pay</th>
-                    <th class="py-3 px-6 text-right">Net Rewards</th>
+                    <th class="py-3 px-6 text-right">Purchase (AED)</th>
+                    <th class="py-3 px-6 text-right">Cash Withdrawal (AED)</th>
+                    <th class="py-3 px-6 text-right">Repaid (AED)</th>
+                    <th class="py-3 px-6 text-right">Service Charges (AED)</th>
+                    <th class="py-3 px-6 text-right">Cashback (AED)</th>
+                    <th class="py-3 px-6 text-right">Remaining Pay (AED)</th>
+                    <th class="py-3 px-6 text-right">Net Rewards (AED)</th>
                 `;
 
                 const catAgg = {};
@@ -1808,7 +1808,38 @@
             renderTransactionsAndMetrics();
         }
 
-        boot();
+        function showLoadingError(message) {
+            const overlay = document.getElementById('app-loading-overlay');
+            if (!overlay) return;
+            overlay.classList.remove('hidden');
+            overlay.innerHTML = `
+                <div class="text-center px-6">
+                    <p class="text-3xl mb-2">⚠️</p>
+                    <p class="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">Couldn't load the app</p>
+                    <p class="text-xs text-slate-500 dark:text-slate-400 mb-4 max-w-xs">${message}</p>
+                    <button onclick="location.reload()" class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-medium px-4 py-2 rounded-lg transition">Reload Page</button>
+                </div>
+            `;
+        }
+
+        // Safety net: if loading takes too long, stop spinning silently and say so.
+        const bootWatchdog = setTimeout(() => {
+            const overlay = document.getElementById('app-loading-overlay');
+            if (overlay && !overlay.classList.contains('hidden')) {
+                showLoadingError('This is taking much longer than expected — check your internet connection, or there may be an issue reaching the database. Open the browser console (F12) for details.');
+            }
+        }, 12000);
+
+        const originalHideLoadingOverlay = hideLoadingOverlay;
+        hideLoadingOverlay = function () {
+            clearTimeout(bootWatchdog);
+            originalHideLoadingOverlay();
+        };
+
+        boot().catch(err => {
+            console.error('Boot failed:', err);
+            showLoadingError(`An error occurred while starting the app: ${err.message || err}. Try reloading — if it keeps happening, check the browser console for details.`);
+        });
     </script>
 </body>
 </html>
