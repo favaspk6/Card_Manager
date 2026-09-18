@@ -22,8 +22,8 @@
     <header class="bg-indigo-700 text-white shadow-md">
         <div class="max-w-[100%] mx-auto px-4 sm:px-8 xl:px-12 py-5 flex justify-between items-center">
             <div>
-                <h1 class="text-2xl font-bold tracking-tight">Cashback & Spend Optimizer</h1>
-                <p class="text-indigo-200 text-xs mt-0.5">AED Credit Card & Cashback Manager</p>
+                <h1 class="text-2xl font-bold tracking-tight">Cashback & Spend Analyzer</h1>
+                <p class="text-indigo-200 text-xs mt-0.5">Credit Card & Cashback Manager</p>
             </div>
             <div class="flex items-center gap-3">
                 <span id="user-email-label" class="text-xs text-indigo-200 hidden"></span>
@@ -120,7 +120,7 @@
                             <span class="text-lg">💳</span>
                         </div>
                         <p id="metric-spend" class="text-3xl font-bold text-slate-900 dark:text-slate-100 mt-1">0.00</p>
-                        <p class="text-[10px] text-slate-400 dark:text-slate-500 mt-1">AED, current filter</p>
+                        <p class="text-[10px] text-slate-400 dark:text-slate-500 mt-1">Current filter</p>
                     </div>
                     <div class="bg-emerald-50 dark:bg-emerald-950 p-5 rounded-xl border border-emerald-100 dark:border-emerald-800 shadow-sm relative overflow-hidden">
                         <div class="flex items-center justify-between">
@@ -128,7 +128,7 @@
                             <span class="text-lg">💰</span>
                         </div>
                         <p id="metric-cashback" class="text-3xl font-bold text-emerald-600 dark:text-emerald-400 mt-1">0.00</p>
-                        <p class="text-[10px] text-emerald-600/70 dark:text-emerald-500/70 mt-1">AED, current filter</p>
+                        <p class="text-[10px] text-emerald-600/70 dark:text-emerald-500/70 mt-1">Current filter</p>
                     </div>
                     <div class="bg-indigo-50 dark:bg-indigo-950 p-5 rounded-xl border border-indigo-100 dark:border-indigo-800 shadow-sm relative overflow-hidden">
                         <div class="flex items-center justify-between">
@@ -240,10 +240,10 @@
                                     <th class="py-3.5 px-6">Type</th>
                                     <th class="py-3.5 px-6">Description</th>
                                     <th class="py-3.5 px-6">Category</th>
-                                    <th class="py-3.5 px-6 text-right">Amount (AED)</th>
-                                    <th class="py-3.5 px-6 text-right">Service Fee (AED)</th>
-                                    <th class="py-3.5 px-6 text-right">Cashback (AED)</th>
-                                    <th class="py-3.5 px-6 text-right">Net Rewards (AED)</th>
+                                    <th class="py-3.5 px-6 text-right">Amount</th>
+                                    <th class="py-3.5 px-6 text-right">Service Fee</th>
+                                    <th class="py-3.5 px-6 text-right">Cashback</th>
+                                    <th class="py-3.5 px-6 text-right">Net Rewards</th>
                                     <th class="py-3.5 px-6 text-center">Actions</th>
                                 </tr>
                             </thead>
@@ -492,7 +492,7 @@
             document.getElementById('auth-gate').classList.add('hidden');
             document.getElementById('sign-out-btn').classList.remove('hidden');
             const label = document.getElementById('user-email-label');
-            label.textContent = session.user.email || '';
+            label.textContent = email.split('@')[0];
             label.classList.remove('hidden');
             await initData();
             hideLoadingOverlay();
@@ -1566,13 +1566,13 @@
             if (filteredTx.length === 0) {
                 headerTr.innerHTML = `
                     <th class="py-3 px-6">Summary</th>
-                    <th class="py-3 px-6 text-right">Purchase (AED)</th>
-                    <th class="py-3 px-6 text-right">Cash Withdrawal (AED)</th>
-                    <th class="py-3 px-6 text-right">Repaid (AED)</th>
-                    <th class="py-3 px-6 text-right">Service Charges (AED)</th>
-                    <th class="py-3 px-6 text-right">Cashback (AED)</th>
-                    <th class="py-3 px-6 text-right">Remaining Pay (AED)</th>
-                    <th class="py-3 px-6 text-right">Net Rewards (AED)</th>
+                    <th class="py-3 px-6 text-right">Purchase</th>
+                    <th class="py-3 px-6 text-right">Cash Withdrawal</th>
+                    <th class="py-3 px-6 text-right">Repaid</th>
+                    <th class="py-3 px-6 text-right">Service Charges</th>
+                    <th class="py-3 px-6 text-right">Cashback</th>
+                    <th class="py-3 px-6 text-right">Remaining Pay</th>
+                    <th class="py-3 px-6 text-right">Net Rewards</th>
                 `;
                 tbody.innerHTML = `<tr><td colspan="8" class="p-4 text-center text-xs text-slate-400 dark:text-slate-500">No data available for selected filter.</td></tr>`;
                 return;
@@ -1582,13 +1582,13 @@
                 titleEl.textContent = 'Summary for All Cards';
                 headerTr.innerHTML = `
                     <th class="py-3 px-6">Card Name</th>
-                    <th class="py-3 px-6 text-right">Purchase (AED)</th>
-                    <th class="py-3 px-6 text-right">Cash Withdrawal (AED)</th>
-                    <th class="py-3 px-6 text-right">Repaid (AED)</th>
-                    <th class="py-3 px-6 text-right">Service Charges (AED)</th>
-                    <th class="py-3 px-6 text-right">Cashback (AED)</th>
-                    <th class="py-3 px-6 text-right">Remaining Pay (AED)</th>
-                    <th class="py-3 px-6 text-right">Net Rewards (AED)</th>
+                    <th class="py-3 px-6 text-right">Purchase</th>
+                    <th class="py-3 px-6 text-right">Cash Withdrawal</th>
+                    <th class="py-3 px-6 text-right">Repaid</th>
+                    <th class="py-3 px-6 text-right">Service Charges</th>
+                    <th class="py-3 px-6 text-right">Cashback</th>
+                    <th class="py-3 px-6 text-right">Remaining Pay</th>
+                    <th class="py-3 px-6 text-right">Net Rewards</th>
                 `;
 
                 const cardAgg = {};
@@ -1665,13 +1665,13 @@
                 titleEl.textContent = `Summary for ${activeCardFilter}`;
                 headerTr.innerHTML = `
                     <th class="py-3 px-6">Category</th>
-                    <th class="py-3 px-6 text-right">Purchase (AED)</th>
-                    <th class="py-3 px-6 text-right">Cash Withdrawal (AED)</th>
-                    <th class="py-3 px-6 text-right">Repaid (AED)</th>
-                    <th class="py-3 px-6 text-right">Service Charges (AED)</th>
-                    <th class="py-3 px-6 text-right">Cashback (AED)</th>
-                    <th class="py-3 px-6 text-right">Remaining Pay (AED)</th>
-                    <th class="py-3 px-6 text-right">Net Rewards (AED)</th>
+                    <th class="py-3 px-6 text-right">Purchase</th>
+                    <th class="py-3 px-6 text-right">Cash Withdrawal</th>
+                    <th class="py-3 px-6 text-right">Repaid</th>
+                    <th class="py-3 px-6 text-right">Service Charges</th>
+                    <th class="py-3 px-6 text-right">Cashback</th>
+                    <th class="py-3 px-6 text-right">Remaining Pay</th>
+                    <th class="py-3 px-6 text-right">Net Rewards</th>
                 `;
 
                 const catAgg = {};
