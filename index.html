@@ -22,8 +22,8 @@
     <header class="bg-indigo-700 text-white shadow-md">
         <div class="max-w-[100%] mx-auto px-4 sm:px-8 xl:px-12 py-5 flex justify-between items-center">
             <div>
-                <h1 class="text-2xl font-bold tracking-tight">Cashback & Spend Analyzer</h1>
-                <p class="text-indigo-200 text-xs mt-0.5">Credit Card & Cashback Manager</p>
+                <h1 class="text-2xl font-bold tracking-tight">Cashback & Spend Optimizer</h1>
+                <p class="text-indigo-200 text-xs mt-0.5">AED Credit Card & Cashback Manager</p>
             </div>
             <div class="flex items-center gap-3">
                 <span id="user-email-label" class="text-xs text-indigo-200 hidden"></span>
@@ -1296,7 +1296,6 @@
                 </button>
             `;
 
-            /*
             if (uniqueMonths.length >= 2) {
                 monthHtml += `
                     <button onclick="selectLastNMonths(2)" class="px-2.5 py-1 text-[11px] font-medium rounded-md transition whitespace-nowrap bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-600">
@@ -1309,7 +1308,6 @@
                         Last 3 Months
                     </button>`;
             }
-            */
 
             uniqueMonths.forEach(m => {
                 const isMonthActive = selectedMonths.includes(m);
@@ -1500,10 +1498,10 @@
 
             const effRate = totalSpend > 0 ? ((totalCashback / totalSpend) * 100).toFixed(2) : '0.00';
 
-            document.getElementById('metric-spend').textContent = `${totalSpend.toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
-            document.getElementById('metric-cashback').textContent = `${totalCashback.toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
+            document.getElementById('metric-spend').textContent = `${totalSpend.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+            document.getElementById('metric-cashback').textContent = `${totalCashback.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
             document.getElementById('metric-return').textContent = `${effRate}%`;
-            document.getElementById('metric-missed').textContent = `${totalMissed.toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
+            document.getElementById('metric-missed').textContent = `${totalMissed.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
             renderDonutCharts(categoryMap, cardMap);
             renderMonthlyChart(monthlyData);
