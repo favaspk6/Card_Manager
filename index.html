@@ -155,8 +155,9 @@
                             <h2 class="text-base font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
                                 <span>💳</span> Saved Cards
                             </h2>
-                            <p class="text-xs text-slate-500 dark:text-slate-400">Overview of all active cards, limits, and current month spend tracking.</p>
+                            <p class="text-xs text-slate-500 dark:text-slate-400">Overview of all active cards, limits, outstanding balance and current month spend tracking.</p>
                         </div>
+                        <div id="total-outstanding" class="sm:text-right"></div>
                     </div>
                     <div id="cards-list" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4"></div>
                 </div>
@@ -196,6 +197,7 @@
                             <tbody id="monthly-table-body" class="divide-y divide-slate-100 dark:divide-slate-700"></tbody>
                         </table>
                     </div>
+                    <p id="summary-cashback-note" class="hidden px-6 py-3 text-[11px] text-slate-500 dark:text-slate-400 border-t border-slate-100 dark:border-slate-700"></p>
                 </div>
 
                 <!-- Side-by-Side Donut Charts for Category & Card Cashback -->
@@ -396,6 +398,66 @@
         // nothing can drift out of sync again.
         const RATE_CATEGORIES = ['Dining', 'Grocery', 'Travel', 'Gas/Fuel', 'Online Shopping', 'Govt', 'All Other Spend'];
         const TX_ONLY_CATEGORIES = ['Cashback', 'Monthly Payment', 'Annual Fee']; // bookkeeping labels, not spend rates
+
+        // ---- OUTSTANDING BALANCE ----
+        // Cashback earned in a month is credited on the NEXT month's statement, so it only
+        // reduces the outstanding balance once that month has started. Cashback earned in the
+        // current month stays "pending" and is shown separately.
+        // Service fees were never part of your Remaining Pay figure; flip this to true if the
+        // fees are also billed to the card and should count towards what you owe.
+        const INCLUDE_FEES_IN_OUTSTANDING = false;
+
+        function localMonthKey(d = new Date()) {
+            return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+        }
+        function localDateKey(d = new Date()) {
+            return `${localMonthKey(d)}-${String(d.getDate()).padStart(2, '0')}`;
+        }
+        function nextMonthKey(monthKey) {
+            const [y, m] = monthKey.split('-').map(Number);
+            return localMonthKey(new Date(y, m, 1)); // m is 1-based, so this is the following month
+        }
+        function monthLabel(monthKey) {
+            const [y, m] = monthKey.split('-').map(Number);
+            return new Date(y, m - 1, 1).toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+        }
+        function formatAED(n) {
+            return n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        }
+
+        // txList: transactions for ONE card (or any set you want a balance for).
+        // Entries dated after asOfDate are ignored - they are not owed yet.
+        function calculateOutstanding(txList, asOfDate = localDateKey()) {
+            const currentMonth = asOfDate.substring(0, 7);
+            const r = { purchases: 0, withdrawals: 0, fees: 0, repaid: 0, cashbackCredited: 0, cashbackPending: 0 };
+
+            txList.forEach(t => {
+                const date = t.date || '';
+                if (date > asOfDate) return;
+
+                const amount = parseFloat(t.amount) || 0;
+                const cashback = parseFloat(t.cashback) || 0;
+                const fee = parseFloat(t.serviceCharge) || 0;
+
+                if (t.type === 'Purchase') r.purchases += amount;
+                else if (t.type === 'Cash Withdrawal') r.withdrawals += amount;
+                else if (t.type === 'Repaid') r.repaid += amount;
+                r.fees += fee;
+
+                if (date.substring(0, 7) < currentMonth) r.cashbackCredited += cashback;
+                else r.cashbackPending += cashback;
+            });
+
+            r.outstanding = r.purchases + r.withdrawals + (INCLUDE_FEES_IN_OUTSTANDING ? r.fees : 0)
+                          - r.repaid - r.cashbackCredited;
+            r.afterPending = r.outstanding - r.cashbackPending;
+            return r;
+        }
+
+        const openCalcCards = new Set(); // remembers which "How it's calculated" panels are open across re-renders
+        function setCalcOpen(cardId, isOpen) {
+            if (isOpen) openCalcCards.add(cardId); else openCalcCards.delete(cardId);
+        }
 
         function escapeHtml(str) {
             if (str === null || str === undefined) return '';
@@ -1173,20 +1235,35 @@
 
         function renderCardsList() {
             const container = document.getElementById('cards-list');
+            const totalEl = document.getElementById('total-outstanding');
             if (cards.length === 0) {
                 container.innerHTML = `<p class="text-xs text-slate-400 dark:text-slate-500 col-span-full">No cards configured.</p>`;
+                totalEl.innerHTML = '';
                 return;
             }
 
-            const currentMonthKey = new Date().toISOString().substring(0, 7);
+            const todayKey = localDateKey();
+            const currentMonthKey = todayKey.substring(0, 7);
+            const currentMonthLabel = monthLabel(currentMonthKey);
+            const creditMonthLabel = monthLabel(nextMonthKey(currentMonthKey));
+
+            let grandOutstanding = 0;
+            let grandPending = 0;
+
+            const calcRow = (label, value, sign, cls = 'text-slate-700 dark:text-slate-300') => `
+                <div class="flex justify-between">
+                    <span class="text-slate-500 dark:text-slate-400">${label}</span>
+                    <span class="font-medium ${cls}">${sign} ${formatAED(value)}</span>
+                </div>`;
 
             container.innerHTML = cards.map(c => {
                 const totalLimit = Number(c.availableLimit) || 0;
                 const targetLimit = totalLimit * 0.97;
 
-                const currentMonthSpend = transactions
-                    .filter(t => t.cardName.trim().toLowerCase() === c.name.trim().toLowerCase() && 
-                                 t.date && t.date.startsWith(currentMonthKey) && 
+                const cardTx = transactions.filter(t => t.cardName.trim().toLowerCase() === c.name.trim().toLowerCase());
+
+                const currentMonthSpend = cardTx
+                    .filter(t => t.date && t.date.startsWith(currentMonthKey) &&
                                  (t.type === 'Purchase' || t.type === 'Cash Withdrawal'))
                     .reduce((sum, t) => sum + (parseFloat(t.amount) || 0), 0);
 
@@ -1199,6 +1276,23 @@
                 } else if (rawPercentageOfTotal >= 97) {
                     barColor = 'bg-red-500';
                 }
+
+                const ob = calculateOutstanding(cardTx, todayKey);
+                grandOutstanding += ob.outstanding;
+                grandPending += ob.cashbackPending;
+
+                const obClass = ob.outstanding < 0 ? 'text-emerald-600' : 'text-slate-900 dark:text-slate-100';
+                const obSuffix = ob.outstanding < 0 ? ' (credit)' : '';
+
+                const pendingHtml = ob.cashbackPending > 0 ? `
+                    <div class="flex justify-between items-center rounded-md bg-emerald-50 dark:bg-emerald-950 px-2 py-1.5 text-[11px]">
+                        <span class="text-emerald-700 dark:text-emerald-400">${currentMonthLabel} cashback · credits in ${creditMonthLabel}</span>
+                        <span class="font-semibold text-emerald-700 dark:text-emerald-400">− ${formatAED(ob.cashbackPending)}</span>
+                    </div>
+                    <div class="flex justify-between text-[11px]">
+                        <span class="text-slate-500 dark:text-slate-400">Outstanding after ${creditMonthLabel} credit</span>
+                        <span class="font-semibold text-slate-800 dark:text-slate-200">AED ${formatAED(ob.afterPending)}</span>
+                    </div>` : '';
 
                 return `
                     <div class="p-4 bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-600 text-xs space-y-3 shadow-sm">
@@ -1221,9 +1315,37 @@
                                 <div class="${barColor} h-2 rounded-full transition-all duration-300" style="width: ${percentage}%"></div>
                             </div>
                         </div>
+                        <div class="pt-3 border-t border-slate-200 dark:border-slate-600 space-y-2">
+                            <div class="flex justify-between items-baseline">
+                                <span class="text-[11px] font-semibold uppercase text-slate-500 dark:text-slate-400">Outstanding Balance · Today</span>
+                                <span class="text-base font-bold ${obClass}">AED ${formatAED(ob.outstanding)}<span class="text-[10px] font-medium">${obSuffix}</span></span>
+                            </div>
+                            <details ${openCalcCards.has(c.id) ? 'open' : ''} ontoggle="setCalcOpen('${c.id}', this.open)">
+                                <summary class="cursor-pointer text-[11px] text-indigo-600 hover:text-indigo-800 font-medium select-none">How it's calculated</summary>
+                                <div class="mt-2 space-y-1 text-[11px]">
+                                    ${calcRow('Purchases', ob.purchases, '+')}
+                                    ${calcRow('Cash withdrawals', ob.withdrawals, '+')}
+                                    ${INCLUDE_FEES_IN_OUTSTANDING ? calcRow('Service fees', ob.fees, '+') : ''}
+                                    ${calcRow('Repaid', ob.repaid, '−', 'text-emerald-600')}
+                                    ${calcRow(`Cashback already credited (before ${currentMonthLabel})`, ob.cashbackCredited, '−', 'text-emerald-600')}
+                                    <div class="flex justify-between pt-1 mt-1 border-t border-slate-200 dark:border-slate-600 font-semibold text-slate-800 dark:text-slate-200">
+                                        <span>Outstanding today</span>
+                                        <span>= ${formatAED(ob.outstanding)}</span>
+                                    </div>
+                                </div>
+                            </details>
+                            ${pendingHtml}
+                        </div>
                     </div>
                 `;
             }).join('');
+
+            const totalClass = grandOutstanding < 0 ? 'text-emerald-600' : 'text-slate-900 dark:text-slate-100';
+            totalEl.innerHTML = `
+                <p class="text-[10px] font-semibold uppercase text-slate-500 dark:text-slate-400">Total Outstanding · All Cards</p>
+                <p class="text-xl font-bold ${totalClass}">AED ${formatAED(grandOutstanding)}</p>
+                ${grandPending > 0 ? `<p class="text-[10px] text-emerald-600 dark:text-emerald-500">${formatAED(grandPending)} cashback credits in ${creditMonthLabel}</p>` : ''}
+            `;
         }
 
         function renderCardFilters() {
@@ -1558,12 +1680,29 @@
             });
         }
 
+        function updateSummaryNote(filteredTx, currentMonth) {
+            const noteEl = document.getElementById('summary-cashback-note');
+            if (!noteEl) return;
+            const pending = filteredTx
+                .filter(t => (t.date || '').substring(0, 7) >= currentMonth)
+                .reduce((sum, t) => sum + (parseFloat(t.cashback) || 0), 0);
+            if (pending > 0) {
+                noteEl.textContent = `Remaining Pay excludes AED ${formatAED(pending)} of cashback earned in ${monthLabel(currentMonth)} — it is credited on the ${monthLabel(nextMonthKey(currentMonth))} statement.`;
+                noteEl.classList.remove('hidden');
+            } else {
+                noteEl.textContent = '';
+                noteEl.classList.add('hidden');
+            }
+        }
+
         function renderSummaryTable() {
             const tbody = document.getElementById('monthly-table-body');
             const titleEl = document.getElementById('summary-table-title');
             const headerTr = document.getElementById('summary-table-header');
 
             const filteredTx = transactions.filter(transactionMatchesFilters);
+            const summaryCurrentMonth = localMonthKey();
+            updateSummaryNote(filteredTx, summaryCurrentMonth);
 
             if (filteredTx.length === 0) {
                 headerTr.innerHTML = `
@@ -1573,7 +1712,7 @@
                     <th class="py-3 px-6 text-right">Repaid (AED)</th>
                     <th class="py-3 px-6 text-right">Service Charges (AED)</th>
                     <th class="py-3 px-6 text-right">Cashback (AED)</th>
-                    <th class="py-3 px-6 text-right">Remaining Pay (AED)</th>
+                    <th class="py-3 px-6 text-right" title="Purchases + withdrawals − repayments − cashback already credited (cashback from earlier months). This month's cashback is credited next month.">Remaining Pay (AED)</th>
                     <th class="py-3 px-6 text-right">Net Rewards (AED)</th>
                 `;
                 tbody.innerHTML = `<tr><td colspan="8" class="p-4 text-center text-xs text-slate-400 dark:text-slate-500">No data available for selected filter.</td></tr>`;
@@ -1589,7 +1728,7 @@
                     <th class="py-3 px-6 text-right">Repaid (AED)</th>
                     <th class="py-3 px-6 text-right">Service Charges (AED)</th>
                     <th class="py-3 px-6 text-right">Cashback (AED)</th>
-                    <th class="py-3 px-6 text-right">Remaining Pay (AED)</th>
+                    <th class="py-3 px-6 text-right" title="Purchases + withdrawals − repayments − cashback already credited (cashback from earlier months). This month's cashback is credited next month.">Remaining Pay (AED)</th>
                     <th class="py-3 px-6 text-right">Net Rewards (AED)</th>
                 `;
 
@@ -1597,7 +1736,7 @@
                 filteredTx.forEach(t => {
                     const cName = t.cardName ? t.cardName.trim() : 'Unknown Card';
                     if (!cardAgg[cName]) {
-                        cardAgg[cName] = { purchase: 0, withdrawal: 0, repaid: 0, fee: 0, cashback: 0, netReward: 0 };
+                        cardAgg[cName] = { purchase: 0, withdrawal: 0, repaid: 0, fee: 0, cashback: 0, cashbackCredited: 0, netReward: 0 };
                     }
                     const amount = parseFloat(t.amount) || 0;
                     const cashback = parseFloat(t.cashback) || 0;
@@ -1609,6 +1748,7 @@
                     if (t.type === 'Repaid') cardAgg[cName].repaid += amount;
                     cardAgg[cName].fee += fee;
                     cardAgg[cName].cashback += cashback;
+                    if ((t.date || '').substring(0, 7) < summaryCurrentMonth) cardAgg[cName].cashbackCredited += cashback;
                     cardAgg[cName].netReward += netReward;
                 });
 
@@ -1622,7 +1762,7 @@
 
                 const rowsHtml = Object.keys(cardAgg).sort().map(cName => {
                     const d = cardAgg[cName];
-                    const remainingPay = (d.purchase + d.withdrawal) - d.repaid - d.cashback;
+                    const remainingPay = (d.purchase + d.withdrawal) - d.repaid - d.cashbackCredited;
                     
                     totalPurchase += d.purchase;
                     totalWithdrawal += d.withdrawal;
@@ -1672,7 +1812,7 @@
                     <th class="py-3 px-6 text-right">Repaid (AED)</th>
                     <th class="py-3 px-6 text-right">Service Charges (AED)</th>
                     <th class="py-3 px-6 text-right">Cashback (AED)</th>
-                    <th class="py-3 px-6 text-right">Remaining Pay (AED)</th>
+                    <th class="py-3 px-6 text-right" title="Purchases + withdrawals − repayments − cashback already credited (cashback from earlier months). This month's cashback is credited next month.">Remaining Pay (AED)</th>
                     <th class="py-3 px-6 text-right">Net Rewards (AED)</th>
                 `;
 
@@ -1680,7 +1820,7 @@
                 filteredTx.forEach(t => {
                     const catName = t.category ? t.category.trim() : 'Uncategorized';
                     if (!catAgg[catName]) {
-                        catAgg[catName] = { purchase: 0, withdrawal: 0, repaid: 0, fee: 0, cashback: 0, netReward: 0 };
+                        catAgg[catName] = { purchase: 0, withdrawal: 0, repaid: 0, fee: 0, cashback: 0, cashbackCredited: 0, netReward: 0 };
                     }
                     const amount = parseFloat(t.amount) || 0;
                     const cashback = parseFloat(t.cashback) || 0;
@@ -1692,6 +1832,7 @@
                     if (t.type === 'Repaid') catAgg[catName].repaid += amount;
                     catAgg[catName].fee += fee;
                     catAgg[catName].cashback += cashback;
+                    if ((t.date || '').substring(0, 7) < summaryCurrentMonth) catAgg[catName].cashbackCredited += cashback;
                     catAgg[catName].netReward += netReward;
                 });
 
@@ -1705,7 +1846,7 @@
 
                 const rowsHtml = Object.keys(catAgg).sort().map(catName => {
                     const d = catAgg[catName];
-                    const remainingPay = (d.purchase + d.withdrawal) - d.repaid - d.cashback;
+                    const remainingPay = (d.purchase + d.withdrawal) - d.repaid - d.cashbackCredited;
                     
                     totalPurchase += d.purchase;
                     totalWithdrawal += d.withdrawal;
