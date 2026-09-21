@@ -170,7 +170,10 @@
                             </h2>
                             <p class="text-xs text-slate-500 dark:text-slate-400">Overview of all active cards, limits, outstanding balance and current month spend tracking.</p>
                         </div>
-                        <div id="total-outstanding" class="sm:text-right"></div>
+                        <div class="flex flex-wrap gap-x-8 gap-y-3 sm:justify-end">
+                            <div id="total-limit" class="sm:text-right"></div>
+                            <div id="total-outstanding" class="sm:text-right"></div>
+                        </div>
                     </div>
                     <div id="cards-list" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4"></div>
                 </div>
@@ -1345,9 +1348,11 @@
         function renderCardsList() {
             const container = document.getElementById('cards-list');
             const totalEl = document.getElementById('total-outstanding');
+            const totalLimitEl = document.getElementById('total-limit');
             if (cards.length === 0) {
                 container.innerHTML = `<p class="text-xs text-slate-400 dark:text-slate-500 col-span-full">No cards configured.</p>`;
                 totalEl.innerHTML = '';
+                totalLimitEl.innerHTML = '';
                 return;
             }
 
@@ -1450,6 +1455,12 @@
                     </div>
                 `;
             }).join('');
+
+            const grandLimit = cards.reduce((sum, c) => sum + (Number(c.availableLimit) || 0), 0);
+            totalLimitEl.innerHTML = `
+                <p class="text-[10px] font-semibold uppercase text-slate-500 dark:text-slate-400">Total Card Limit · All Cards</p>
+                <p class="text-xl font-bold text-slate-900 dark:text-slate-100">AED ${formatAED(grandLimit)}</p>
+            `;
 
             const totalClass = grandOutstanding < 0 ? 'text-emerald-600' : 'text-slate-900 dark:text-slate-100';
             totalEl.innerHTML = `
