@@ -80,6 +80,19 @@
                             <input type="number" step="any" min="0" id="card-limit" placeholder="e.g., 15000" required class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-sm bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 border-slate-200 dark:border-slate-600 placeholder-slate-400 dark:placeholder-slate-500">
                         </div>
                         <div>
+                            <div class="grid grid-cols-2 gap-2">
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase mb-1">Statement Day</label>
+                                    <input type="number" step="1" min="1" max="31" id="card-statement-day" placeholder="e.g., 5" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-sm bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 border-slate-200 dark:border-slate-600 placeholder-slate-400 dark:placeholder-slate-500">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase mb-1">Payment Day</label>
+                                    <input type="number" step="1" min="1" max="31" id="card-payment-day" placeholder="e.g., 25" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-sm bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 border-slate-200 dark:border-slate-600 placeholder-slate-400 dark:placeholder-slate-500">
+                                </div>
+                            </div>
+                            <p class="text-[10px] text-slate-400 dark:text-slate-500 mt-1">Day of the month (1–31). The card turns orange 5 days before the payment day and red on it.</p>
+                        </div>
+                        <div>
                             <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase mb-2">Category Rates (%)</label>
                             <div id="rate-inputs-container" class="grid grid-cols-2 gap-2 text-xs">
                                 <!-- populated by renderRateInputs() from RATE_CATEGORIES -->
@@ -454,6 +467,63 @@
             return r;
         }
 
+        // ---- STATEMENT / PAYMENT DATES ----
+        const PAYMENT_WARNING_DAYS = 5; // card turns orange this many days before the payment day, red on the day
+
+        // Next date (today or later) that falls on the given day-of-month. Days that don't exist in a
+        // short month (e.g. 31 in June, 30 in February) roll back to that month's last day.
+        function nextOccurrence(day, fromDate) {
+            const from = new Date(fromDate.getFullYear(), fromDate.getMonth(), fromDate.getDate());
+            const inMonth = (y, m) => new Date(y, m, Math.min(day, new Date(y, m + 1, 0).getDate()));
+            let d = inMonth(from.getFullYear(), from.getMonth());
+            if (d < from) d = inMonth(from.getFullYear(), from.getMonth() + 1);
+            return d;
+        }
+        function daysBetween(a, b) { return Math.round((b - a) / 86400000); }
+        function shortDate(d) { return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }); }
+        function countdownText(n) { return n === 0 ? 'today' : n === 1 ? 'tomorrow' : `in ${n} days`; }
+
+        // Returns the card's container colours plus the statement / payment row shown inside it.
+        function getCardDateInfo(c, todayDate = new Date()) {
+            const today = new Date(todayDate.getFullYear(), todayDate.getMonth(), todayDate.getDate());
+            let wrapperClass = 'bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-600';
+            let statementHtml = '';
+            let badgeHtml = '';
+
+            if (c.statementDay) {
+                const st = nextOccurrence(c.statementDay, today);
+                const n = daysBetween(today, st);
+                statementHtml = `<span class="text-slate-500 dark:text-slate-400">🧾 Statement: ${shortDate(st)} · ${countdownText(n)}</span>`;
+            }
+
+            if (c.paymentDay) {
+                const due = nextOccurrence(c.paymentDay, today);
+                const n = daysBetween(today, due);
+                let badgeClass, label;
+                if (n === 0) {
+                    wrapperClass = 'bg-red-50 dark:bg-red-950/40 border-red-500 ring-2 ring-red-300 dark:ring-red-700';
+                    badgeClass = 'bg-red-600 text-white';
+                    label = `🚨 Payment due TODAY · ${shortDate(due)}`;
+                } else if (n <= PAYMENT_WARNING_DAYS) {
+                    wrapperClass = 'bg-amber-50 dark:bg-amber-950/40 border-amber-400 dark:border-amber-600';
+                    badgeClass = 'bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200';
+                    label = `⏰ Payment due ${countdownText(n)} · ${shortDate(due)}`;
+                } else {
+                    badgeClass = 'bg-slate-200 text-slate-600 dark:bg-slate-700 dark:text-slate-300';
+                    label = `Payment: ${shortDate(due)} · ${countdownText(n)}`;
+                }
+                badgeHtml = `<span class="px-2 py-0.5 rounded-full font-semibold ${badgeClass}">${label}</span>`;
+            }
+
+            let rowHtml;
+            if (statementHtml || badgeHtml) {
+                rowHtml = `<div class="flex flex-wrap items-center justify-between gap-x-3 gap-y-1.5 text-[11px]">${statementHtml}${badgeHtml}</div>`;
+            } else {
+                rowHtml = `<p class="text-[11px] text-slate-400 dark:text-slate-500">Add a statement &amp; payment day (Edit) to get due-date alerts.</p>`;
+            }
+            return { wrapperClass, rowHtml };
+        }
+
         const openCalcCards = new Set(); // remembers which "How it's calculated" panels are open across re-renders
         function setCalcOpen(cardId, isOpen) {
             if (isOpen) openCalcCards.add(cardId); else openCalcCards.delete(cardId);
@@ -606,7 +676,9 @@
                         id: String(c.id),
                         name: c.name,
                         availableLimit: c.available_limit,
-                        rates: c.rates || {}
+                        rates: c.rates || {},
+                        statementDay: c.statement_day ?? null, // present once the statement_day / payment_day columns exist
+                        paymentDay: c.payment_day ?? null
                     }));
                 } else {
                     cards = [
@@ -650,15 +722,35 @@
             render();
         }
 
+        let warnedMissingDayColumns = false;
         async function saveCardToDB(c) {
             if (_supabase) {
-                await _supabase.from('cards').upsert({
+                const base = {
                     id: String(c.id),
                     name: c.name,
                     available_limit: c.availableLimit,
                     rates: c.rates,
                     user_id: currentUserId
+                };
+                const { error } = await _supabase.from('cards').upsert({
+                    ...base,
+                    statement_day: c.statementDay ?? null,
+                    payment_day: c.paymentDay ?? null
                 });
+
+                if (error && /statement_day|payment_day/.test(error.message || '')) {
+                    // The two new columns are not in the table yet. Save the card without them so
+                    // nothing else breaks, and tell the user (once) how to finish the setup.
+                    await _supabase.from('cards').upsert(base);
+                    if (!warnedMissingDayColumns && (c.statementDay || c.paymentDay)) {
+                        warnedMissingDayColumns = true;
+                        alert('Card saved, but the statement/payment day could not be stored in Supabase yet.\n\nRun this once in the Supabase SQL editor, then save the card again:\n\n' +
+                              'alter table cards add column if not exists statement_day int check (statement_day between 1 and 31);\n' +
+                              'alter table cards add column if not exists payment_day int check (payment_day between 1 and 31);');
+                    }
+                } else if (error) {
+                    console.error('Saving card failed:', error);
+                }
             }
             saveData();
         }
@@ -881,6 +973,19 @@
                 return;
             }
 
+            const parseDay = (id) => {
+                const raw = document.getElementById(id).value.trim();
+                if (raw === '') return null;
+                const n = Number(raw);
+                return (Number.isInteger(n) && n >= 1 && n <= 31) ? n : NaN;
+            };
+            const statementDay = parseDay('card-statement-day');
+            const paymentDay = parseDay('card-payment-day');
+            if (Number.isNaN(statementDay) || Number.isNaN(paymentDay)) {
+                alert('Statement Day and Payment Day must be whole numbers between 1 and 31, or left blank.');
+                return;
+            }
+
             const rates = getCardRatesFromForm();
 
             let cardObj;
@@ -890,10 +995,12 @@
                     cards[index].name = name;
                     cards[index].availableLimit = availableLimit;
                     cards[index].rates = rates;
+                    cards[index].statementDay = statementDay;
+                    cards[index].paymentDay = paymentDay;
                     cardObj = cards[index];
                 }
             } else {
-                cardObj = { id: Date.now().toString(), name, availableLimit, rates };
+                cardObj = { id: Date.now().toString(), name, availableLimit, rates, statementDay, paymentDay };
                 cards.push(cardObj);
             }
 
@@ -908,6 +1015,8 @@
             document.getElementById('editing-card-id').value = card.id;
             document.getElementById('card-name').value = card.name;
             document.getElementById('card-limit').value = card.availableLimit ?? '';
+            document.getElementById('card-statement-day').value = card.statementDay ?? '';
+            document.getElementById('card-payment-day').value = card.paymentDay ?? '';
             renderRateInputs(card.rates || {});
 
             document.getElementById('card-form-title').innerHTML = `<span>✏️</span> Edit Card`;
@@ -1278,6 +1387,7 @@
                 }
 
                 const ob = calculateOutstanding(cardTx, todayKey);
+                const dateInfo = getCardDateInfo(c);
                 grandOutstanding += ob.outstanding;
                 grandPending += ob.cashbackPending;
 
@@ -1295,7 +1405,7 @@
                     </div>` : '';
 
                 return `
-                    <div class="p-4 bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-600 text-xs space-y-3 shadow-sm">
+                    <div class="p-4 rounded-xl border text-xs space-y-3 shadow-sm ${dateInfo.wrapperClass}">
                         <div class="flex justify-between items-start">
                             <div>
                                 <span class="font-bold text-slate-900 dark:text-slate-100 text-sm block">${escapeHtml(c.name)}</span>
@@ -1306,6 +1416,7 @@
                                 <button onclick="deleteCard('${c.id}')" class="text-red-500 hover:text-red-700 font-bold">✕</button>
                             </div>
                         </div>
+                        ${dateInfo.rowHtml}
                         <div class="space-y-1">
                             <div class="flex justify-between text-[11px] font-medium">
                                 <span class="text-slate-600 dark:text-slate-400">Current Spend: AED ${currentMonthSpend.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
@@ -1948,6 +2059,11 @@
             renderCardFilters();
             renderTransactionsAndMetrics();
         }
+
+        // If the tab was left open overnight, refresh the due-date colours when you come back to it.
+        document.addEventListener('visibilitychange', () => {
+            if (!document.hidden && cards.length > 0) renderCardsList();
+        });
 
         function showLoadingError(message) {
             const overlay = document.getElementById('app-loading-overlay');
