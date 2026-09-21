@@ -1,0 +1,2141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Credit Card Cashback Tracker</title>
+    <!-- Tailwind CSS, Chart.js, SheetJS & Supabase JS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body class="bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-200 font-sans min-h-screen pb-12">
+
+    <!-- LOADING OVERLAY: shown until initData() resolves, avoids a blank flash while Supabase responds -->
+    <div id="app-loading-overlay" class="fixed inset-0 z-[70] flex flex-col items-center justify-center gap-3 bg-slate-50 dark:bg-slate-900">
+        <div class="w-10 h-10 border-4 border-indigo-200 dark:border-indigo-900 border-t-indigo-600 rounded-full animate-spin"></div>
+        <p class="text-xs text-slate-400 dark:text-slate-500">Loading your data…</p>
+    </div>
+
+    <!-- Navbar -->
+    <header class="bg-indigo-700 text-white shadow-md">
+        <div class="max-w-[100%] mx-auto px-4 sm:px-8 xl:px-12 py-5 flex justify-between items-center">
+            <div>
+                <h1 class="text-2xl font-bold tracking-tight">Cashback & Spend Optimizer</h1>
+                <p class="text-indigo-200 text-xs mt-0.5">AED Credit Card & Cashback Manager</p>
+            </div>
+            <div class="flex items-center gap-3">
+                <span id="user-email-label" class="text-xs text-indigo-200 hidden"></span>
+                <button id="sign-out-btn" onclick="signOut()" class="hidden bg-indigo-800 hover:bg-indigo-900 text-xs px-3 py-2 rounded text-indigo-100 transition duration-150">Sign Out</button>
+                <button onclick="exportBackup()" class="bg-indigo-800 hover:bg-indigo-900 text-xs px-3 py-2 rounded text-indigo-100 transition duration-150">Export Backup</button>
+                <label class="bg-indigo-800 hover:bg-indigo-900 text-xs px-3 py-2 rounded text-indigo-100 transition duration-150 cursor-pointer">
+                    Import Backup
+                    <input type="file" id="backup-file-input" accept="application/json" class="hidden">
+                </label>
+                <button onclick="clearAllData()" class="bg-indigo-800 hover:bg-red-600 text-xs px-3 py-2 rounded text-indigo-100 transition duration-150">Reset Data</button>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-[100%] mx-auto px-4 sm:px-8 xl:px-12 mt-8 space-y-8">
+
+        <!-- Two Column Layout for Controls & Analytics -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+
+            <!-- Left Column: Controls & Card Management (3/12 width) -->
+            <div class="space-y-6 lg:col-span-3">
+
+                <!-- Excel File Upload & Add Transaction Section -->
+                <div class="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-sm border border-slate-200 dark:border-slate-600">
+                    <div class="flex items-center justify-between mb-2">
+                        <h2 class="text-base font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                            <span>📁</span> Import Excel / CSV Data
+                        </h2>
+                    </div>
+                    <p class="text-xs text-slate-500 dark:text-slate-400 mb-4">Upload your existing spreadsheet to automatically import history.</p>
+                    
+                    <input type="file" id="excel-file-input" accept=".xlsx, .xls, .csv" class="block w-full text-xs text-slate-500 dark:text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-indigo-50 dark:bg-indigo-950 file:text-indigo-700 hover:file:bg-indigo-100 cursor-pointer mb-4"/>
+
+                    <div class="pt-3 border-t border-slate-100 dark:border-slate-700">
+                        <button onclick="openTxModal()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-xs font-semibold px-4 py-2.5 rounded-lg text-white transition duration-150 shadow-sm flex items-center justify-center gap-2">
+                            <span>+</span> Add Transaction Manually
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Card Manager Form -->
+                <div class="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-sm border border-slate-200 dark:border-slate-600">
+                    <h2 id="card-form-title" class="text-base font-bold text-slate-900 dark:text-slate-100 mb-4 flex items-center gap-2">
+                        <span>💳</span> Add / Manage Cards
+                    </h2>
+                    <form id="card-form" class="space-y-4">
+                        <input type="hidden" id="editing-card-id" value="">
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase mb-1">Card Name</label>
+                            <input type="text" id="card-name" placeholder="e.g., ADCB - 365" required class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-sm bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 border-slate-200 dark:border-slate-600 placeholder-slate-400 dark:placeholder-slate-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase mb-1">Available Limit (AED)</label>
+                            <input type="number" step="any" min="0" id="card-limit" placeholder="e.g., 15000" required class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-sm bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 border-slate-200 dark:border-slate-600 placeholder-slate-400 dark:placeholder-slate-500">
+                        </div>
+                        <div>
+                            <div class="grid grid-cols-2 gap-2">
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase mb-1">Statement Day</label>
+                                    <input type="number" step="1" min="1" max="31" id="card-statement-day" placeholder="e.g., 5" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-sm bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 border-slate-200 dark:border-slate-600 placeholder-slate-400 dark:placeholder-slate-500">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase mb-1">Payment Day</label>
+                                    <input type="number" step="1" min="1" max="31" id="card-payment-day" placeholder="e.g., 25" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-sm bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 border-slate-200 dark:border-slate-600 placeholder-slate-400 dark:placeholder-slate-500">
+                                </div>
+                            </div>
+                            <p class="text-[10px] text-slate-400 dark:text-slate-500 mt-1">Day of the month (1–31). The card turns orange 5 days before the payment day and red on it.</p>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase mb-2">Category Rates (%)</label>
+                            <div id="rate-inputs-container" class="grid grid-cols-2 gap-2 text-xs">
+                                <!-- populated by renderRateInputs() from RATE_CATEGORIES -->
+                            </div>
+                        </div>
+                        <div class="flex gap-2">
+                            <button type="submit" id="card-submit-btn" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 rounded-lg transition text-sm">Save Card</button>
+                            <button type="button" id="cancel-edit-btn" onclick="cancelEditCard()" class="hidden bg-slate-200 dark:bg-slate-600 hover:bg-slate-300 text-slate-700 dark:text-slate-300 font-medium px-3 py-2 rounded-lg transition text-sm">Cancel</button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Best Card Optimizer -->
+                <div class="bg-indigo-50 dark:bg-indigo-950 p-6 rounded-xl border border-indigo-100 dark:border-indigo-800 shadow-sm">
+                    <h2 class="text-base font-bold text-indigo-950 mb-1 flex items-center gap-2">
+                        <span>🎯</span> Best Card Recommender
+                    </h2>
+                    <p class="text-xs text-indigo-700 mb-4">Select category to identify highest reward card.</p>
+                    <div class="space-y-3">
+                        <select id="rec-category" onchange="recommendBestCard()" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-sm bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 border-slate-200 dark:border-slate-600">
+                        </select>
+                        <div id="recommendation-result" class="p-3 bg-white dark:bg-slate-800 rounded-lg border border-indigo-200 dark:border-indigo-800 text-sm font-medium text-indigo-900 dark:text-indigo-200">
+                            Select category to calculate.
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Right Column: Analytics & History (9/12 width) -->
+            <div class="space-y-6 lg:col-span-9">
+
+                <!-- Overview Metrics -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+                    <div class="bg-white dark:bg-slate-800 p-5 rounded-xl border border-slate-200 dark:border-slate-600 shadow-sm relative overflow-hidden">
+                        <div class="flex items-center justify-between">
+                            <p class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase">Total Spend</p>
+                            <span class="text-lg">💳</span>
+                        </div>
+                        <p id="metric-spend" class="text-3xl font-bold text-slate-900 dark:text-slate-100 mt-1">0.00</p>
+                        <p class="text-[10px] text-slate-400 dark:text-slate-500 mt-1">AED, current filter</p>
+                    </div>
+                    <div class="bg-emerald-50 dark:bg-emerald-950 p-5 rounded-xl border border-emerald-100 dark:border-emerald-800 shadow-sm relative overflow-hidden">
+                        <div class="flex items-center justify-between">
+                            <p class="text-xs font-semibold text-emerald-700 dark:text-emerald-400 uppercase">Cashback Earned</p>
+                            <span class="text-lg">💰</span>
+                        </div>
+                        <p id="metric-cashback" class="text-3xl font-bold text-emerald-600 dark:text-emerald-400 mt-1">0.00</p>
+                        <p class="text-[10px] text-emerald-600/70 dark:text-emerald-500/70 mt-1">AED, current filter</p>
+                    </div>
+                    <div class="bg-indigo-50 dark:bg-indigo-950 p-5 rounded-xl border border-indigo-100 dark:border-indigo-800 shadow-sm relative overflow-hidden">
+                        <div class="flex items-center justify-between">
+                            <p class="text-xs font-semibold text-indigo-700 dark:text-indigo-400 uppercase">Effective Return</p>
+                            <span class="text-lg">📈</span>
+                        </div>
+                        <p id="metric-return" class="text-3xl font-bold text-indigo-600 dark:text-indigo-400 mt-1">0.00%</p>
+                        <p class="text-[10px] text-indigo-600/70 dark:text-indigo-500/70 mt-1">Cashback ÷ Spend</p>
+                    </div>
+                    <div class="bg-amber-50 dark:bg-amber-950 p-5 rounded-xl border border-amber-100 dark:border-amber-800 shadow-sm relative overflow-hidden">
+                        <div class="flex items-center justify-between">
+                            <p class="text-xs font-semibold text-amber-700 dark:text-amber-400 uppercase">Left on the Table</p>
+                            <span class="text-lg">🔍</span>
+                        </div>
+                        <p id="metric-missed" class="text-3xl font-bold text-amber-600 dark:text-amber-400 mt-1">0.00</p>
+                        <p class="text-[10px] text-amber-600/70 dark:text-amber-500/70 mt-1">vs. best card per purchase</p>
+                    </div>
+                </div>
+
+                <!-- Saved Cards & Monthly Spend Section -->
+                <div class="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-sm border border-slate-200 dark:border-slate-600">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
+                        <div>
+                            <h2 class="text-base font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                                <span>💳</span> Saved Cards
+                            </h2>
+                            <p class="text-xs text-slate-500 dark:text-slate-400">Overview of all active cards, limits, outstanding balance and current month spend tracking.</p>
+                        </div>
+                        <div class="flex flex-wrap gap-x-8 gap-y-3 sm:justify-end">
+                            <div id="total-limit" class="sm:text-right"></div>
+                            <div id="total-outstanding" class="sm:text-right"></div>
+                        </div>
+                    </div>
+                    <div id="cards-list" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4"></div>
+                </div>
+
+                <!-- Month-Wise Multi-Metric Chart & Filters -->
+                <div class="bg-white dark:bg-slate-800 p-6 rounded-xl border border-slate-200 dark:border-slate-600 shadow-sm space-y-4">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                        <div>
+                            <h3 class="text-base font-bold text-slate-800 dark:text-slate-200">Financial Performance</h3>
+                            <p class="text-xs text-slate-500 dark:text-slate-400">Breakdown of purchases, cash withdrawals, repayments, fees, cashback & net rewards</p>
+                        </div>
+                    </div>
+
+                    <!-- CARD, CATEGORY & MONTH FILTERS (month chips support multi-select) -->
+                    <div class="space-y-2 pt-2 border-t border-slate-100 dark:border-slate-700">
+                        <div class="flex items-center gap-2 overflow-x-auto pb-1" id="card-filter-container"></div>
+                        <div id="category-filter-wrapper" class="hidden flex items-center gap-2 overflow-x-auto pb-1 pt-1 border-t border-dashed border-slate-100 dark:border-slate-700"></div>
+                        <div id="month-filter-container" class="flex items-center gap-2 overflow-x-auto pb-1 pt-1 border-t border-dashed border-slate-100 dark:border-slate-700"></div>
+                    </div>
+
+                    <div class="h-80">
+                        <canvas id="monthlyChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Aggregated Summary Table (Non-Monthly Breakdown) -->
+                <div class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-600 shadow-sm overflow-hidden">
+                    <div class="px-6 py-4 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center">
+                        <h3 id="summary-table-title" class="font-semibold text-slate-900 dark:text-slate-100">Summary Table</h3>
+                        <span id="active-filter-label" class="text-xs font-semibold text-indigo-600 bg-indigo-50 dark:bg-indigo-950 px-2.5 py-1 rounded-md">Filter: All Cards</span>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse text-xs">
+                            <thead>
+                                <tr id="summary-table-header" class="bg-slate-50 dark:bg-slate-900 text-slate-500 dark:text-slate-400 uppercase tracking-wider border-b border-slate-100 dark:border-slate-700"></tr>
+                            </thead>
+                            <tbody id="monthly-table-body" class="divide-y divide-slate-100 dark:divide-slate-700"></tbody>
+                        </table>
+                    </div>
+                    <p id="summary-cashback-note" class="hidden px-6 py-3 text-[11px] text-slate-500 dark:text-slate-400 border-t border-slate-100 dark:border-slate-700"></p>
+                </div>
+
+                <!-- Side-by-Side Donut Charts for Category & Card Cashback -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="bg-white dark:bg-slate-800 p-6 rounded-xl border border-slate-200 dark:border-slate-600 shadow-sm flex flex-col justify-between">
+                        <h3 class="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-4">Cashback by Category</h3>
+                        <div class="h-64 relative flex items-center justify-center">
+                            <canvas id="categoryDonutChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="bg-white dark:bg-slate-800 p-6 rounded-xl border border-slate-200 dark:border-slate-600 shadow-sm flex flex-col justify-between">
+                        <h3 class="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-4">Cashback by Cards</h3>
+                        <div class="h-64 relative flex items-center justify-center">
+                            <canvas id="cardDonutChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- History Table -->
+                <div class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-600 shadow-sm overflow-hidden">
+                    <div class="px-6 py-4 border-b border-slate-100 dark:border-slate-700 flex flex-col md:flex-row md:justify-between md:items-center gap-3">
+                        <div class="flex items-center gap-3 flex-wrap">
+                            <h3 class="font-semibold text-slate-900 dark:text-slate-100">Transaction History</h3>
+                            <span id="tx-count" class="text-xs bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400 px-2.5 py-1 rounded-full font-medium">0 entries</span>
+                            <input type="text" id="tx-search-input" oninput="setSearchQuery(this.value)" placeholder="🔍 Search description…" class="text-xs px-3 py-1.5 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none w-48 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 border-slate-200 dark:border-slate-600 placeholder-slate-400 dark:placeholder-slate-500">
+                            <div id="type-filter-container" class="flex items-center gap-1"></div>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <button onclick="exportFilteredCsv()" class="bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-600 dark:text-slate-400 text-xs font-medium px-3 py-1.5 rounded-lg transition">
+                                ⬇ Export Filtered CSV
+                            </button>
+                            <button onclick="openTxModal()" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-medium px-3 py-1.5 rounded-lg transition">
+                                + Log Entry
+                            </button>
+                        </div>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse text-xs">
+                            <thead>
+                                <tr class="bg-slate-50 dark:bg-slate-900 text-slate-500 dark:text-slate-400 uppercase tracking-wider border-b border-slate-100 dark:border-slate-700">
+                                    <th class="py-3.5 px-6">Date</th>
+                                    <th class="py-3.5 px-6">Card</th>
+                                    <th class="py-3.5 px-6">Type</th>
+                                    <th class="py-3.5 px-6">Description</th>
+                                    <th class="py-3.5 px-6">Category</th>
+                                    <th class="py-3.5 px-6 text-right">Amount (AED)</th>
+                                    <th class="py-3.5 px-6 text-right">Service Fee (AED)</th>
+                                    <th class="py-3.5 px-6 text-right">Cashback (AED)</th>
+                                    <th class="py-3.5 px-6 text-right">Net Rewards (AED)</th>
+                                    <th class="py-3.5 px-6 text-center">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tx-table-body" class="divide-y divide-slate-100 dark:divide-slate-700"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+
+    </main>
+
+    <!-- TRANSACTION MODAL POPUP -->
+    <div id="tx-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4">
+        <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-xl border border-slate-100 dark:border-slate-700 w-full max-w-lg overflow-hidden transform transition-all">
+            <div class="px-6 py-4 bg-slate-50 dark:bg-slate-900 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center">
+                <h2 id="exp-form-title" class="text-base font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                    <span>➕</span> Log New Transaction
+                </h2>
+                <button onclick="closeTxModal()" class="text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:text-slate-400 font-bold text-lg leading-none">&times;</button>
+            </div>
+            
+            <form id="expense-form" class="p-6 space-y-4">
+                <input type="hidden" id="editing-tx-id" value="">
+                
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase mb-1">Date</label>
+                        <input type="date" id="exp-date" required class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-sm bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 border-slate-200 dark:border-slate-600 placeholder-slate-400 dark:placeholder-slate-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase mb-1">Type</label>
+                        <select id="exp-type" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-sm bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 border-slate-200 dark:border-slate-600">
+                            <option value="Purchase">Purchase</option>
+                            <option value="Cash Withdrawal">Cash Withdrawal</option>
+                            <option value="Repaid">Repaid</option>
+                            <option value="Cashback">Cashback</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase mb-1">Description</label>
+                    <input type="text" id="exp-desc" placeholder="e.g. Visa Fee" required class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-sm bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 border-slate-200 dark:border-slate-600 placeholder-slate-400 dark:placeholder-slate-500">
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase mb-1">Amount (AED)</label>
+                        <input type="number" step="0.01" min="0.01" id="exp-amount" placeholder="0.00" required class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-sm bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 border-slate-200 dark:border-slate-600 placeholder-slate-400 dark:placeholder-slate-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase mb-1">Category (Optional)</label>
+                        <select id="exp-category" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-sm bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 border-slate-200 dark:border-slate-600">
+                        </select>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase mb-1">Service Fee (AED)</label>
+                        <input type="number" step="0.01" id="exp-service" placeholder="0.00" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-sm bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 border-slate-200 dark:border-slate-600 placeholder-slate-400 dark:placeholder-slate-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase mb-1">Cashback (AED)</label>
+                        <input type="number" step="0.01" id="exp-cashback" placeholder="0.00" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-sm bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 border-slate-200 dark:border-slate-600 placeholder-slate-400 dark:placeholder-slate-500">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase mb-1">Card Used</label>
+                    <select id="exp-card" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-sm bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 border-slate-200 dark:border-slate-600" required></select>
+                </div>
+
+                <div class="flex gap-2 pt-2">
+                    <button type="submit" id="tx-submit-btn" class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-medium py-2 rounded-lg transition text-sm">Log Entry</button>
+                    <button type="button" onclick="closeTxModal()" class="bg-slate-200 dark:bg-slate-600 hover:bg-slate-300 text-slate-700 dark:text-slate-300 font-medium px-4 py-2 rounded-lg transition text-sm">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- LOGIN GATE (only shown when using Supabase and no session exists) -->
+    <div id="auth-gate" class="fixed inset-0 z-[60] hidden flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
+        <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-xl border border-slate-100 dark:border-slate-700 w-full max-w-sm overflow-hidden">
+            <div class="px-6 py-4 bg-slate-50 dark:bg-slate-900 border-b border-slate-100 dark:border-slate-700">
+                <h2 class="text-base font-bold text-slate-900 dark:text-slate-100">Sign in to your Cashback Tracker</h2>
+                <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Your cards and transactions are private to your account.</p>
+            </div>
+            <form id="auth-form" class="p-6 space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase mb-1">Email</label>
+                    <input type="email" id="auth-email" required class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-sm bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 border-slate-200 dark:border-slate-600 placeholder-slate-400 dark:placeholder-slate-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase mb-1">Password</label>
+                    <input type="password" id="auth-password" required minlength="6" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-sm bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 border-slate-200 dark:border-slate-600 placeholder-slate-400 dark:placeholder-slate-500">
+                </div>
+                <p id="auth-error" class="text-xs text-red-600 hidden"></p>
+                <div class="flex gap-2 pt-1">
+                    <button type="submit" id="auth-signin-btn" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 rounded-lg transition text-sm">Sign In</button>
+                    <button type="button" id="auth-signup-btn" class="flex-1 bg-slate-200 dark:bg-slate-600 hover:bg-slate-300 text-slate-700 dark:text-slate-300 font-medium py-2 rounded-lg transition text-sm">Create Account</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Set up Supabase Connection
+        // Chart.js doesn't pick up Tailwind's dark: classes, so mirror the same
+        // prefers-color-scheme check for chart text/grid colors.
+        if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+            Chart.defaults.color = '#cbd5e1';       // slate-300
+            Chart.defaults.borderColor = '#334155'; // slate-700
+        }
+
+        const SUPABASE_URL = 'https://eghvqigfmcohvlstnajw.supabase.co';
+        const SUPABASE_ANON_KEY = 'sb_publishable_SB6dXxf5bfzdpKL69IOMqQ_F9ETe580';
+        const _supabase = (SUPABASE_URL !== 'YOUR_SUPABASE_URL') ? supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
+
+        let cards = [];
+        let transactions = [];
+        let categoryDonutInstance = null;
+        let cardDonutInstance = null;
+        let monthlyChartInstance = null;
+        let activeCardFilter = 'ALL';
+        let selectedCategories = []; // empty array = "All Categories"; otherwise one or more category names
+        let selectedMonths = []; // empty array = "All Months"; otherwise one or more 'YYYY-MM' keys, e.g. last 2 months
+        let searchQuery = '';
+        const TYPE_FILTER_OPTIONS = ['Purchase', 'Cash Withdrawal', 'Repaid', 'Cashback']; // same list as the Type dropdown in the transaction form
+        let activeTypeFilter = 'ALL'; // 'ALL' or one of TYPE_FILTER_OPTIONS
+
+        function transactionMatchesFilters(t) {
+            const matchesCard = (activeCardFilter === 'ALL' || t.cardName.trim() === activeCardFilter);
+            const matchesCategory = (selectedCategories.length === 0 || (t.category && selectedCategories.includes(t.category.trim())));
+            const matchesMonth = (selectedMonths.length === 0 || (t.date && selectedMonths.includes(t.date.substring(0, 7))));
+            const matchesSearch = (!searchQuery || (t.desc && t.desc.toLowerCase().includes(searchQuery.toLowerCase())));
+            const matchesType = (activeTypeFilter === 'ALL' || t.type === activeTypeFilter);
+            return matchesCard && matchesCategory && matchesMonth && matchesSearch && matchesType;
+        }
+
+        function renderTypeFilter() {
+            const el = document.getElementById('type-filter-container');
+            if (!el) return;
+            const options = [['ALL', 'All Types'], ...TYPE_FILTER_OPTIONS.map(t => [t, t])]
+                .map(([value, label]) => `<option value="${value}" ${activeTypeFilter === value ? 'selected' : ''}>${label}</option>`)
+                .join('');
+            el.innerHTML = `
+                <select onchange="setTypeFilter(this.value)" aria-label="Filter by transaction type"
+                    class="text-xs px-3 py-1.5 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 border-slate-200 dark:border-slate-600">
+                    ${options}
+                </select>`;
+        }
+
+        function setTypeFilter(type) {
+            activeTypeFilter = type;
+            renderTypeFilter();
+            renderCardFilters(); // refreshes the "Filter: ..." label
+            renderTransactionsAndMetrics();
+        }
+
+        function setSearchQuery(value) {
+            searchQuery = value.trim();
+            renderTransactionsAndMetrics();
+        }
+        let currentUserId = null;
+
+        // ---- SINGLE SOURCE OF TRUTH FOR CATEGORIES ----
+        // Add/remove/rename a category here ONLY. Every dropdown and the
+        // card rate-input grid are generated from these two lists, so
+        // nothing can drift out of sync again.
+        const RATE_CATEGORIES = ['Dining', 'Grocery', 'Travel', 'Gas/Fuel', 'Online Shopping', 'Govt', 'All Other Spend'];
+        const TX_ONLY_CATEGORIES = ['Cashback', 'Monthly Payment', 'Annual Fee']; // bookkeeping labels, not spend rates
+
+        // ---- OUTSTANDING BALANCE ----
+        // Cashback earned in a month is credited on the NEXT month's statement, so it only
+        // reduces the outstanding balance once that month has started. Cashback earned in the
+        // current month stays "pending" and is shown separately.
+        // Service fees were never part of your Remaining Pay figure; flip this to true if the
+        // fees are also billed to the card and should count towards what you owe.
+        const INCLUDE_FEES_IN_OUTSTANDING = false;
+
+        function localMonthKey(d = new Date()) {
+            return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+        }
+        function localDateKey(d = new Date()) {
+            return `${localMonthKey(d)}-${String(d.getDate()).padStart(2, '0')}`;
+        }
+        function nextMonthKey(monthKey) {
+            const [y, m] = monthKey.split('-').map(Number);
+            return localMonthKey(new Date(y, m, 1)); // m is 1-based, so this is the following month
+        }
+        function monthLabel(monthKey) {
+            const [y, m] = monthKey.split('-').map(Number);
+            return new Date(y, m - 1, 1).toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+        }
+        function formatAED(n) {
+            return n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        }
+
+        // txList: transactions for ONE card (or any set you want a balance for).
+        // Entries dated after asOfDate are ignored - they are not owed yet.
+        function calculateOutstanding(txList, asOfDate = localDateKey()) {
+            const currentMonth = asOfDate.substring(0, 7);
+            const r = { purchases: 0, withdrawals: 0, fees: 0, repaid: 0, cashbackCredited: 0, cashbackPending: 0 };
+
+            txList.forEach(t => {
+                const date = t.date || '';
+                if (date > asOfDate) return;
+
+                const amount = parseFloat(t.amount) || 0;
+                const cashback = parseFloat(t.cashback) || 0;
+                const fee = parseFloat(t.serviceCharge) || 0;
+
+                if (t.type === 'Purchase') r.purchases += amount;
+                else if (t.type === 'Cash Withdrawal') r.withdrawals += amount;
+                else if (t.type === 'Repaid') r.repaid += amount;
+                r.fees += fee;
+
+                if (date.substring(0, 7) < currentMonth) r.cashbackCredited += cashback;
+                else r.cashbackPending += cashback;
+            });
+
+            r.outstanding = r.purchases + r.withdrawals + (INCLUDE_FEES_IN_OUTSTANDING ? r.fees : 0)
+                          - r.repaid - r.cashbackCredited;
+            r.afterPending = r.outstanding - r.cashbackPending;
+            return r;
+        }
+
+        // ---- STATEMENT / PAYMENT DATES ----
+        const PAYMENT_WARNING_DAYS = 5; // card turns orange this many days before the payment day, red on the day
+
+        // Next date (today or later) that falls on the given day-of-month. Days that don't exist in a
+        // short month (e.g. 31 in June, 30 in February) roll back to that month's last day.
+        function nextOccurrence(day, fromDate) {
+            const from = new Date(fromDate.getFullYear(), fromDate.getMonth(), fromDate.getDate());
+            const inMonth = (y, m) => new Date(y, m, Math.min(day, new Date(y, m + 1, 0).getDate()));
+            let d = inMonth(from.getFullYear(), from.getMonth());
+            if (d < from) d = inMonth(from.getFullYear(), from.getMonth() + 1);
+            return d;
+        }
+        function daysBetween(a, b) { return Math.round((b - a) / 86400000); }
+        function shortDate(d) { return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }); }
+        function countdownText(n) { return n === 0 ? 'today' : n === 1 ? 'tomorrow' : `in ${n} days`; }
+
+        // Returns the card's container colours plus the statement / payment row shown inside it.
+        function getCardDateInfo(c, todayDate = new Date()) {
+            const today = new Date(todayDate.getFullYear(), todayDate.getMonth(), todayDate.getDate());
+            let wrapperClass = 'bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-600';
+            let statementHtml = '';
+            let badgeHtml = '';
+
+            if (c.statementDay) {
+                const st = nextOccurrence(c.statementDay, today);
+                const n = daysBetween(today, st);
+                statementHtml = `<span class="text-slate-500 dark:text-slate-400">🧾 Statement: ${shortDate(st)} · ${countdownText(n)}</span>`;
+            }
+
+            if (c.paymentDay) {
+                const due = nextOccurrence(c.paymentDay, today);
+                const n = daysBetween(today, due);
+                let badgeClass, label;
+                if (n === 0) {
+                    wrapperClass = 'bg-red-50 dark:bg-red-950/40 border-red-500 ring-2 ring-red-300 dark:ring-red-700';
+                    badgeClass = 'bg-red-600 text-white';
+                    label = `🚨 Payment due TODAY · ${shortDate(due)}`;
+                } else if (n <= PAYMENT_WARNING_DAYS) {
+                    wrapperClass = 'bg-amber-50 dark:bg-amber-950/40 border-amber-400 dark:border-amber-600';
+                    badgeClass = 'bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200';
+                    label = `⏰ Payment due ${countdownText(n)} · ${shortDate(due)}`;
+                } else {
+                    badgeClass = 'bg-slate-200 text-slate-600 dark:bg-slate-700 dark:text-slate-300';
+                    label = `Payment: ${shortDate(due)} · ${countdownText(n)}`;
+                }
+                badgeHtml = `<span class="px-2 py-0.5 rounded-full font-semibold ${badgeClass}">${label}</span>`;
+            }
+
+            let rowHtml;
+            if (statementHtml || badgeHtml) {
+                rowHtml = `<div class="flex flex-wrap items-center justify-between gap-x-3 gap-y-1.5 text-[11px]">${statementHtml}${badgeHtml}</div>`;
+            } else {
+                rowHtml = `<p class="text-[11px] text-slate-400 dark:text-slate-500">Add a statement &amp; payment day (Edit) to get due-date alerts.</p>`;
+            }
+            return { wrapperClass, rowHtml };
+        }
+
+        const openCalcCards = new Set(); // remembers which "How it's calculated" panels are open across re-renders
+        function setCalcOpen(cardId, isOpen) {
+            if (isOpen) openCalcCards.add(cardId); else openCalcCards.delete(cardId);
+        }
+
+        function escapeHtml(str) {
+            if (str === null || str === undefined) return '';
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
+        function categorySlug(cat) {
+            return cat.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+        }
+
+        function defaultRates(fallbackRate = 1) {
+            const rates = {};
+            RATE_CATEGORIES.forEach(cat => { rates[cat] = cat === 'Govt' ? 0.15 : fallbackRate; });
+            return rates;
+        }
+
+        function renderRateInputs(existingRates = {}) {
+            const container = document.getElementById('rate-inputs-container');
+            container.innerHTML = RATE_CATEGORIES.map(cat => {
+                const isLast = cat === 'All Other Spend';
+                const val = existingRates[cat] ?? '';
+                return `
+                    <div class="${isLast ? 'col-span-2' : ''}">
+                        <span class="text-slate-500 dark:text-slate-400">${cat}</span>
+                        <input type="number" step="any" min="0" data-rate-category="${cat}"
+                            id="rate-${categorySlug(cat)}" placeholder="0" value="${val}"
+                            ${isLast ? 'required' : ''}
+                            class="w-full px-3 py-1.5 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none mt-1 bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 border-slate-200 dark:border-slate-600 placeholder-slate-400 dark:placeholder-slate-500">
+                    </div>`;
+            }).join('');
+        }
+
+        function getCardRatesFromForm() {
+            const rates = {};
+            RATE_CATEGORIES.forEach(cat => {
+                const input = document.querySelector(`[data-rate-category="${cat}"]`);
+                const parsed = parseFloat(input ? input.value : '');
+                rates[cat] = isNaN(parsed) || parsed < 0 ? 0 : parsed;
+            });
+            return rates;
+        }
+
+        function populateCategorySelects() {
+            document.getElementById('rec-category').innerHTML =
+                RATE_CATEGORIES.map(cat => `<option value="${cat}">${cat}</option>`).join('');
+
+            document.getElementById('exp-category').innerHTML =
+                `<option value="">None / Default</option>` +
+                RATE_CATEGORIES.map(cat => `<option value="${cat}">${cat}</option>`).join('') +
+                TX_ONLY_CATEGORIES.map(cat => `<option value="${cat}">${cat}</option>`).join('');
+        }
+
+        // ---- AUTH GATE ----
+        // With Row Level Security enabled on 'cards' and 'transactions' (see the
+        // accompanying SQL), each signed-in user can only read/write rows where
+        // user_id = auth.uid(). Nothing loads from Supabase until a session exists.
+        function hideLoadingOverlay() {
+            const overlay = document.getElementById('app-loading-overlay');
+            if (overlay) overlay.classList.add('hidden');
+        }
+
+        async function boot() {
+            if (!_supabase) {
+                // No Supabase configured -> fall back to plain localStorage, no auth needed.
+                await initData();
+                hideLoadingOverlay();
+                return;
+            }
+
+            const { data: { session } } = await _supabase.auth.getSession();
+            if (session) {
+                await onSignedIn(session);
+            } else {
+                hideLoadingOverlay();
+                document.getElementById('auth-gate').classList.remove('hidden');
+            }
+
+            _supabase.auth.onAuthStateChange((event, session) => {
+                if (event === 'SIGNED_IN' && session) {
+                    onSignedIn(session);
+                } else if (event === 'SIGNED_OUT') {
+                    location.reload();
+                }
+            });
+        }
+
+        async function onSignedIn(session) {
+            currentUserId = session.user.id;
+            document.getElementById('auth-gate').classList.add('hidden');
+            document.getElementById('sign-out-btn').classList.remove('hidden');
+            const label = document.getElementById('user-email-label');
+            const email = session.user.email || '';
+            label.textContent = email.split('@')[0]; // show just the username part, not the full address
+            label.title = email; // full email still available on hover
+            label.classList.remove('hidden');
+            await initData();
+            hideLoadingOverlay();
+        }
+
+        document.getElementById('auth-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            await handleAuth('signin');
+        });
+        document.getElementById('auth-signup-btn').addEventListener('click', async () => {
+            await handleAuth('signup');
+        });
+
+        async function handleAuth(mode) {
+            const email = document.getElementById('auth-email').value.trim();
+            const password = document.getElementById('auth-password').value;
+            const errorEl = document.getElementById('auth-error');
+            errorEl.classList.add('hidden');
+
+            const { data, error } = mode === 'signup'
+                ? await _supabase.auth.signUp({ email, password })
+                : await _supabase.auth.signInWithPassword({ email, password });
+
+            if (error) {
+                errorEl.textContent = error.message;
+                errorEl.classList.remove('hidden');
+                return;
+            }
+            if (mode === 'signup' && !data.session) {
+                errorEl.textContent = 'Account created — check your email to confirm, then sign in.';
+                errorEl.classList.remove('hidden');
+            }
+            // onAuthStateChange fires onSignedIn automatically once a session exists.
+        }
+
+        async function signOut() {
+            if (_supabase) await _supabase.auth.signOut();
+        }
+
+        async function initData() {
+            if (_supabase) {
+                const { data: dbCards, error: cardError } = await _supabase.from('cards').select('*');
+                const { data: dbTx, error: txError } = await _supabase.from('transactions').select('*');
+                
+                if (!cardError && dbCards && dbCards.length > 0) {
+                    cards = dbCards.map(c => ({
+                        id: String(c.id),
+                        name: c.name,
+                        availableLimit: c.available_limit,
+                        rates: c.rates || {},
+                        statementDay: c.statement_day ?? null, // present once the statement_day / payment_day columns exist
+                        paymentDay: c.payment_day ?? null
+                    }));
+                } else {
+                    cards = [
+                        { id: '1', name: 'ADCB - 365', availableLimit: 15000, rates: { 'Dining': 6, 'Grocery': 5, 'Travel': 1, 'Gas/Fuel': 1, 'Online Shopping': 1, 'Govt': 0.15, 'All Other Spend': 1 } },
+                        { id: '2', name: 'MASHREQ - NEO', availableLimit: 22000, rates: { 'Dining': 5, 'Grocery': 1, 'Travel': 1, 'Gas/Fuel': 1, 'Online Shopping': 1, 'Govt': 0.15, 'All Other Spend': 1 } }
+                    ];
+                }
+
+                if (!txError && dbTx) {
+                    transactions = dbTx.map(t => ({
+                        id: String(t.id),
+                        date: t.date,
+                        cardName: t.card_name,
+                        cardId: t.card_id || undefined, // present once the card_id column + SQL migration are applied
+                        type: t.type,
+                        desc: t.description,
+                        category: t.category,
+                        amount: t.amount,
+                        serviceCharge: t.service_charge,
+                        cashback: t.cashback,
+                        notes: t.notes
+                    }));
+                }
+            } else {
+                cards = JSON.parse(localStorage.getItem('cb_cards')) || [
+                    { id: '1', name: 'ADCB - 365', availableLimit: 15000, rates: { 'Dining': 6, 'Grocery': 5, 'Travel': 1, 'Gas/Fuel': 1, 'Online Shopping': 1, 'Govt': 0.15, 'All Other Spend': 1 } },
+                    { id: '2', name: 'MASHREQ - NEO', availableLimit: 22000, rates: { 'Dining': 5, 'Grocery': 1, 'Travel': 1, 'Gas/Fuel': 1, 'Online Shopping': 1, 'Govt': 0.15, 'All Other Spend': 1 } }
+                ];
+                transactions = JSON.parse(localStorage.getItem('cb_transactions')) || [];
+            }
+            populateCategorySelects();
+            renderRateInputs({});
+            render();
+        }
+
+        async function saveData() {
+            if (!_supabase) {
+                localStorage.setItem('cb_cards', JSON.stringify(cards));
+                localStorage.setItem('cb_transactions', JSON.stringify(transactions));
+            }
+            render();
+        }
+
+        let warnedMissingDayColumns = false;
+        async function saveCardToDB(c) {
+            if (_supabase) {
+                const base = {
+                    id: String(c.id),
+                    name: c.name,
+                    available_limit: c.availableLimit,
+                    rates: c.rates,
+                    user_id: currentUserId
+                };
+                const { error } = await _supabase.from('cards').upsert({
+                    ...base,
+                    statement_day: c.statementDay ?? null,
+                    payment_day: c.paymentDay ?? null
+                });
+
+                if (error && /statement_day|payment_day/.test(error.message || '')) {
+                    // The two new columns are not in the table yet. Save the card without them so
+                    // nothing else breaks, and tell the user (once) how to finish the setup.
+                    await _supabase.from('cards').upsert(base);
+                    if (!warnedMissingDayColumns && (c.statementDay || c.paymentDay)) {
+                        warnedMissingDayColumns = true;
+                        alert('Card saved, but the statement/payment day could not be stored in Supabase yet.\n\nRun this once in the Supabase SQL editor, then save the card again:\n\n' +
+                              'alter table cards add column if not exists statement_day int check (statement_day between 1 and 31);\n' +
+                              'alter table cards add column if not exists payment_day int check (payment_day between 1 and 31);');
+                    }
+                } else if (error) {
+                    console.error('Saving card failed:', error);
+                }
+            }
+            saveData();
+        }
+
+        async function deleteCardFromDB(id) {
+            if (_supabase) {
+                await _supabase.from('cards').delete().eq('id', String(id));
+            }
+            cards = cards.filter(c => c.id !== String(id));
+            saveData();
+        }
+
+        async function saveTransactionToDB(t) {
+            if (_supabase) {
+                const payload = {
+                    id: String(t.id),
+                    date: t.date,
+                    card_name: t.cardName,
+                    card_id: t.cardId || null,
+                    type: t.type,
+                    description: t.desc,
+                    category: t.category,
+                    amount: t.amount,
+                    service_charge: t.serviceCharge,
+                    cashback: t.cashback,
+                    notes: t.notes,
+                    user_id: currentUserId
+                };
+                const { error } = await _supabase.from('transactions').upsert(payload);
+                if (error && /card_id/i.test(error.message || '')) {
+                    // The card_id column doesn't exist yet (migration not run) — retry
+                    // without it so saving still works; run the SQL migration to enable
+                    // reliable card linking (see the comment on the cardId field).
+                    delete payload.card_id;
+                    await _supabase.from('transactions').upsert(payload);
+                }
+            }
+            saveData();
+        }
+
+        async function deleteTransactionFromDB(id) {
+            if (_supabase) {
+                await _supabase.from('transactions').delete().eq('id', String(id));
+            }
+            transactions = transactions.filter(t => t.id !== String(id));
+            saveData();
+        }
+
+        function calculateDynamicCashback() {
+            const type = document.getElementById('exp-type').value;
+            const amount = parseFloat(document.getElementById('exp-amount').value) || 0;
+            const category = document.getElementById('exp-category').value;
+            const cardId = document.getElementById('exp-card').value;
+            const cashbackInput = document.getElementById('exp-cashback');
+
+            // Force cashback to 0.00 for Repaid entries regardless of category selection
+            if (type === 'Repaid') {
+                cashbackInput.value = '0.00';
+                return;
+            }
+
+            if (type === 'Purchase' || type === 'Cash Withdrawal') {
+                const selectedCard = cards.find(c => c.id === cardId);
+                if (selectedCard && amount > 0) {
+                    const activeCategory = category || 'All Other Spend';
+                    const rate = selectedCard.rates[activeCategory] !== undefined ? selectedCard.rates[activeCategory] : (selectedCard.rates['All Other Spend'] || 0);
+                    const calculatedCashback = (amount * (rate / 100)).toFixed(2);
+                    cashbackInput.value = calculatedCashback;
+                }
+            }
+        }
+
+        ['exp-amount', 'exp-category', 'exp-card'].forEach(id => {
+            document.getElementById(id).addEventListener('input', calculateDynamicCashback);
+            document.getElementById(id).addEventListener('change', calculateDynamicCashback);
+        });
+
+        function openTxModal() {
+            document.getElementById('tx-modal').classList.remove('hidden');
+            const dateField = document.getElementById('exp-date');
+            if (!dateField.value) {
+                dateField.value = new Date().toISOString().slice(0, 10);
+            }
+        }
+
+        function closeTxModal() {
+            document.getElementById('tx-modal').classList.add('hidden');
+            cancelEditTransaction();
+        }
+
+        function cancelEditTransaction() {
+            document.getElementById('editing-tx-id').value = "";
+            document.getElementById('expense-form').reset();
+            document.getElementById('exp-form-title').innerHTML = `<span>➕</span> Log New Transaction`;
+            document.getElementById('tx-submit-btn').textContent = "Log Entry";
+            syncCategoryState(document.getElementById('exp-type').value);
+        }
+
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') closeTxModal();
+        });
+
+        function syncCategoryState(typeVal) {
+            const catSelect = document.getElementById('exp-category');
+            // Enable category dropdown for Repaid transactions as well
+            catSelect.disabled = false;
+            catSelect.classList.remove('bg-slate-100', 'dark:bg-slate-700', 'cursor-not-allowed');
+            calculateDynamicCashback();
+        }
+
+        document.getElementById('exp-type').addEventListener('change', (e) => {
+            syncCategoryState(e.target.value);
+        });
+
+        function formatExcelDate(excelDate) {
+            if (!excelDate) return '';
+            if (typeof excelDate === 'number') {
+                const dateObj = XLSX.SSF.parse_date_code(excelDate);
+                if (dateObj) {
+                    const y = dateObj.y;
+                    const m = String(dateObj.m).padStart(2, '0');
+                    const d = String(dateObj.d).padStart(2, '0');
+                    return `${y}-${m}-${d}`;
+                }
+            }
+            return String(excelDate);
+        }
+
+        document.getElementById('excel-file-input').addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = async (evt) => {
+                const bstr = evt.target.result;
+                const workbook = XLSX.read(bstr, { type: 'binary' });
+                const firstSheetName = workbook.SheetNames[0];
+                const worksheet = workbook.Sheets[firstSheetName];
+                const rawData = XLSX.utils.sheet_to_json(worksheet, { defval: '' });
+
+                const knownCategories = new Set([...RATE_CATEGORIES, ...TX_ONLY_CATEGORIES]);
+                let imported = 0, skipped = 0, unknownCategoryRows = 0;
+
+                for (let i = 0; i < rawData.length; i++) {
+                    const row = rawData[i];
+                    try {
+                        const date = formatExcelDate(row['Date']);
+                        const cardName = String(row['Card'] || '').trim();
+                        const type = row['Type'] || 'Purchase';
+                        const desc = row['Description'] || row['Desc'] || '';
+                        let category = String(row['Category'] || '').trim();
+                        const amount = parseFloat(row['Amount (AED)']);
+                        const serviceCharge = parseFloat(row['Service Charge (AED)']) || parseFloat(row['Service Fee (AED)']) || 0;
+                        const cashbackRaw = row['Cashback (AED)'];
+                        const cashback = (type === 'Repaid' || cashbackRaw === '-' || cashbackRaw === '' || cashbackRaw === undefined) ? 0 : parseFloat(cashbackRaw);
+                        const notes = row['Notes'] || '';
+
+                        // A row with no card name and no usable amount is not salvageable — skip it
+                        // rather than silently recording a zero-amount "Unknown Card" transaction.
+                        if (!cardName || isNaN(amount)) {
+                            skipped++;
+                            continue;
+                        }
+
+                        if (category && !knownCategories.has(category)) {
+                            unknownCategoryRows++;
+                            category = ''; // falls back to "All Other Spend" rate at calculation time
+                        }
+
+                        if (!cards.some(c => c.name.trim().toLowerCase() === cardName.toLowerCase())) {
+                            const newCard = {
+                                id: Date.now().toString() + Math.random(),
+                                name: cardName,
+                                availableLimit: 20000,
+                                rates: defaultRates(1)
+                            };
+                            cards.push(newCard);
+                            await saveCardToDB(newCard);
+                        }
+
+                        const newTx = {
+                            id: Date.now().toString() + Math.random(),
+                            date, cardName, type, desc, category, amount,
+                            serviceCharge, cashback, notes
+                        };
+                        transactions.push(newTx);
+                        await saveTransactionToDB(newTx);
+                        imported++;
+                    } catch (err) {
+                        console.error(`Row ${i + 2} failed to import:`, err);
+                        skipped++;
+                    }
+                }
+
+                let summary = `Imported ${imported} of ${rawData.length} rows.`;
+                if (skipped > 0) summary += `\n${skipped} row(s) skipped — missing a Card name or a valid Amount.`;
+                if (unknownCategoryRows > 0) summary += `\n${unknownCategoryRows} row(s) had a Category not in the app's list — filed as "All Other Spend".`;
+                alert(summary);
+                e.target.value = '';
+                render();
+            };
+            reader.readAsBinaryString(file);
+        });
+
+        document.getElementById('card-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const editingId = document.getElementById('editing-card-id').value;
+            const name = document.getElementById('card-name').value.trim();
+            const limitInput = document.getElementById('card-limit');
+            const availableLimit = parseFloat(limitInput.value);
+
+            if (!name) { alert('Please enter a card name.'); return; }
+            if (isNaN(availableLimit) || availableLimit < 0) {
+                alert('Available Limit must be a number of 0 or more.');
+                limitInput.focus();
+                return;
+            }
+            if (cards.some(c => c.id !== editingId && c.name.trim().toLowerCase() === name.toLowerCase())) {
+                alert('A card with this name already exists. Use a distinct name so transactions link to the right card.');
+                return;
+            }
+
+            const parseDay = (id) => {
+                const raw = document.getElementById(id).value.trim();
+                if (raw === '') return null;
+                const n = Number(raw);
+                return (Number.isInteger(n) && n >= 1 && n <= 31) ? n : NaN;
+            };
+            const statementDay = parseDay('card-statement-day');
+            const paymentDay = parseDay('card-payment-day');
+            if (Number.isNaN(statementDay) || Number.isNaN(paymentDay)) {
+                alert('Statement Day and Payment Day must be whole numbers between 1 and 31, or left blank.');
+                return;
+            }
+
+            const rates = getCardRatesFromForm();
+
+            let cardObj;
+            if (editingId) {
+                const index = cards.findIndex(c => c.id === editingId);
+                if (index !== -1) {
+                    cards[index].name = name;
+                    cards[index].availableLimit = availableLimit;
+                    cards[index].rates = rates;
+                    cards[index].statementDay = statementDay;
+                    cards[index].paymentDay = paymentDay;
+                    cardObj = cards[index];
+                }
+            } else {
+                cardObj = { id: Date.now().toString(), name, availableLimit, rates, statementDay, paymentDay };
+                cards.push(cardObj);
+            }
+
+            if (cardObj) await saveCardToDB(cardObj);
+            cancelEditCard();
+        });
+
+        function editCard(id) {
+            const card = cards.find(c => c.id === id);
+            if (!card) return;
+
+            document.getElementById('editing-card-id').value = card.id;
+            document.getElementById('card-name').value = card.name;
+            document.getElementById('card-limit').value = card.availableLimit ?? '';
+            document.getElementById('card-statement-day').value = card.statementDay ?? '';
+            document.getElementById('card-payment-day').value = card.paymentDay ?? '';
+            renderRateInputs(card.rates || {});
+
+            document.getElementById('card-form-title').innerHTML = `<span>✏️</span> Edit Card`;
+            document.getElementById('card-submit-btn').textContent = "Update Card";
+            document.getElementById('cancel-edit-btn').classList.remove('hidden');
+        }
+
+        function cancelEditCard() {
+            document.getElementById('editing-card-id').value = "";
+            document.getElementById('card-form').reset();
+            renderRateInputs({});
+            document.getElementById('card-form-title').innerHTML = `<span>💳</span> Add / Manage Cards`;
+            document.getElementById('card-submit-btn').textContent = "Save Card";
+            document.getElementById('cancel-edit-btn').classList.add('hidden');
+        }
+
+        document.getElementById('expense-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const editingTxId = document.getElementById('editing-tx-id').value;
+            const date = document.getElementById('exp-date').value;
+            const type = document.getElementById('exp-type').value;
+            const desc = document.getElementById('exp-desc').value;
+            const amount = parseFloat(document.getElementById('exp-amount').value) || 0;
+            const category = document.getElementById('exp-category').value;
+            const serviceCharge = parseFloat(document.getElementById('exp-service').value) || 0;
+            const cashback = type === 'Repaid' ? 0 : (parseFloat(document.getElementById('exp-cashback').value) || 0);
+            const cardId = document.getElementById('exp-card').value;
+
+            const selectedCard = cards.find(c => c.id === cardId);
+
+            if (selectedCard && (type === 'Purchase' || type === 'Cash Withdrawal')) {
+                const maxAllowedSpend = (selectedCard.availableLimit || 0) * 0.97;
+                const monthKey = date ? date.substring(0, 7) : new Date().toISOString().substring(0, 7);
+                
+                const currentMonthCardSpend = transactions
+                    .filter(t => t.id !== editingTxId &&
+                                 t.cardName.trim().toLowerCase() === selectedCard.name.trim().toLowerCase() && 
+                                 t.date && t.date.startsWith(monthKey) && 
+                                 (t.type === 'Purchase' || t.type === 'Cash Withdrawal'))
+                    .reduce((sum, t) => sum + (parseFloat(t.amount) || 0), 0);
+
+                if (currentMonthCardSpend + amount > maxAllowedSpend) {
+                    const proceed = confirm(`Warning: This transaction pushes ${selectedCard.name}'s monthly spend past the 97% target limit (AED ${maxAllowedSpend.toFixed(2)}). Do you still want to proceed?`);
+                    if (!proceed) return;
+                }
+            }
+
+            const existingTx = editingTxId ? transactions.find(t => t.id === editingTxId) : null;
+
+            const txObj = {
+                id: editingTxId || Date.now().toString(),
+                date,
+                cardName: selectedCard ? selectedCard.name : 'Unknown',
+                cardId: selectedCard ? selectedCard.id : undefined,
+                type,
+                desc,
+                category,
+                amount,
+                serviceCharge,
+                cashback,
+                notes: existingTx ? (existingTx.notes || '') : '' // form has no Notes field yet, so preserve what was already there
+            };
+
+            if (editingTxId) {
+                const idx = transactions.findIndex(t => t.id === editingTxId);
+                if (idx !== -1) transactions[idx] = txObj;
+            } else {
+                transactions.unshift(txObj);
+            }
+
+            await saveTransactionToDB(txObj);
+            closeTxModal();
+        });
+
+        function resolveCardForTransaction(tx) {
+            if (tx.cardId) {
+                const byId = cards.find(c => c.id === tx.cardId);
+                if (byId) return byId;
+            }
+            // Legacy fallback for transactions saved before cardId existed
+            return cards.find(c => c.name.trim().toLowerCase() === tx.cardName.trim().toLowerCase());
+        }
+
+        function editTransaction(id) {
+            const tx = transactions.find(t => t.id === id);
+            if (!tx) return;
+
+            document.getElementById('editing-tx-id').value = tx.id;
+            document.getElementById('exp-date').value = tx.date;
+            document.getElementById('exp-type').value = tx.type;
+            document.getElementById('exp-desc').value = tx.desc;
+            document.getElementById('exp-amount').value = tx.amount || '';
+            document.getElementById('exp-service').value = tx.serviceCharge || '';
+
+            const cardMatch = resolveCardForTransaction(tx);
+            if (cardMatch) {
+                document.getElementById('exp-card').value = cardMatch.id;
+            }
+
+            syncCategoryState(tx.type);
+            document.getElementById('exp-category').value = tx.category || '';
+            document.getElementById('exp-cashback').value = tx.cashback || '0.00';
+
+            document.getElementById('exp-form-title').innerHTML = `<span>✏️</span> Edit Transaction`;
+            document.getElementById('tx-submit-btn').textContent = "Update Transaction";
+            
+            openTxModal();
+        }
+
+        function duplicateTransaction(id) {
+            const tx = transactions.find(t => t.id === id);
+            if (!tx) return;
+
+            document.getElementById('editing-tx-id').value = ""; // blank = this creates a NEW transaction, not an edit
+            document.getElementById('exp-date').value = new Date().toISOString().slice(0, 10);
+            document.getElementById('exp-type').value = tx.type;
+            document.getElementById('exp-desc').value = tx.desc;
+            document.getElementById('exp-amount').value = tx.amount || '';
+            document.getElementById('exp-service').value = tx.serviceCharge || '';
+
+            const cardMatch = resolveCardForTransaction(tx);
+            if (cardMatch) {
+                document.getElementById('exp-card').value = cardMatch.id;
+            }
+
+            syncCategoryState(tx.type);
+            document.getElementById('exp-category').value = tx.category || '';
+            calculateDynamicCashback(); // recompute cashback for today's rates rather than copying the old value
+
+            document.getElementById('exp-form-title').innerHTML = `<span>↻</span> Repeat Transaction`;
+            document.getElementById('tx-submit-btn').textContent = "Log Transaction";
+
+            openTxModal();
+        }
+
+        async function deleteTransaction(id) {
+            if (confirm('Are you sure you want to delete this transaction entry?')) {
+                await deleteTransactionFromDB(id);
+                if (document.getElementById('editing-tx-id').value === id) {
+                    cancelEditTransaction();
+                }
+                render();
+            }
+        }
+
+        async function deleteCard(id) {
+            const card = cards.find(c => c.id === id);
+            const linkedCount = card ? transactions.filter(t => (t.cardId ? t.cardId === card.id : t.cardName.trim().toLowerCase() === card.name.trim().toLowerCase())).length : 0;
+
+            const message = linkedCount > 0
+                ? `This card has ${linkedCount} transaction(s) logged against it. Deleting it won't delete those transactions, but they'll show "${card.name}" as an orphaned card name with no rates to calculate against. Delete anyway?`
+                : 'Are you sure you want to delete this card?';
+
+            if (confirm(message)) {
+                await deleteCardFromDB(id);
+                render();
+            }
+        }
+
+        // ---- BACKUP: EXPORT / IMPORT (independent of localStorage vs Supabase) ----
+        function csvEscape(value) {
+            const str = value === null || value === undefined ? '' : String(value);
+            if (/[",\n]/.test(str)) {
+                return '"' + str.replace(/"/g, '""') + '"';
+            }
+            return str;
+        }
+
+        function exportFilteredCsv() {
+            const filtered = transactions.filter(transactionMatchesFilters);
+            if (filtered.length === 0) {
+                alert('No transactions match the current filter — nothing to export.');
+                return;
+            }
+
+            const headers = ['Date', 'Card', 'Type', 'Description', 'Category', 'Amount (AED)', 'Service Charge (AED)', 'Cashback (AED)', 'Notes'];
+            const rows = filtered.map(t => [
+                t.date, t.cardName, t.type, t.desc, t.category || '', t.amount, t.serviceCharge || 0, t.cashback || 0, t.notes || ''
+            ]);
+
+            const csvContent = [headers, ...rows].map(row => row.map(csvEscape).join(',')).join('\n');
+            const blob = new Blob([csvContent], { type: 'text/csv' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `cashback-tracker-filtered-${new Date().toISOString().slice(0, 10)}.csv`;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            URL.revokeObjectURL(url);
+        }
+
+        function exportBackup() {
+            const backup = {
+                exportedAt: new Date().toISOString(),
+                cards,
+                transactions
+            };
+            const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `cashback-tracker-backup-${new Date().toISOString().slice(0, 10)}.json`;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            URL.revokeObjectURL(url);
+        }
+
+        document.getElementById('backup-file-input').addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = async (evt) => {
+                let parsed;
+                try {
+                    parsed = JSON.parse(evt.target.result);
+                } catch (err) {
+                    alert('That file is not valid JSON — please choose a backup exported from this app.');
+                    e.target.value = '';
+                    return;
+                }
+
+                if (!Array.isArray(parsed.cards) || !Array.isArray(parsed.transactions)) {
+                    alert('This file does not look like a Cashback Tracker backup (missing cards/transactions arrays).');
+                    e.target.value = '';
+                    return;
+                }
+
+                if (!confirm(`This backup has ${parsed.cards.length} card(s) and ${parsed.transactions.length} transaction(s). Importing will ADD to what you already have (duplicates possible if you import the same backup twice). Continue?`)) {
+                    e.target.value = '';
+                    return;
+                }
+
+                for (const c of parsed.cards) {
+                    if (!cards.some(existing => existing.id === c.id)) {
+                        cards.push(c);
+                        await saveCardToDB(c);
+                    }
+                }
+                for (const t of parsed.transactions) {
+                    if (!transactions.some(existing => existing.id === t.id)) {
+                        transactions.push(t);
+                        await saveTransactionToDB(t);
+                    }
+                }
+
+                alert('Backup imported.');
+                e.target.value = '';
+                render();
+            };
+            reader.readAsText(file);
+        });
+
+        async function clearAllData() {
+            if (confirm('Clear all stored cards and transaction history?')) {
+                if (_supabase) {
+                    // Once RLS is enabled with the accompanying policies, these
+                    // deletes are restricted to rows where user_id = auth.uid(),
+                    // so this only ever clears the signed-in user's own data.
+                    await _supabase.from('transactions').delete().neq('id', '0');
+                    await _supabase.from('cards').delete().neq('id', '0');
+                }
+                localStorage.clear();
+                cards = [];
+                transactions = [];
+                activeCardFilter = 'ALL';
+                selectedCategories = [];
+                selectedMonths = [];
+                searchQuery = '';
+                const searchInput = document.getElementById('tx-search-input');
+                if (searchInput) searchInput.value = '';
+                render();
+            }
+        }
+
+        function bestRateForCategory(category) {
+            if (cards.length === 0) return 0;
+            const cat = category || 'All Other Spend';
+            return Math.max(...cards.map(c => {
+                if (!c.rates) return 0;
+                return c.rates[cat] !== undefined ? c.rates[cat] : (c.rates['All Other Spend'] || 0);
+            }));
+        }
+
+        function recommendBestCard() {
+            const cat = document.getElementById('rec-category').value;
+            const resultDiv = document.getElementById('recommendation-result');
+
+            if (cards.length === 0) {
+                resultDiv.innerHTML = `<span class="text-slate-400 dark:text-slate-500">Add cards above to calculate choices.</span>`;
+                return;
+            }
+
+            const ranked = cards
+                .map(card => ({
+                    name: card.name,
+                    rate: card.rates && card.rates[cat] !== undefined ? card.rates[cat] : (card.rates ? card.rates['All Other Spend'] : 0)
+                }))
+                .sort((a, b) => b.rate - a.rate);
+
+            const best = ranked[0];
+            const rowsHtml = ranked.map((c, i) => `
+                <div class="flex justify-between items-center py-1 ${i === 0 ? 'font-bold text-indigo-700' : 'text-slate-500 dark:text-slate-400'}">
+                    <span>${i === 0 ? '🏆 ' : ''}${escapeHtml(c.name)}</span>
+                    <span>${c.rate}%</span>
+                </div>`).join('');
+
+            resultDiv.innerHTML = `
+                <div class="mb-2">Use <strong class="text-indigo-600">${escapeHtml(best.name)}</strong> for <span class="font-bold text-emerald-600">${best.rate}% cashback</span> on ${cat}.</div>
+                <div class="border-t border-indigo-100 dark:border-indigo-800 pt-2 text-xs">${rowsHtml}</div>
+                <div class="text-[10px] text-slate-400 dark:text-slate-500 mt-2">Ranked by the rate you entered for this category on each card — caps or minimum spend rules aren't tracked yet, so double-check those against your actual card terms.</div>
+            `;
+        }
+
+        function updateCardDropdowns() {
+            const select = document.getElementById('exp-card');
+            if (cards.length === 0) {
+                select.innerHTML = `<option value="">No cards available</option>`;
+                return;
+            }
+            select.innerHTML = cards.map(c => `<option value="${c.id}">${escapeHtml(c.name)}</option>`).join('');
+        }
+
+        function renderCardsList() {
+            const container = document.getElementById('cards-list');
+            const totalEl = document.getElementById('total-outstanding');
+            const totalLimitEl = document.getElementById('total-limit');
+            if (cards.length === 0) {
+                container.innerHTML = `<p class="text-xs text-slate-400 dark:text-slate-500 col-span-full">No cards configured.</p>`;
+                totalEl.innerHTML = '';
+                totalLimitEl.innerHTML = '';
+                return;
+            }
+
+            const todayKey = localDateKey();
+            const currentMonthKey = todayKey.substring(0, 7);
+            const currentMonthLabel = monthLabel(currentMonthKey);
+            const creditMonthLabel = monthLabel(nextMonthKey(currentMonthKey));
+
+            let grandOutstanding = 0;
+            let grandPending = 0;
+
+            const calcRow = (label, value, sign, cls = 'text-slate-700 dark:text-slate-300') => `
+                <div class="flex justify-between">
+                    <span class="text-slate-500 dark:text-slate-400">${label}</span>
+                    <span class="font-medium ${cls}">${sign} ${formatAED(value)}</span>
+                </div>`;
+
+            container.innerHTML = cards.map(c => {
+                const totalLimit = Number(c.availableLimit) || 0;
+                const targetLimit = totalLimit * 0.97;
+
+                const cardTx = transactions.filter(t => t.cardName.trim().toLowerCase() === c.name.trim().toLowerCase());
+
+                const currentMonthSpend = cardTx
+                    .filter(t => t.date && t.date.startsWith(currentMonthKey) &&
+                                 (t.type === 'Purchase' || t.type === 'Cash Withdrawal'))
+                    .reduce((sum, t) => sum + (parseFloat(t.amount) || 0), 0);
+
+                const percentage = targetLimit > 0 ? Math.min(Math.round((currentMonthSpend / targetLimit) * 100), 100) : 0;
+                const rawPercentageOfTotal = totalLimit > 0 ? (currentMonthSpend / totalLimit) * 100 : 0;
+
+                let barColor = 'bg-emerald-500';
+                if (rawPercentageOfTotal >= 90 && rawPercentageOfTotal < 97) {
+                    barColor = 'bg-amber-500';
+                } else if (rawPercentageOfTotal >= 97) {
+                    barColor = 'bg-red-500';
+                }
+
+                const ob = calculateOutstanding(cardTx, todayKey);
+                const dateInfo = getCardDateInfo(c);
+                grandOutstanding += ob.outstanding;
+                grandPending += ob.cashbackPending;
+
+                const obClass = ob.outstanding < 0 ? 'text-emerald-600' : 'text-slate-900 dark:text-slate-100';
+                const obSuffix = ob.outstanding < 0 ? ' (credit)' : '';
+
+                const pendingHtml = ob.cashbackPending > 0 ? `
+                    <div class="flex justify-between items-center rounded-md bg-emerald-50 dark:bg-emerald-950 px-2 py-1.5 text-[11px]">
+                        <span class="text-emerald-700 dark:text-emerald-400">${currentMonthLabel} cashback · credits in ${creditMonthLabel}</span>
+                        <span class="font-semibold text-emerald-700 dark:text-emerald-400">− ${formatAED(ob.cashbackPending)}</span>
+                    </div>
+                    <div class="flex justify-between text-[11px]">
+                        <span class="text-slate-500 dark:text-slate-400">Outstanding after ${creditMonthLabel} credit</span>
+                        <span class="font-semibold text-slate-800 dark:text-slate-200">AED ${formatAED(ob.afterPending)}</span>
+                    </div>` : '';
+
+                return `
+                    <div class="p-4 rounded-xl border text-xs space-y-3 shadow-sm ${dateInfo.wrapperClass}">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <span class="font-bold text-slate-900 dark:text-slate-100 text-sm block">${escapeHtml(c.name)}</span>
+                                <span class="text-slate-500 dark:text-slate-400 text-[11px]">Limit: AED ${totalLimit.toLocaleString()} (97% Cap: AED ${targetLimit.toLocaleString()})</span>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <button onclick="editCard('${c.id}')" class="text-indigo-600 hover:text-indigo-800 font-semibold">Edit</button>
+                                <button onclick="deleteCard('${c.id}')" class="text-red-500 hover:text-red-700 font-bold">✕</button>
+                            </div>
+                        </div>
+                        ${dateInfo.rowHtml}
+                        <div class="space-y-1">
+                            <div class="flex justify-between text-[11px] font-medium">
+                                <span class="text-slate-600 dark:text-slate-400">Current Spend: AED ${currentMonthSpend.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+                                <span class="${rawPercentageOfTotal >= 97 ? 'text-red-600 font-bold' : 'text-slate-500 dark:text-slate-400'}">${rawPercentageOfTotal.toFixed(1)}% of limit</span>
+                            </div>
+                            <div class="w-full bg-slate-200 dark:bg-slate-600 rounded-full h-2 overflow-hidden">
+                                <div class="${barColor} h-2 rounded-full transition-all duration-300" style="width: ${percentage}%"></div>
+                            </div>
+                        </div>
+                        <div class="pt-3 border-t border-slate-200 dark:border-slate-600 space-y-2">
+                            <div class="flex justify-between items-baseline">
+                                <span class="text-[11px] font-semibold uppercase text-slate-500 dark:text-slate-400">Outstanding Balance · Today</span>
+                                <span class="text-base font-bold ${obClass}">AED ${formatAED(ob.outstanding)}<span class="text-[10px] font-medium">${obSuffix}</span></span>
+                            </div>
+                            <details ${openCalcCards.has(c.id) ? 'open' : ''} ontoggle="setCalcOpen('${c.id}', this.open)">
+                                <summary class="cursor-pointer text-[11px] text-indigo-600 hover:text-indigo-800 font-medium select-none">How it's calculated</summary>
+                                <div class="mt-2 space-y-1 text-[11px]">
+                                    ${calcRow('Purchases', ob.purchases, '+')}
+                                    ${calcRow('Cash withdrawals', ob.withdrawals, '+')}
+                                    ${INCLUDE_FEES_IN_OUTSTANDING ? calcRow('Service fees', ob.fees, '+') : ''}
+                                    ${calcRow('Repaid', ob.repaid, '−', 'text-emerald-600')}
+                                    ${calcRow(`Cashback already credited (before ${currentMonthLabel})`, ob.cashbackCredited, '−', 'text-emerald-600')}
+                                    <div class="flex justify-between pt-1 mt-1 border-t border-slate-200 dark:border-slate-600 font-semibold text-slate-800 dark:text-slate-200">
+                                        <span>Outstanding today</span>
+                                        <span>= ${formatAED(ob.outstanding)}</span>
+                                    </div>
+                                </div>
+                            </details>
+                            ${pendingHtml}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            const grandLimit = cards.reduce((sum, c) => sum + (Number(c.availableLimit) || 0), 0);
+            totalLimitEl.innerHTML = `
+                <p class="text-[10px] font-semibold uppercase text-slate-500 dark:text-slate-400">Total Card Limit · All Cards</p>
+                <p class="text-xl font-bold text-slate-900 dark:text-slate-100">AED ${formatAED(grandLimit)}</p>
+            `;
+
+            const totalClass = grandOutstanding < 0 ? 'text-emerald-600' : 'text-slate-900 dark:text-slate-100';
+            totalEl.innerHTML = `
+                <p class="text-[10px] font-semibold uppercase text-slate-500 dark:text-slate-400">Total Outstanding · All Cards</p>
+                <p class="text-xl font-bold ${totalClass}">AED ${formatAED(grandOutstanding)}</p>
+                ${grandPending > 0 ? `<p class="text-[10px] text-emerald-600 dark:text-emerald-500">${formatAED(grandPending)} cashback credits in ${creditMonthLabel}</p>` : ''}
+            `;
+        }
+
+        function renderCardFilters() {
+            const container = document.getElementById('card-filter-container');
+            const categoryWrapper = document.getElementById('category-filter-wrapper');
+            const monthWrapper = document.getElementById('month-filter-container');
+            const uniqueCardNames = Array.from(new Set(transactions.map(t => t.cardName.trim()))).filter(Boolean);
+
+            let html = `
+                <button onclick="setCardFilter('ALL')" class="px-3 py-1.5 text-xs font-semibold rounded-lg transition whitespace-nowrap ${activeCardFilter === 'ALL' ? 'bg-indigo-600 text-white shadow-sm' : 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-600'}">
+                    All Cards
+                </button>
+            `;
+
+            uniqueCardNames.forEach(cardName => {
+                const isActive = activeCardFilter === cardName;
+                html += `
+                    <button onclick="setCardFilter('${cardName.replace(/'/g, "\\'")}')" class="px-3 py-1.5 text-xs font-semibold rounded-lg transition whitespace-nowrap ${isActive ? 'bg-indigo-600 text-white shadow-sm' : 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-600'}">
+                        💳 ${escapeHtml(cardName)}
+                    </button>
+                `;
+            });
+
+            container.innerHTML = html;
+
+            if (activeCardFilter === 'ALL') {
+                categoryWrapper.classList.add('hidden');
+                selectedCategories = [];
+            } else {
+                categoryWrapper.classList.remove('hidden');
+                const cardCategories = Array.from(new Set(
+                    transactions
+                        .filter(t => t.cardName.trim() === activeCardFilter && t.category)
+                        .map(t => t.category.trim())
+                ));
+
+                const allCatsSelected = selectedCategories.length === 0;
+                let catHtml = `
+                    <button onclick="clearCategoryFilter()" class="px-2.5 py-1 text-[11px] font-medium rounded-md transition whitespace-nowrap ${allCatsSelected ? 'bg-indigo-500 dark:bg-indigo-600 text-white shadow-sm' : 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-600'}">
+                        All Categories
+                    </button>
+                `;
+
+                cardCategories.forEach(cat => {
+                    const isCatActive = selectedCategories.includes(cat);
+                    catHtml += `
+                        <button onclick="toggleCategoryFilter('${cat.replace(/'/g, "\\'")}')" class="px-2.5 py-1 text-[11px] font-medium rounded-md transition whitespace-nowrap ${isCatActive ? 'bg-indigo-500 dark:bg-indigo-600 text-white shadow-sm' : 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-600'}">
+                            ${isCatActive ? '✓ ' : '🏷️ '}${cat}
+                        </button>
+                    `;
+                });
+
+                categoryWrapper.innerHTML = catHtml;
+            }
+
+            const uniqueMonths = Array.from(new Set(
+                transactions
+                    .filter(t => {
+                        const matchesCard = (activeCardFilter === 'ALL' || t.cardName.trim() === activeCardFilter);
+                        const matchesCategory = (selectedCategories.length === 0 || (t.category && selectedCategories.includes(t.category.trim())));
+                        return matchesCard && matchesCategory;
+                    })
+                    .map(t => t.date ? t.date.substring(0, 7) : '')
+                    .filter(Boolean)
+            )).sort().reverse(); // newest first
+
+            const allSelected = selectedMonths.length === 0;
+
+            let monthHtml = `
+                <button onclick="clearMonthFilter()" class="px-2.5 py-1 text-[11px] font-medium rounded-md transition whitespace-nowrap ${allSelected ? 'bg-indigo-500 dark:bg-indigo-600 text-white shadow-sm' : 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-600'}">
+                    All Months
+                </button>
+            `;
+
+            if (uniqueMonths.length >= 2) {
+                monthHtml += `
+                    <button onclick="selectLastNMonths(2)" class="px-2.5 py-1 text-[11px] font-medium rounded-md transition whitespace-nowrap bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-600">
+                        Last 2 Months
+                    </button>`;
+            }
+            if (uniqueMonths.length >= 3) {
+                monthHtml += `
+                    <button onclick="selectLastNMonths(3)" class="px-2.5 py-1 text-[11px] font-medium rounded-md transition whitespace-nowrap bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-600">
+                        Last 3 Months
+                    </button>`;
+            }
+
+            uniqueMonths.forEach(m => {
+                const isMonthActive = selectedMonths.includes(m);
+                monthHtml += `
+                    <button onclick="toggleMonthFilter('${m}')" class="px-2.5 py-1 text-[11px] font-medium rounded-md transition whitespace-nowrap ${isMonthActive ? 'bg-indigo-500 dark:bg-indigo-600 text-white shadow-sm' : 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-600'}">
+                        ${isMonthActive ? '✓ ' : '📅 '}${m}
+                    </button>
+                `;
+            });
+
+            monthWrapper.innerHTML = monthHtml;
+
+            let filterText = `Filter: ${activeCardFilter === 'ALL' ? 'All Cards' : activeCardFilter}`;
+            if (activeCardFilter !== 'ALL' && selectedCategories.length > 0) {
+                filterText += ` → ${[...selectedCategories].sort().join(', ')}`;
+            }
+            if (selectedMonths.length > 0) {
+                filterText += ` (${[...selectedMonths].sort().join(', ')})`;
+            }
+            if (activeTypeFilter !== 'ALL') {
+                filterText += ` · ${activeTypeFilter}`;
+            }
+            document.getElementById('active-filter-label').textContent = filterText;
+        }
+
+        function setCardFilter(cardName) {
+            activeCardFilter = cardName;
+            selectedCategories = [];
+            renderCardFilters();
+            renderTransactionsAndMetrics();
+        }
+
+        function toggleCategoryFilter(categoryName) {
+            if (selectedCategories.includes(categoryName)) {
+                selectedCategories = selectedCategories.filter(c => c !== categoryName);
+            } else {
+                selectedCategories = [...selectedCategories, categoryName];
+            }
+            renderCardFilters();
+            renderTransactionsAndMetrics();
+        }
+
+        function clearCategoryFilter() {
+            selectedCategories = [];
+            renderCardFilters();
+            renderTransactionsAndMetrics();
+        }
+
+        function toggleMonthFilter(month) {
+            if (selectedMonths.includes(month)) {
+                selectedMonths = selectedMonths.filter(m => m !== month);
+            } else {
+                selectedMonths = [...selectedMonths, month];
+            }
+            renderCardFilters();
+            renderTransactionsAndMetrics();
+        }
+
+        function clearMonthFilter() {
+            selectedMonths = [];
+            renderCardFilters();
+            renderTransactionsAndMetrics();
+        }
+
+        function selectLastNMonths(n) {
+            const availableMonths = Array.from(new Set(
+                transactions
+                    .filter(t => {
+                        const matchesCard = (activeCardFilter === 'ALL' || t.cardName.trim() === activeCardFilter);
+                        const matchesCategory = (selectedCategories.length === 0 || (t.category && selectedCategories.includes(t.category.trim())));
+                        return matchesCard && matchesCategory;
+                    })
+                    .map(t => t.date ? t.date.substring(0, 7) : '')
+                    .filter(Boolean)
+            )).sort().reverse(); // newest first
+
+            selectedMonths = availableMonths.slice(0, n);
+            renderCardFilters();
+            renderTransactionsAndMetrics();
+        }
+
+        function renderTransactionsAndMetrics() {
+            const tbody = document.getElementById('tx-table-body');
+            document.getElementById('tx-count').textContent = `${transactions.length} entries`;
+
+            if (transactions.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="10" class="p-6 text-center text-xs text-slate-400 dark:text-slate-500">No transactions recorded yet.</td></tr>`;
+                document.getElementById('metric-spend').textContent = '0.00';
+                document.getElementById('metric-cashback').textContent = '0.00';
+                document.getElementById('metric-return').textContent = '0.00%';
+                document.getElementById('metric-missed').textContent = '0.00';
+                renderDonutCharts({}, {});
+                renderMonthlyChart({});
+                renderSummaryTable();
+                renderCardsList();
+                return;
+            }
+
+
+
+            const sortedTransactions = [...transactions]
+                .filter(transactionMatchesFilters)
+                .sort((a, b) => {
+                    const dateA = new Date(a.date || '1970-01-01');
+                    const dateB = new Date(b.date || '1970-01-01');
+                    if (dateB - dateA !== 0) return dateB - dateA;
+                    return String(b.id).localeCompare(String(a.id));
+                });
+
+            if (sortedTransactions.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="10" class="p-6 text-center text-xs text-slate-400 dark:text-slate-500">No transactions match the current filter.</td></tr>`;
+            }
+
+            let totalSpend = 0;
+            let totalCashback = 0;
+            let totalMissed = 0;
+            const categoryMap = {};
+            const cardMap = {};
+            const monthlyData = {};
+
+            const rowsHtml = sortedTransactions.map(t => {
+                const amount = parseFloat(t.amount) || 0;
+                const cashback = parseFloat(t.cashback) || 0;
+                const fee = parseFloat(t.serviceCharge) || 0;
+                let netReward = (t.type === 'Repaid') ? 0 : (cashback - fee);
+
+                {
+                    if (t.type === 'Purchase' || t.type === 'Cash Withdrawal') {
+                        totalSpend += amount;
+
+                        // "Left on the table": what the best available card's rate would have
+                        // earned on this same purchase vs. what was actually earned. This is an
+                        // approximation from amount/cashback, not a tracked per-transaction rate,
+                        // so treat it as directional rather than exact.
+                        const actualRate = amount > 0 ? (cashback / amount) * 100 : 0;
+                        const best = bestRateForCategory(t.category);
+                        if (best > actualRate) {
+                            totalMissed += amount * (best - actualRate) / 100;
+                        }
+                    }
+                    totalCashback += cashback;
+
+                    const displayCategory = t.category ? t.category : 'Uncategorized';
+                    if (cashback > 0) {
+                        categoryMap[displayCategory] = (categoryMap[displayCategory] || 0) + cashback;
+                    }
+
+                    const displayCard = t.cardName ? t.cardName.trim() : 'Unknown Card';
+                    if (cashback > 0) {
+                        cardMap[displayCard] = (cardMap[displayCard] || 0) + cashback;
+                    }
+
+                    const monthKey = t.date ? t.date.substring(0, 7) : 'Unknown';
+                    if (!monthlyData[monthKey]) {
+                        monthlyData[monthKey] = { purchase: 0, withdrawal: 0, repaid: 0, fee: 0, cashback: 0, netReward: 0 };
+                    }
+
+                    if (t.type === 'Purchase') monthlyData[monthKey].purchase += amount;
+                    if (t.type === 'Cash Withdrawal') monthlyData[monthKey].withdrawal += amount;
+                    if (t.type === 'Repaid') monthlyData[monthKey].repaid += amount;
+                    monthlyData[monthKey].fee += fee;
+                    monthlyData[monthKey].cashback += cashback;
+                    monthlyData[monthKey].netReward += netReward;
+                }
+
+                const netClass = netReward < 0 ? 'text-red-600 font-bold' : 'text-emerald-600 font-bold';
+
+                return `
+                    <tr class="hover:bg-slate-50 dark:bg-slate-900 transition">
+                        <td class="py-3.5 px-6 text-slate-500 dark:text-slate-400 whitespace-nowrap">${t.date}</td>
+                        <td class="py-3.5 px-6 font-medium text-slate-800 dark:text-slate-200 whitespace-nowrap">${t.cardName}</td>
+                        <td class="py-3.5 px-6"><span class="bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400 px-2.5 py-1 rounded text-xs whitespace-nowrap">${t.type}</span></td>
+                        <td class="py-3.5 px-6 text-slate-800 dark:text-slate-200 font-medium">${t.desc}</td>
+                        <td class="py-3.5 px-6 text-slate-600 dark:text-slate-400 whitespace-nowrap">${t.category ? t.category : '-'}</td>
+                        <td class="py-3.5 px-6 text-right text-slate-900 dark:text-slate-100 font-medium whitespace-nowrap">${amount ? amount.toFixed(2) : '-'}</td>
+                        <td class="py-3.5 px-6 text-right text-amber-600 font-medium whitespace-nowrap">${fee ? fee.toFixed(2) : '-'}</td>
+                        <td class="py-3.5 px-6 text-right text-emerald-600 font-semibold whitespace-nowrap">${cashback ? cashback.toFixed(2) : '-'}</td>
+                        <td class="py-3.5 px-6 text-right ${netClass} whitespace-nowrap">${netReward.toFixed(2)}</td>
+                        <td class="py-3.5 px-6 text-center whitespace-nowrap space-x-1">
+                            <button onclick="duplicateTransaction('${t.id}')" title="Repeat this transaction with today's date" class="text-emerald-600 hover:text-emerald-800 font-semibold px-2 py-1 rounded hover:bg-emerald-50 dark:hover:bg-emerald-950 transition">↻</button>
+                            <button onclick="editTransaction('${t.id}')" class="text-indigo-600 hover:text-indigo-800 font-semibold px-2 py-1 rounded hover:bg-indigo-50 dark:bg-indigo-950 transition">Edit</button>
+                            <button onclick="deleteTransaction('${t.id}')" class="text-red-500 hover:text-red-700 font-semibold px-2 py-1 rounded hover:bg-red-50 transition">Delete</button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+
+            if (sortedTransactions.length > 0) {
+                tbody.innerHTML = rowsHtml;
+            }
+
+            const effRate = totalSpend > 0 ? ((totalCashback / totalSpend) * 100).toFixed(2) : '0.00';
+
+            document.getElementById('metric-spend').textContent = `${totalSpend.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+            document.getElementById('metric-cashback').textContent = `${totalCashback.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+            document.getElementById('metric-return').textContent = `${effRate}%`;
+            document.getElementById('metric-missed').textContent = `${totalMissed.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
+            renderDonutCharts(categoryMap, cardMap);
+            renderMonthlyChart(monthlyData);
+            renderSummaryTable();
+            renderCardsList();
+        }
+
+        function renderMonthlyChart(monthlyData) {
+            const ctx = document.getElementById('monthlyChart').getContext('2d');
+            const months = Object.keys(monthlyData).sort();
+
+            const purchaseData = months.map(m => monthlyData[m].purchase);
+            const withdrawalData = months.map(m => monthlyData[m].withdrawal);
+            const repaidData = months.map(m => monthlyData[m].repaid);
+            const feeData = months.map(m => monthlyData[m].fee);
+            const cashbackData = months.map(m => monthlyData[m].cashback);
+            const netRewardData = months.map(m => monthlyData[m].netReward);
+            // Effective rate trend: is the card mix actually earning more over time, or just spending more?
+            const effRateData = months.map(m => {
+                const spend = monthlyData[m].purchase + monthlyData[m].withdrawal;
+                return spend > 0 ? Number(((monthlyData[m].cashback / spend) * 100).toFixed(2)) : 0;
+            });
+
+            if (monthlyChartInstance) monthlyChartInstance.destroy();
+
+            monthlyChartInstance = new Chart(ctx, {
+                data: {
+                    labels: months.length > 0 ? months : ['No Data'],
+                    datasets: [
+                        { type: 'bar', label: 'Purchase (AED)', data: purchaseData, backgroundColor: '#3B82F6', yAxisID: 'y' },
+                        { type: 'bar', label: 'Cash Withdrawal (AED)', data: withdrawalData, backgroundColor: '#F59E0B', yAxisID: 'y' },
+                        { type: 'bar', label: 'Repaid (AED)', data: repaidData, backgroundColor: '#10B981', yAxisID: 'y' },
+                        { type: 'bar', label: 'Service Fees (AED)', data: feeData, backgroundColor: '#EF4444', yAxisID: 'y' },
+                        { type: 'bar', label: 'Cashback (AED)', data: cashbackData, backgroundColor: '#059669', yAxisID: 'y' },
+                        { type: 'bar', label: 'Net Rewards (AED)', data: netRewardData, backgroundColor: '#6366F1', yAxisID: 'y' },
+                        { type: 'line', label: 'Effective Rate (%)', data: effRateData, borderColor: '#DB2777', backgroundColor: '#DB2777', yAxisID: 'y1', tension: 0.3, pointRadius: 3 }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'top', labels: { boxWidth: 12, font: { size: 11 } } },
+                        tooltip: { mode: 'index', intersect: false }
+                    },
+                    scales: {
+                        y: { beginAtZero: true, position: 'left', title: { display: true, text: 'AED' } },
+                        y1: { beginAtZero: true, position: 'right', grid: { drawOnChartArea: false }, title: { display: true, text: 'Effective Rate (%)' } },
+                        x: { grid: { display: false } }
+                    }
+                }
+            });
+        }
+
+        function updateSummaryNote(filteredTx, currentMonth) {
+            const noteEl = document.getElementById('summary-cashback-note');
+            if (!noteEl) return;
+            const pending = filteredTx
+                .filter(t => (t.date || '').substring(0, 7) >= currentMonth)
+                .reduce((sum, t) => sum + (parseFloat(t.cashback) || 0), 0);
+            if (pending > 0) {
+                noteEl.textContent = `Remaining Pay excludes AED ${formatAED(pending)} of cashback earned in ${monthLabel(currentMonth)} — it is credited on the ${monthLabel(nextMonthKey(currentMonth))} statement.`;
+                noteEl.classList.remove('hidden');
+            } else {
+                noteEl.textContent = '';
+                noteEl.classList.add('hidden');
+            }
+        }
+
+        function renderSummaryTable() {
+            const tbody = document.getElementById('monthly-table-body');
+            const titleEl = document.getElementById('summary-table-title');
+            const headerTr = document.getElementById('summary-table-header');
+
+            const filteredTx = transactions.filter(transactionMatchesFilters);
+            const summaryCurrentMonth = localMonthKey();
+            updateSummaryNote(filteredTx, summaryCurrentMonth);
+
+            if (filteredTx.length === 0) {
+                headerTr.innerHTML = `
+                    <th class="py-3 px-6">Summary</th>
+                    <th class="py-3 px-6 text-right">Purchase (AED)</th>
+                    <th class="py-3 px-6 text-right">Cash Withdrawal (AED)</th>
+                    <th class="py-3 px-6 text-right">Repaid (AED)</th>
+                    <th class="py-3 px-6 text-right">Service Charges (AED)</th>
+                    <th class="py-3 px-6 text-right">Cashback (AED)</th>
+                    <th class="py-3 px-6 text-right" title="Purchases + withdrawals − repayments − cashback already credited (cashback from earlier months). This month's cashback is credited next month.">Remaining Pay (AED)</th>
+                    <th class="py-3 px-6 text-right">Net Rewards (AED)</th>
+                `;
+                tbody.innerHTML = `<tr><td colspan="8" class="p-4 text-center text-xs text-slate-400 dark:text-slate-500">No data available for selected filter.</td></tr>`;
+                return;
+            }
+
+            if (activeCardFilter === 'ALL') {
+                titleEl.textContent = 'Summary for All Cards';
+                headerTr.innerHTML = `
+                    <th class="py-3 px-6">Card Name</th>
+                    <th class="py-3 px-6 text-right">Purchase (AED)</th>
+                    <th class="py-3 px-6 text-right">Cash Withdrawal (AED)</th>
+                    <th class="py-3 px-6 text-right">Repaid (AED)</th>
+                    <th class="py-3 px-6 text-right">Service Charges (AED)</th>
+                    <th class="py-3 px-6 text-right">Cashback (AED)</th>
+                    <th class="py-3 px-6 text-right" title="Purchases + withdrawals − repayments − cashback already credited (cashback from earlier months). This month's cashback is credited next month.">Remaining Pay (AED)</th>
+                    <th class="py-3 px-6 text-right">Net Rewards (AED)</th>
+                `;
+
+                const cardAgg = {};
+                filteredTx.forEach(t => {
+                    const cName = t.cardName ? t.cardName.trim() : 'Unknown Card';
+                    if (!cardAgg[cName]) {
+                        cardAgg[cName] = { purchase: 0, withdrawal: 0, repaid: 0, fee: 0, cashback: 0, cashbackCredited: 0, netReward: 0 };
+                    }
+                    const amount = parseFloat(t.amount) || 0;
+                    const cashback = parseFloat(t.cashback) || 0;
+                    const fee = parseFloat(t.serviceCharge) || 0;
+                    const netReward = (t.type === 'Repaid') ? 0 : (cashback - fee);
+
+                    if (t.type === 'Purchase') cardAgg[cName].purchase += amount;
+                    if (t.type === 'Cash Withdrawal') cardAgg[cName].withdrawal += amount;
+                    if (t.type === 'Repaid') cardAgg[cName].repaid += amount;
+                    cardAgg[cName].fee += fee;
+                    cardAgg[cName].cashback += cashback;
+                    if ((t.date || '').substring(0, 7) < summaryCurrentMonth) cardAgg[cName].cashbackCredited += cashback;
+                    cardAgg[cName].netReward += netReward;
+                });
+
+                let totalPurchase = 0;
+                let totalWithdrawal = 0;
+                let totalRepaid = 0;
+                let totalFee = 0;
+                let totalCashback = 0;
+                let totalRemainingPay = 0;
+                let totalNetReward = 0;
+
+                const rowsHtml = Object.keys(cardAgg).sort().map(cName => {
+                    const d = cardAgg[cName];
+                    const remainingPay = (d.purchase + d.withdrawal) - d.repaid - d.cashbackCredited;
+                    
+                    totalPurchase += d.purchase;
+                    totalWithdrawal += d.withdrawal;
+                    totalRepaid += d.repaid;
+                    totalFee += d.fee;
+                    totalCashback += d.cashback;
+                    totalRemainingPay += remainingPay;
+                    totalNetReward += d.netReward;
+
+                    const netClass = d.netReward < 0 ? 'text-red-600 font-bold' : 'text-emerald-600 font-bold';
+                    return `
+                        <tr class="hover:bg-slate-50 dark:bg-slate-900 transition">
+                            <td class="py-3 px-6 font-semibold text-slate-800 dark:text-slate-200">💳 ${cName}</td>
+                            <td class="py-3 px-6 text-right text-slate-700 dark:text-slate-300">${d.purchase.toFixed(2)}</td>
+                            <td class="py-3 px-6 text-right text-amber-600">${d.withdrawal.toFixed(2)}</td>
+                            <td class="py-3 px-6 text-right text-emerald-600 font-medium">${d.repaid.toFixed(2)}</td>
+                            <td class="py-3 px-6 text-right text-red-600">${d.fee.toFixed(2)}</td>
+                            <td class="py-3 px-6 text-right text-emerald-600 font-semibold">${d.cashback.toFixed(2)}</td>
+                            <td class="py-3 px-6 text-right font-semibold text-slate-900 dark:text-slate-100">${remainingPay.toFixed(2)}</td>
+                            <td class="py-3 px-6 text-right ${netClass}">${d.netReward.toFixed(2)}</td>
+                        </tr>
+                    `;
+                }).join('');
+
+                const totalNetClass = totalNetReward < 0 ? 'text-red-600 font-bold' : 'text-emerald-600 font-bold';
+                const totalRowHtml = `
+                    <tr class="bg-slate-100 dark:bg-slate-700 font-bold border-t-2 border-slate-200 dark:border-slate-600">
+                        <td class="py-3 px-6 text-slate-900 dark:text-slate-100">Total</td>
+                        <td class="py-3 px-6 text-right text-slate-900 dark:text-slate-100">${totalPurchase.toFixed(2)}</td>
+                        <td class="py-3 px-6 text-right text-amber-700">${totalWithdrawal.toFixed(2)}</td>
+                        <td class="py-3 px-6 text-right text-emerald-700">${totalRepaid.toFixed(2)}</td>
+                        <td class="py-3 px-6 text-right text-red-700">${totalFee.toFixed(2)}</td>
+                        <td class="py-3 px-6 text-right text-emerald-700">${totalCashback.toFixed(2)}</td>
+                        <td class="py-3 px-6 text-right text-slate-900 dark:text-slate-100">${totalRemainingPay.toFixed(2)}</td>
+                        <td class="py-3 px-6 text-right ${totalNetClass}">${totalNetReward.toFixed(2)}</td>
+                    </tr>
+                `;
+
+                tbody.innerHTML = rowsHtml + totalRowHtml;
+
+            } else {
+                titleEl.textContent = `Summary for ${activeCardFilter}`;
+                headerTr.innerHTML = `
+                    <th class="py-3 px-6">Category</th>
+                    <th class="py-3 px-6 text-right">Purchase (AED)</th>
+                    <th class="py-3 px-6 text-right">Cash Withdrawal (AED)</th>
+                    <th class="py-3 px-6 text-right">Repaid (AED)</th>
+                    <th class="py-3 px-6 text-right">Service Charges (AED)</th>
+                    <th class="py-3 px-6 text-right">Cashback (AED)</th>
+                    <th class="py-3 px-6 text-right" title="Purchases + withdrawals − repayments − cashback already credited (cashback from earlier months). This month's cashback is credited next month.">Remaining Pay (AED)</th>
+                    <th class="py-3 px-6 text-right">Net Rewards (AED)</th>
+                `;
+
+                const catAgg = {};
+                filteredTx.forEach(t => {
+                    const catName = t.category ? t.category.trim() : 'Uncategorized';
+                    if (!catAgg[catName]) {
+                        catAgg[catName] = { purchase: 0, withdrawal: 0, repaid: 0, fee: 0, cashback: 0, cashbackCredited: 0, netReward: 0 };
+                    }
+                    const amount = parseFloat(t.amount) || 0;
+                    const cashback = parseFloat(t.cashback) || 0;
+                    const fee = parseFloat(t.serviceCharge) || 0;
+                    const netReward = (t.type === 'Repaid') ? 0 : (cashback - fee);
+
+                    if (t.type === 'Purchase') catAgg[catName].purchase += amount;
+                    if (t.type === 'Cash Withdrawal') catAgg[catName].withdrawal += amount;
+                    if (t.type === 'Repaid') catAgg[catName].repaid += amount;
+                    catAgg[catName].fee += fee;
+                    catAgg[catName].cashback += cashback;
+                    if ((t.date || '').substring(0, 7) < summaryCurrentMonth) catAgg[catName].cashbackCredited += cashback;
+                    catAgg[catName].netReward += netReward;
+                });
+
+                let totalPurchase = 0;
+                let totalWithdrawal = 0;
+                let totalRepaid = 0;
+                let totalFee = 0;
+                let totalCashback = 0;
+                let totalRemainingPay = 0;
+                let totalNetReward = 0;
+
+                const rowsHtml = Object.keys(catAgg).sort().map(catName => {
+                    const d = catAgg[catName];
+                    const remainingPay = (d.purchase + d.withdrawal) - d.repaid - d.cashbackCredited;
+                    
+                    totalPurchase += d.purchase;
+                    totalWithdrawal += d.withdrawal;
+                    totalRepaid += d.repaid;
+                    totalFee += d.fee;
+                    totalCashback += d.cashback;
+                    totalRemainingPay += remainingPay;
+                    totalNetReward += d.netReward;
+
+                    const netClass = d.netReward < 0 ? 'text-red-600 font-bold' : 'text-emerald-600 font-bold';
+                    return `
+                        <tr class="hover:bg-slate-50 dark:bg-slate-900 transition">
+                            <td class="py-3 px-6 font-semibold text-slate-800 dark:text-slate-200">🏷️ ${catName}</td>
+                            <td class="py-3 px-6 text-right text-slate-700 dark:text-slate-300">${d.purchase.toFixed(2)}</td>
+                            <td class="py-3 px-6 text-right text-amber-600">${d.withdrawal.toFixed(2)}</td>
+                            <td class="py-3 px-6 text-right text-emerald-600 font-medium">${d.repaid.toFixed(2)}</td>
+                            <td class="py-3 px-6 text-right text-red-600">${d.fee.toFixed(2)}</td>
+                            <td class="py-3 px-6 text-right text-emerald-600 font-semibold">${d.cashback.toFixed(2)}</td>
+                            <td class="py-3 px-6 text-right font-semibold text-slate-900 dark:text-slate-100">${remainingPay.toFixed(2)}</td>
+                            <td class="py-3 px-6 text-right ${netClass}">${d.netReward.toFixed(2)}</td>
+                        </tr>
+                    `;
+                }).join('');
+
+                const totalNetClass = totalNetReward < 0 ? 'text-red-600 font-bold' : 'text-emerald-600 font-bold';
+                const totalRowHtml = `
+                    <tr class="bg-slate-100 dark:bg-slate-700 font-bold border-t-2 border-slate-200 dark:border-slate-600">
+                        <td class="py-3 px-6 text-slate-900 dark:text-slate-100">Total</td>
+                        <td class="py-3 px-6 text-right text-slate-900 dark:text-slate-100">${totalPurchase.toFixed(2)}</td>
+                        <td class="py-3 px-6 text-right text-amber-700">${totalWithdrawal.toFixed(2)}</td>
+                        <td class="py-3 px-6 text-right text-emerald-700">${totalRepaid.toFixed(2)}</td>
+                        <td class="py-3 px-6 text-right text-red-700">${totalFee.toFixed(2)}</td>
+                        <td class="py-3 px-6 text-right text-emerald-700">${totalCashback.toFixed(2)}</td>
+                        <td class="py-3 px-6 text-right text-slate-900 dark:text-slate-100">${totalRemainingPay.toFixed(2)}</td>
+                        <td class="py-3 px-6 text-right ${totalNetClass}">${totalNetReward.toFixed(2)}</td>
+                    </tr>
+                `;
+
+                tbody.innerHTML = rowsHtml + totalRowHtml;
+            }
+        }
+
+        function renderDonutCharts(categoryMap, cardMap) {
+            const colors = ['#4F46E5', '#059669', '#3B82F6', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899', '#14B8A6'];
+
+            const catCtx = document.getElementById('categoryDonutChart').getContext('2d');
+            const catLabels = Object.keys(categoryMap);
+            const catData = Object.values(categoryMap);
+
+            if (categoryDonutInstance) categoryDonutInstance.destroy();
+            categoryDonutInstance = new Chart(catCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: catLabels.length > 0 ? catLabels : ['No Data'],
+                    datasets: [{
+                        data: catData.length > 0 ? catData : [1],
+                        backgroundColor: catData.length > 0 ? colors.slice(0, catData.length) : ['#E2E8F0'],
+                        borderWidth: 2,
+                        borderColor: '#ffffff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 10 } } } },
+                    cutout: '65%'
+                }
+            });
+
+            const cardCtx = document.getElementById('cardDonutChart').getContext('2d');
+            const cardLabels = Object.keys(cardMap);
+            const cardData = Object.values(cardMap);
+
+            if (cardDonutInstance) cardDonutInstance.destroy();
+            cardDonutInstance = new Chart(cardCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: cardLabels.length > 0 ? cardLabels : ['No Data'],
+                    datasets: [{
+                        data: cardData.length > 0 ? cardData : [1],
+                        backgroundColor: cardData.length > 0 ? colors.slice(0, cardData.length) : ['#E2E8F0'],
+                        borderWidth: 2,
+                        borderColor: '#ffffff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 10 } } } },
+                    cutout: '65%'
+                }
+            });
+        }
+
+        function render() {
+            renderTypeFilter();
+            renderCardsList();
+            updateCardDropdowns();
+            recommendBestCard();
+            renderCardFilters();
+            renderTransactionsAndMetrics();
+        }
+
+        // If the tab was left open overnight, refresh the due-date colours when you come back to it.
+        document.addEventListener('visibilitychange', () => {
+            if (!document.hidden && cards.length > 0) renderCardsList();
+        });
+
+        function showLoadingError(message) {
+            const overlay = document.getElementById('app-loading-overlay');
+            if (!overlay) return;
+            overlay.classList.remove('hidden');
+            overlay.innerHTML = `
+                <div class="text-center px-6">
+                    <p class="text-3xl mb-2">⚠️</p>
+                    <p class="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">Couldn't load the app</p>
+                    <p class="text-xs text-slate-500 dark:text-slate-400 mb-4 max-w-xs">${message}</p>
+                    <button onclick="location.reload()" class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-medium px-4 py-2 rounded-lg transition">Reload Page</button>
+                </div>
+            `;
+        }
+
+        // Safety net: if loading takes too long, stop spinning silently and say so.
+        const bootWatchdog = setTimeout(() => {
+            const overlay = document.getElementById('app-loading-overlay');
+            if (overlay && !overlay.classList.contains('hidden')) {
+                showLoadingError('This is taking much longer than expected — check your internet connection, or there may be an issue reaching the database. Open the browser console (F12) for details.');
+            }
+        }, 12000);
+
+        const originalHideLoadingOverlay = hideLoadingOverlay;
+        hideLoadingOverlay = function () {
+            clearTimeout(bootWatchdog);
+            originalHideLoadingOverlay();
+        };
+
+        boot().catch(err => {
+            console.error('Boot failed:', err);
+            showLoadingError(`An error occurred while starting the app: ${err.message || err}. Try reloading — if it keeps happening, check the browser console for details.`);
+        });
+    </script>
+</body>
+</html>
