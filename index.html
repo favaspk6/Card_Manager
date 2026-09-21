@@ -239,6 +239,7 @@
                             <h3 class="font-semibold text-slate-900 dark:text-slate-100">Transaction History</h3>
                             <span id="tx-count" class="text-xs bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400 px-2.5 py-1 rounded-full font-medium">0 entries</span>
                             <input type="text" id="tx-search-input" oninput="setSearchQuery(this.value)" placeholder="🔍 Search description…" class="text-xs px-3 py-1.5 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none w-48 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 border-slate-200 dark:border-slate-600 placeholder-slate-400 dark:placeholder-slate-500">
+                            <div id="type-filter-container" class="flex items-center gap-1"></div>
                         </div>
                         <div class="flex items-center gap-2">
                             <button onclick="exportFilteredCsv()" class="bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-600 dark:text-slate-400 text-xs font-medium px-3 py-1.5 rounded-lg transition">
@@ -393,13 +394,36 @@
         let selectedCategories = []; // empty array = "All Categories"; otherwise one or more category names
         let selectedMonths = []; // empty array = "All Months"; otherwise one or more 'YYYY-MM' keys, e.g. last 2 months
         let searchQuery = '';
+        const TYPE_FILTER_OPTIONS = ['Purchase', 'Cash Withdrawal'];
+        let activeTypeFilter = 'ALL'; // 'ALL' or one of TYPE_FILTER_OPTIONS
 
         function transactionMatchesFilters(t) {
             const matchesCard = (activeCardFilter === 'ALL' || t.cardName.trim() === activeCardFilter);
             const matchesCategory = (selectedCategories.length === 0 || (t.category && selectedCategories.includes(t.category.trim())));
             const matchesMonth = (selectedMonths.length === 0 || (t.date && selectedMonths.includes(t.date.substring(0, 7))));
             const matchesSearch = (!searchQuery || (t.desc && t.desc.toLowerCase().includes(searchQuery.toLowerCase())));
-            return matchesCard && matchesCategory && matchesMonth && matchesSearch;
+            const matchesType = (activeTypeFilter === 'ALL' || t.type === activeTypeFilter);
+            return matchesCard && matchesCategory && matchesMonth && matchesSearch && matchesType;
+        }
+
+        function renderTypeFilter() {
+            const el = document.getElementById('type-filter-container');
+            if (!el) return;
+            const chip = (value, label) => {
+                const active = activeTypeFilter === value;
+                const cls = active
+                    ? 'bg-indigo-600 text-white shadow-sm'
+                    : 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-600';
+                return `<button onclick="setTypeFilter('${value}')" class="px-2.5 py-1 text-[11px] font-medium rounded-md transition whitespace-nowrap ${cls}">${label}</button>`;
+            };
+            el.innerHTML = chip('ALL', 'All Types') + TYPE_FILTER_OPTIONS.map(t => chip(t, t)).join('');
+        }
+
+        function setTypeFilter(type) {
+            activeTypeFilter = type;
+            renderTypeFilter();
+            renderCardFilters(); // refreshes the "Filter: ..." label
+            renderTransactionsAndMetrics();
         }
 
         function setSearchQuery(value) {
@@ -1573,6 +1597,9 @@
             if (selectedMonths.length > 0) {
                 filterText += ` (${[...selectedMonths].sort().join(', ')})`;
             }
+            if (activeTypeFilter !== 'ALL') {
+                filterText += ` · ${activeTypeFilter}`;
+            }
             document.getElementById('active-filter-label').textContent = filterText;
         }
 
@@ -2064,6 +2091,7 @@
         }
 
         function render() {
+            renderTypeFilter();
             renderCardsList();
             updateCardDropdowns();
             recommendBestCard();
