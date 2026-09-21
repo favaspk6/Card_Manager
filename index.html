@@ -394,7 +394,7 @@
         let selectedCategories = []; // empty array = "All Categories"; otherwise one or more category names
         let selectedMonths = []; // empty array = "All Months"; otherwise one or more 'YYYY-MM' keys, e.g. last 2 months
         let searchQuery = '';
-        const TYPE_FILTER_OPTIONS = ['Purchase', 'Cash Withdrawal'];
+        const TYPE_FILTER_OPTIONS = ['Purchase', 'Cash Withdrawal', 'Repaid', 'Cashback']; // same list as the Type dropdown in the transaction form
         let activeTypeFilter = 'ALL'; // 'ALL' or one of TYPE_FILTER_OPTIONS
 
         function transactionMatchesFilters(t) {
@@ -409,14 +409,14 @@
         function renderTypeFilter() {
             const el = document.getElementById('type-filter-container');
             if (!el) return;
-            const chip = (value, label) => {
-                const active = activeTypeFilter === value;
-                const cls = active
-                    ? 'bg-indigo-600 text-white shadow-sm'
-                    : 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-600';
-                return `<button onclick="setTypeFilter('${value}')" class="px-2.5 py-1 text-[11px] font-medium rounded-md transition whitespace-nowrap ${cls}">${label}</button>`;
-            };
-            el.innerHTML = chip('ALL', 'All Types') + TYPE_FILTER_OPTIONS.map(t => chip(t, t)).join('');
+            const options = [['ALL', 'All Types'], ...TYPE_FILTER_OPTIONS.map(t => [t, t])]
+                .map(([value, label]) => `<option value="${value}" ${activeTypeFilter === value ? 'selected' : ''}>${label}</option>`)
+                .join('');
+            el.innerHTML = `
+                <select onchange="setTypeFilter(this.value)" aria-label="Filter by transaction type"
+                    class="text-xs px-3 py-1.5 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 border-slate-200 dark:border-slate-600">
+                    ${options}
+                </select>`;
         }
 
         function setTypeFilter(type) {
