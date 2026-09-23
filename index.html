@@ -178,24 +178,42 @@
                     <div id="cards-list" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4"></div>
                 </div>
 
-                <!-- Month-Wise Multi-Metric Chart & Filters -->
-                <div class="bg-white dark:bg-slate-800 p-6 rounded-xl border border-slate-200 dark:border-slate-600 shadow-sm space-y-4">
-                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                        <div>
-                            <h3 class="text-base font-bold text-slate-800 dark:text-slate-200">Financial Performance</h3>
-                            <p class="text-xs text-slate-500 dark:text-slate-400">Breakdown of purchases, cash withdrawals, repayments, fees, cashback & net rewards</p>
+                <!-- Month-Wise Multi-Metric Chart, Filters & Donut Charts - all in one row -->
+                <div class="grid grid-cols-1 lg:grid-cols-4 gap-4 items-stretch">
+                    <div class="lg:col-span-3 bg-white dark:bg-slate-800 p-6 rounded-xl border border-slate-200 dark:border-slate-600 shadow-sm space-y-4">
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                            <div>
+                                <h3 class="text-base font-bold text-slate-800 dark:text-slate-200">Financial Performance</h3>
+                                <p class="text-xs text-slate-500 dark:text-slate-400">Breakdown of purchases, cash withdrawals, repayments, fees, cashback & net rewards</p>
+                            </div>
+                        </div>
+
+                        <!-- CARD, CATEGORY & MONTH FILTERS (month chips support multi-select) -->
+                        <div class="space-y-2 pt-2 border-t border-slate-100 dark:border-slate-700">
+                            <div class="flex items-center gap-2 overflow-x-auto pb-1" id="card-filter-container"></div>
+                            <div id="category-filter-wrapper" class="hidden flex items-center gap-2 overflow-x-auto pb-1 pt-1 border-t border-dashed border-slate-100 dark:border-slate-700"></div>
+                            <div id="month-filter-container" class="flex items-center gap-2 overflow-x-auto pb-1 pt-1 border-t border-dashed border-slate-100 dark:border-slate-700"></div>
+                        </div>
+
+                        <div class="h-80">
+                            <canvas id="monthlyChart"></canvas>
                         </div>
                     </div>
 
-                    <!-- CARD, CATEGORY & MONTH FILTERS (month chips support multi-select) -->
-                    <div class="space-y-2 pt-2 border-t border-slate-100 dark:border-slate-700">
-                        <div class="flex items-center gap-2 overflow-x-auto pb-1" id="card-filter-container"></div>
-                        <div id="category-filter-wrapper" class="hidden flex items-center gap-2 overflow-x-auto pb-1 pt-1 border-t border-dashed border-slate-100 dark:border-slate-700"></div>
-                        <div id="month-filter-container" class="flex items-center gap-2 overflow-x-auto pb-1 pt-1 border-t border-dashed border-slate-100 dark:border-slate-700"></div>
-                    </div>
-
-                    <div class="h-80">
-                        <canvas id="monthlyChart"></canvas>
+                    <!-- Donut Charts for Category & Card Cashback -->
+                    <div class="lg:col-span-1 flex flex-col gap-4">
+                        <div class="flex-1 bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-600 shadow-sm flex flex-col">
+                            <h3 class="text-xs font-semibold text-slate-700 dark:text-slate-300 mb-2">Cashback by Category</h3>
+                            <div class="flex-1 relative flex items-center justify-center min-h-[140px]">
+                                <canvas id="categoryDonutChart"></canvas>
+                            </div>
+                        </div>
+                        <div class="flex-1 bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-600 shadow-sm flex flex-col">
+                            <h3 class="text-xs font-semibold text-slate-700 dark:text-slate-300 mb-2">Cashback by Cards</h3>
+                            <div class="flex-1 relative flex items-center justify-center min-h-[140px]">
+                                <canvas id="cardDonutChart"></canvas>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -214,22 +232,6 @@
                         </table>
                     </div>
                     <p id="summary-cashback-note" class="hidden px-6 py-3 text-[11px] text-slate-500 dark:text-slate-400 border-t border-slate-100 dark:border-slate-700"></p>
-                </div>
-
-                <!-- Side-by-Side Donut Charts for Category & Card Cashback -->
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div class="bg-white dark:bg-slate-800 p-6 rounded-xl border border-slate-200 dark:border-slate-600 shadow-sm flex flex-col justify-between">
-                        <h3 class="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-4">Cashback by Category</h3>
-                        <div class="h-64 relative flex items-center justify-center">
-                            <canvas id="categoryDonutChart"></canvas>
-                        </div>
-                    </div>
-                    <div class="bg-white dark:bg-slate-800 p-6 rounded-xl border border-slate-200 dark:border-slate-600 shadow-sm flex flex-col justify-between">
-                        <h3 class="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-4">Cashback by Cards</h3>
-                        <div class="h-64 relative flex items-center justify-center">
-                            <canvas id="cardDonutChart"></canvas>
-                        </div>
-                    </div>
                 </div>
 
                 <!-- History Table -->
