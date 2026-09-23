@@ -125,6 +125,10 @@
             <!-- Right Column: Analytics & History (9/12 width) -->
             <div class="space-y-6 lg:col-span-9">
 
+                <div id="no-cards-banner" class="hidden bg-indigo-50 dark:bg-indigo-950 border border-indigo-100 dark:border-indigo-800 rounded-xl px-4 py-3 text-xs text-indigo-800 dark:text-indigo-300">
+                    👋 Welcome! Add your first card on the left to unlock the dashboard, charts and best-card recommender below.
+                </div>
+
                 <!-- Overview Metrics -->
                 <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
                     <div class="bg-white dark:bg-slate-800 p-5 rounded-xl border border-slate-200 dark:border-slate-600 shadow-sm relative overflow-hidden">
@@ -252,25 +256,34 @@
                             </button>
                         </div>
                     </div>
+                    <div id="tx-bulk-actions" class="hidden px-6 py-2.5 bg-indigo-50 dark:bg-indigo-950 border-b border-indigo-100 dark:border-indigo-800 flex items-center justify-between gap-3">
+                        <span id="tx-bulk-count" class="text-xs font-semibold text-indigo-700 dark:text-indigo-300">0 selected</span>
+                        <div class="flex items-center gap-2">
+                            <button onclick="bulkDeleteSelected()" class="bg-red-600 hover:bg-red-700 text-white text-xs font-medium px-3 py-1.5 rounded-lg transition">Delete Selected</button>
+                            <button onclick="clearTxSelection()" class="bg-white dark:bg-slate-700 hover:bg-slate-100 dark:hover:bg-slate-600 text-slate-600 dark:text-slate-400 text-xs font-medium px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-600 transition">Clear</button>
+                        </div>
+                    </div>
                     <div class="overflow-x-auto">
                         <table class="w-full text-left border-collapse text-xs">
                             <thead>
                                 <tr class="bg-slate-50 dark:bg-slate-900 text-slate-500 dark:text-slate-400 uppercase tracking-wider border-b border-slate-100 dark:border-slate-700">
-                                    <th class="py-3.5 px-6">Date</th>
-                                    <th class="py-3.5 px-6">Card</th>
-                                    <th class="py-3.5 px-6">Type</th>
-                                    <th class="py-3.5 px-6">Description</th>
-                                    <th class="py-3.5 px-6">Category</th>
-                                    <th class="py-3.5 px-6 text-right">Amount</th>
-                                    <th class="py-3.5 px-6 text-right">Service Fee</th>
-                                    <th class="py-3.5 px-6 text-right">Cashback</th>
-                                    <th class="py-3.5 px-6 text-right">Net Rewards</th>
-                                    <th class="py-3.5 px-6 text-center">Actions</th>
+                                    <th class="py-3.5 px-4 w-8"><input type="checkbox" id="tx-select-all" onchange="onTxSelectAllChange(this.checked)" class="rounded border-slate-300 dark:border-slate-600"></th>
+                                    <th class="py-3.5 px-4 cursor-pointer select-none hover:text-slate-700 dark:hover:text-slate-200" onclick="toggleTxSort('date')">Date <span id="sort-arrow-date"></span></th>
+                                    <th class="py-3.5 px-4 cursor-pointer select-none hover:text-slate-700 dark:hover:text-slate-200" onclick="toggleTxSort('card')">Card <span id="sort-arrow-card"></span></th>
+                                    <th class="py-3.5 px-4">Type</th>
+                                    <th class="py-3.5 px-4">Description</th>
+                                    <th class="py-3.5 px-4">Category</th>
+                                    <th class="py-3.5 px-4 text-right cursor-pointer select-none hover:text-slate-700 dark:hover:text-slate-200" onclick="toggleTxSort('amount')">Amount <span id="sort-arrow-amount"></span></th>
+                                    <th class="py-3.5 px-4 text-right">Service Fee</th>
+                                    <th class="py-3.5 px-4 text-right cursor-pointer select-none hover:text-slate-700 dark:hover:text-slate-200" onclick="toggleTxSort('cashback')">Cashback <span id="sort-arrow-cashback"></span></th>
+                                    <th class="py-3.5 px-4 text-right cursor-pointer select-none hover:text-slate-700 dark:hover:text-slate-200" onclick="toggleTxSort('net')">Net Rewards <span id="sort-arrow-net"></span></th>
+                                    <th class="py-3.5 px-4 text-center">Actions</th>
                                 </tr>
                             </thead>
                             <tbody id="tx-table-body" class="divide-y divide-slate-100 dark:divide-slate-700"></tbody>
                         </table>
                     </div>
+                    <div id="tx-pagination" class="px-6 py-3 border-t border-slate-100 dark:border-slate-700 flex items-center justify-between gap-3 text-xs text-slate-500 dark:text-slate-400"></div>
                 </div>
 
             </div>
@@ -349,6 +362,23 @@
         </div>
     </div>
 
+    <!-- TOAST NOTIFICATIONS: transient success/undo messages, replacing alert() for non-blocking feedback -->
+    <div id="toast-container" class="fixed bottom-4 right-4 z-[90] flex flex-col-reverse gap-2 items-end pointer-events-none"></div>
+
+    <!-- CONFIRM MODAL: styled replacement for window.confirm(), used for destructive actions -->
+    <div id="confirm-modal" class="fixed inset-0 z-[85] hidden flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4">
+        <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-xl border border-slate-100 dark:border-slate-700 w-full max-w-sm overflow-hidden">
+            <div class="p-6">
+                <p id="confirm-modal-title" class="text-base font-bold text-slate-900 dark:text-slate-100 mb-2"></p>
+                <p id="confirm-modal-message" class="text-sm text-slate-600 dark:text-slate-400"></p>
+            </div>
+            <div class="px-6 py-4 bg-slate-50 dark:bg-slate-900 border-t border-slate-100 dark:border-slate-700 flex justify-end gap-2">
+                <button id="confirm-modal-cancel" class="bg-slate-200 dark:bg-slate-600 hover:bg-slate-300 text-slate-700 dark:text-slate-300 font-medium px-4 py-2 rounded-lg transition text-sm">Cancel</button>
+                <button id="confirm-modal-ok" class="bg-red-600 hover:bg-red-700 text-white font-medium px-4 py-2 rounded-lg transition text-sm">Confirm</button>
+            </div>
+        </div>
+    </div>
+
     <!-- LOGIN GATE (only shown when using Supabase and no session exists) -->
     <div id="auth-gate" class="fixed inset-0 z-[60] hidden flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
         <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-xl border border-slate-100 dark:border-slate-700 w-full max-w-sm overflow-hidden">
@@ -398,6 +428,71 @@
         let searchQuery = '';
         const TYPE_FILTER_OPTIONS = ['Purchase', 'Cash Withdrawal', 'Repaid', 'Cashback']; // same list as the Type dropdown in the transaction form
         let activeTypeFilter = 'ALL'; // 'ALL' or one of TYPE_FILTER_OPTIONS
+
+        // ---- HISTORY TABLE: sort, pagination, bulk-select ----
+        let txSortColumn = 'date';
+        let txSortDir = 'desc'; // 'asc' | 'desc'
+        const TX_PAGE_SIZE = 25;
+        let txCurrentPage = 1;
+        const selectedTxIds = new Set();
+        let lastRenderedPageIds = []; // ids on the currently visible table page, used by the 'select all' checkbox
+        const TX_SORT_COLUMNS = { date: 'date', card: 'cardName', amount: 'amount', cashback: 'cashback', net: '__net' };
+
+        function toggleTxSort(column) {
+            if (txSortColumn === column) {
+                txSortDir = txSortDir === 'asc' ? 'desc' : 'asc';
+            } else {
+                txSortColumn = column;
+                txSortDir = 'asc';
+            }
+            txCurrentPage = 1;
+            renderTransactionsAndMetrics();
+        }
+
+        function sortArrow(column) {
+            if (txSortColumn !== column) return '<span class="text-slate-300 dark:text-slate-600">↕</span>';
+            return txSortDir === 'asc' ? '<span class="text-indigo-600">↑</span>' : '<span class="text-indigo-600">↓</span>';
+        }
+
+        function goToTxPage(page) {
+            txCurrentPage = page;
+            renderTransactionsAndMetrics();
+        }
+
+        function toggleTxSelected(id, checked) {
+            if (checked) selectedTxIds.add(id); else selectedTxIds.delete(id);
+            renderBulkActionBar();
+            const master = document.getElementById('tx-select-all');
+            if (master) master.checked = false; // visible page selection changed; re-derive on next render
+        }
+
+        function clearTxSelection() {
+            selectedTxIds.clear();
+            renderTransactionsAndMetrics();
+        }
+
+        function renderBulkActionBar() {
+            const el = document.getElementById('tx-bulk-actions');
+            if (!el) return;
+            if (selectedTxIds.size === 0) {
+                el.classList.add('hidden');
+                return;
+            }
+            el.classList.remove('hidden');
+            document.getElementById('tx-bulk-count').textContent = `${selectedTxIds.size} selected`;
+        }
+
+        async function bulkDeleteSelected() {
+            const ids = [...selectedTxIds];
+            if (ids.length === 0) return;
+            const ok = await showConfirm(
+                `Delete ${ids.length} transaction${ids.length === 1 ? '' : 's'}?`,
+                'You can undo this for a few seconds after deleting.',
+                { confirmLabel: 'Delete' }
+            );
+            if (!ok) return;
+            softDeleteTransactions(ids);
+        }
 
         function transactionMatchesFilters(t) {
             const matchesCard = (activeCardFilter === 'ALL' || t.cardName.trim() === activeCardFilter);
@@ -465,6 +560,117 @@
         }
         function formatAED(n) {
             return n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        }
+
+        // ---- TOASTS ----
+        // Lightweight, non-blocking feedback for things that used to be alert(). Pass
+        // { actionLabel, onAction } to show an action button (e.g. "Undo") instead of
+        // an OK button; the toast auto-dismisses after `duration` ms either way.
+        function showToast(message, { actionLabel, onAction, duration = 4000, tone = 'default' } = {}) {
+            const container = document.getElementById('toast-container');
+            if (!container) { console.log(message); return; }
+
+            const toneClasses = {
+                default: 'bg-slate-800 dark:bg-slate-700 text-white',
+                success: 'bg-emerald-600 text-white',
+                error: 'bg-red-600 text-white'
+            };
+
+            const toast = document.createElement('div');
+            toast.className = `pointer-events-auto flex items-center gap-3 ${toneClasses[tone] || toneClasses.default} text-xs font-medium px-4 py-3 rounded-lg shadow-lg max-w-sm transition-all duration-200 opacity-0 translate-y-1`;
+            toast.innerHTML = `
+                <span class="flex-1 whitespace-pre-line">${escapeHtml(message)}</span>
+                ${actionLabel ? `<button class="toast-action underline font-semibold whitespace-nowrap">${escapeHtml(actionLabel)}</button>` : ''}
+                <button class="toast-dismiss text-white/70 hover:text-white font-bold leading-none">&times;</button>
+            `;
+            container.appendChild(toast);
+            requestAnimationFrame(() => toast.classList.remove('opacity-0', 'translate-y-1'));
+
+            let dismissed = false;
+            const dismiss = () => {
+                if (dismissed) return;
+                dismissed = true;
+                toast.classList.add('opacity-0');
+                setTimeout(() => toast.remove(), 200);
+            };
+
+            const timer = setTimeout(dismiss, duration);
+            toast.querySelector('.toast-dismiss').addEventListener('click', () => { clearTimeout(timer); dismiss(); });
+            if (actionLabel && onAction) {
+                toast.querySelector('.toast-action').addEventListener('click', () => {
+                    clearTimeout(timer);
+                    dismiss();
+                    onAction();
+                });
+            }
+        }
+
+        // ---- STYLED CONFIRM ----
+        // Promise-based replacement for window.confirm() so destructive actions match the
+        // app's look. Usage: if (!(await showConfirm('Delete card?', 'This cannot be undone.'))) return;
+        function showConfirm(title, message, { confirmLabel = 'Confirm' } = {}) {
+            return new Promise((resolve) => {
+                const modal = document.getElementById('confirm-modal');
+                document.getElementById('confirm-modal-title').textContent = title;
+                document.getElementById('confirm-modal-message').textContent = message;
+                const okBtn = document.getElementById('confirm-modal-ok');
+                const cancelBtn = document.getElementById('confirm-modal-cancel');
+                okBtn.textContent = confirmLabel;
+                modal.classList.remove('hidden');
+
+                const cleanup = (result) => {
+                    modal.classList.add('hidden');
+                    okBtn.removeEventListener('click', onOk);
+                    cancelBtn.removeEventListener('click', onCancel);
+                    document.removeEventListener('keydown', onKey);
+                    resolve(result);
+                };
+                const onOk = () => cleanup(true);
+                const onCancel = () => cleanup(false);
+                const onKey = (e) => { if (e.key === 'Escape') cleanup(false); };
+
+                okBtn.addEventListener('click', onOk);
+                cancelBtn.addEventListener('click', onCancel);
+                document.addEventListener('keydown', onKey);
+            });
+        }
+
+        // ---- UNDOABLE DELETE ----
+        // Deleting hides the transaction immediately (it's excluded from every render via
+        // hiddenTxIds) and only calls deleteTransactionFromDB() after the toast's timeout
+        // expires. Clicking Undo before then just un-hides it — nothing was sent to the DB.
+        const hiddenTxIds = new Set();
+        const pendingDeleteTimers = new Map();
+        const UNDO_WINDOW_MS = 6000;
+
+        function softDeleteTransactions(ids) {
+            ids.forEach(id => hiddenTxIds.add(id));
+            selectedTxIds.forEach(id => { if (ids.includes(id)) selectedTxIds.delete(id); });
+            render();
+
+            const label = ids.length === 1 ? 'Transaction deleted' : `${ids.length} transactions deleted`;
+            const timer = setTimeout(async () => {
+                for (const id of ids) {
+                    await deleteTransactionFromDB(id);
+                    hiddenTxIds.delete(id);
+                    pendingDeleteTimers.delete(id);
+                }
+                render();
+            }, UNDO_WINDOW_MS);
+            ids.forEach(id => pendingDeleteTimers.set(id, timer));
+
+            showToast(label, {
+                actionLabel: 'Undo',
+                duration: UNDO_WINDOW_MS,
+                onAction: () => {
+                    ids.forEach(id => {
+                        clearTimeout(pendingDeleteTimers.get(id));
+                        pendingDeleteTimers.delete(id);
+                        hiddenTxIds.delete(id);
+                    });
+                    render();
+                }
+            });
         }
 
         // txList: transactions for ONE card (or any set you want a balance for).
@@ -857,12 +1063,34 @@
             document.getElementById(id).addEventListener('change', calculateDynamicCashback);
         });
 
-        function openTxModal() {
+        function openTxModal(prefillLast = true) {
             document.getElementById('tx-modal').classList.remove('hidden');
             const dateField = document.getElementById('exp-date');
             if (!dateField.value) {
                 dateField.value = new Date().toISOString().slice(0, 10);
             }
+
+            // For a genuinely new entry (not editing/duplicating, which already set their own
+            // values), start from whatever card & type were used last time to cut repeat typing.
+            if (prefillLast) {
+                try {
+                    const lastCardId = localStorage.getItem('lastUsedCardId');
+                    const lastType = localStorage.getItem('lastUsedType');
+                    const cardSelect = document.getElementById('exp-card');
+                    if (lastCardId && [...cardSelect.options].some(o => o.value === lastCardId)) {
+                        cardSelect.value = lastCardId;
+                    }
+                    if (lastType) {
+                        const typeSelect = document.getElementById('exp-type');
+                        typeSelect.value = lastType;
+                        syncCategoryState(lastType);
+                    }
+                } catch (err) { /* localStorage may be unavailable (e.g. private mode) — safe to skip */ }
+            }
+
+            // Description is the next thing that needs typing (date/type/card already have
+            // sensible defaults), so put the cursor there.
+            setTimeout(() => document.getElementById('exp-desc').focus(), 50);
         }
 
         function closeTxModal() {
@@ -977,7 +1205,7 @@
                 let summary = `Imported ${imported} of ${rawData.length} rows.`;
                 if (skipped > 0) summary += `\n${skipped} row(s) skipped — missing a Card name or a valid Amount.`;
                 if (unknownCategoryRows > 0) summary += `\n${unknownCategoryRows} row(s) had a Category not in the app's list — filed as "All Other Spend".`;
-                alert(summary);
+                showToast(summary, { tone: 'success', duration: 6000 });
                 e.target.value = '';
                 render();
             };
@@ -1033,7 +1261,19 @@
                 cards.push(cardObj);
             }
 
-            if (cardObj) await saveCardToDB(cardObj);
+            if (cardObj) {
+                const submitBtn = document.getElementById('card-submit-btn');
+                const originalLabel = submitBtn.textContent;
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = `<span class="inline-block w-3 h-3 border-2 border-white/40 border-t-white rounded-full animate-spin align-[-2px] mr-1.5"></span>Saving…`;
+                try {
+                    await saveCardToDB(cardObj);
+                    showToast('Card saved.', { tone: 'success', duration: 2500 });
+                } finally {
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = originalLabel;
+                }
+            }
             cancelEditCard();
         });
 
@@ -1088,7 +1328,11 @@
                     .reduce((sum, t) => sum + (parseFloat(t.amount) || 0), 0);
 
                 if (currentMonthCardSpend + amount > maxAllowedSpend) {
-                    const proceed = confirm(`Warning: This transaction pushes ${selectedCard.name}'s monthly spend past the 97% target limit (AED ${maxAllowedSpend.toFixed(2)}). Do you still want to proceed?`);
+                    const proceed = await showConfirm(
+                        'Over your 97% target limit',
+                        `This pushes ${selectedCard.name}'s monthly spend past the 97% target limit (AED ${maxAllowedSpend.toFixed(2)}). Proceed anyway?`,
+                        { confirmLabel: 'Proceed' }
+                    );
                     if (!proceed) return;
                 }
             }
@@ -1116,7 +1360,23 @@
                 transactions.unshift(txObj);
             }
 
-            await saveTransactionToDB(txObj);
+            // Remember the last-used card & type so the next new entry starts prefilled with them.
+            try {
+                localStorage.setItem('lastUsedCardId', txObj.cardId || '');
+                localStorage.setItem('lastUsedType', txObj.type || '');
+            } catch (err) { /* localStorage may be unavailable (e.g. private mode) — safe to skip */ }
+
+            const submitBtn = document.getElementById('tx-submit-btn');
+            const originalLabel = submitBtn.textContent;
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = `<span class="inline-block w-3 h-3 border-2 border-white/40 border-t-white rounded-full animate-spin align-[-2px] mr-1.5"></span>Saving…`;
+            try {
+                await saveTransactionToDB(txObj);
+                showToast(editingTxId ? 'Transaction updated.' : 'Transaction logged.', { tone: 'success', duration: 2500 });
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = originalLabel;
+            }
             closeTxModal();
         });
 
@@ -1152,7 +1412,7 @@
             document.getElementById('exp-form-title').innerHTML = `<span>✏️</span> Edit Transaction`;
             document.getElementById('tx-submit-btn').textContent = "Update Transaction";
             
-            openTxModal();
+            openTxModal(false);
         }
 
         function duplicateTransaction(id) {
@@ -1178,17 +1438,16 @@
             document.getElementById('exp-form-title').innerHTML = `<span>↻</span> Repeat Transaction`;
             document.getElementById('tx-submit-btn').textContent = "Log Transaction";
 
-            openTxModal();
+            openTxModal(false);
         }
 
         async function deleteTransaction(id) {
-            if (confirm('Are you sure you want to delete this transaction entry?')) {
-                await deleteTransactionFromDB(id);
-                if (document.getElementById('editing-tx-id').value === id) {
-                    cancelEditTransaction();
-                }
-                render();
+            const ok = await showConfirm('Delete this transaction?', 'You can undo this for a few seconds after deleting.', { confirmLabel: 'Delete' });
+            if (!ok) return;
+            if (document.getElementById('editing-tx-id').value === id) {
+                cancelEditTransaction();
             }
+            softDeleteTransactions([id]);
         }
 
         async function deleteCard(id) {
@@ -1199,7 +1458,8 @@
                 ? `This card has ${linkedCount} transaction(s) logged against it. Deleting it won't delete those transactions, but they'll show "${card.name}" as an orphaned card name with no rates to calculate against. Delete anyway?`
                 : 'Are you sure you want to delete this card?';
 
-            if (confirm(message)) {
+            const ok = await showConfirm('Delete this card?', message, { confirmLabel: 'Delete' });
+            if (ok) {
                 await deleteCardFromDB(id);
                 render();
             }
@@ -1221,7 +1481,7 @@
                 return;
             }
 
-            const headers = ['Date', 'Card', 'Type', 'Description', 'Category', 'Amount', 'Service Charg', 'Cashback', 'Notes'];
+            const headers = ['Date', 'Card', 'Type', 'Description', 'Category', 'Amount', 'Service Charge', 'Cashback', 'Notes'];
             const rows = filtered.map(t => [
                 t.date, t.cardName, t.type, t.desc, t.category || '', t.amount, t.serviceCharge || 0, t.cashback || 0, t.notes || ''
             ]);
@@ -1276,7 +1536,12 @@
                     return;
                 }
 
-                if (!confirm(`This backup has ${parsed.cards.length} card(s) and ${parsed.transactions.length} transaction(s). Importing will ADD to what you already have (duplicates possible if you import the same backup twice). Continue?`)) {
+                const proceedImport = await showConfirm(
+                    'Import backup?',
+                    `This backup has ${parsed.cards.length} card(s) and ${parsed.transactions.length} transaction(s). Importing will ADD to what you already have (duplicates possible if you import the same backup twice).`,
+                    { confirmLabel: 'Import' }
+                );
+                if (!proceedImport) {
                     e.target.value = '';
                     return;
                 }
@@ -1294,7 +1559,7 @@
                     }
                 }
 
-                alert('Backup imported.');
+                showToast('Backup imported.', { tone: 'success' });
                 e.target.value = '';
                 render();
             };
@@ -1302,7 +1567,8 @@
         });
 
         async function clearAllData() {
-            if (confirm('Clear all stored cards and transaction history?')) {
+            const ok = await showConfirm('Clear all data?', 'This permanently deletes every stored card and transaction. This cannot be undone.', { confirmLabel: 'Clear Everything' });
+            if (ok) {
                 if (_supabase) {
                     // Once RLS is enabled with the accompanying policies, these
                     // deletes are restricted to rows where user_id = auth.uid(),
@@ -1375,12 +1641,20 @@
             const container = document.getElementById('cards-list');
             const totalEl = document.getElementById('total-outstanding');
             const totalLimitEl = document.getElementById('total-limit');
+            const banner = document.getElementById('no-cards-banner');
             if (cards.length === 0) {
-                container.innerHTML = `<p class="text-xs text-slate-400 dark:text-slate-500 col-span-full">No cards configured.</p>`;
+                if (banner) banner.classList.remove('hidden');
+                container.innerHTML = `
+                    <div class="col-span-full text-center py-6 px-4 border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-xl">
+                        <p class="text-2xl mb-1">💳</p>
+                        <p class="text-sm font-semibold text-slate-600 dark:text-slate-400">No cards yet</p>
+                        <p class="text-xs text-slate-400 dark:text-slate-500 mt-1">Use "Add / Manage Cards" on the left to add your first card — the dashboard, charts and recommender will fill in once you do.</p>
+                    </div>`;
                 totalEl.innerHTML = '';
                 totalLimitEl.innerHTML = '';
                 return;
             }
+            if (banner) banner.classList.add('hidden');
 
             const todayKey = localDateKey();
             const currentMonthKey = todayKey.substring(0, 7);
@@ -1663,16 +1937,54 @@
             renderTransactionsAndMetrics();
         }
 
+        function txSortValue(t, col) {
+            if (col === 'date') return t.date || '';
+            if (col === 'card') return (t.cardName || '').trim().toLowerCase();
+            if (col === 'amount') return parseFloat(t.amount) || 0;
+            if (col === 'cashback') return parseFloat(t.cashback) || 0;
+            if (col === 'net') return (t.type === 'Repaid') ? 0 : ((parseFloat(t.cashback) || 0) - (parseFloat(t.serviceCharge) || 0));
+            return '';
+        }
+
+        function renderPagination(totalItems) {
+            const el = document.getElementById('tx-pagination');
+            if (!el) return;
+            if (totalItems === 0) { el.innerHTML = ''; return; }
+            const totalPages = Math.max(1, Math.ceil(totalItems / TX_PAGE_SIZE));
+            const start = (txCurrentPage - 1) * TX_PAGE_SIZE + 1;
+            const end = Math.min(txCurrentPage * TX_PAGE_SIZE, totalItems);
+            const btn = (label, page, disabled) => `
+                <button onclick="goToTxPage(${page})" ${disabled ? 'disabled' : ''}
+                    class="px-2.5 py-1 rounded-md font-medium transition ${disabled ? 'text-slate-300 dark:text-slate-600 cursor-not-allowed' : 'text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-950'}">
+                    ${label}
+                </button>`;
+            el.innerHTML = `
+                <span>Showing ${start}–${end} of ${totalItems}</span>
+                <div class="flex items-center gap-1">
+                    ${btn('‹ Prev', txCurrentPage - 1, txCurrentPage <= 1)}
+                    <span class="px-1">Page ${txCurrentPage} of ${totalPages}</span>
+                    ${btn('Next ›', txCurrentPage + 1, txCurrentPage >= totalPages)}
+                </div>`;
+        }
+
+        function onTxSelectAllChange(checked) {
+            lastRenderedPageIds.forEach(id => { if (checked) selectedTxIds.add(id); else selectedTxIds.delete(id); });
+            renderTransactionsAndMetrics();
+        }
+
         function renderTransactionsAndMetrics() {
             const tbody = document.getElementById('tx-table-body');
-            document.getElementById('tx-count').textContent = `${transactions.length} entries`;
+            const visibleTransactions = transactions.filter(t => !hiddenTxIds.has(t.id));
+            document.getElementById('tx-count').textContent = `${visibleTransactions.length} entries`;
 
-            if (transactions.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="10" class="p-6 text-center text-xs text-slate-400 dark:text-slate-500">No transactions recorded yet.</td></tr>`;
+            if (visibleTransactions.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="11" class="p-6 text-center text-xs text-slate-400 dark:text-slate-500">No transactions recorded yet.</td></tr>`;
                 document.getElementById('metric-spend').textContent = '0.00';
                 document.getElementById('metric-cashback').textContent = '0.00';
                 document.getElementById('metric-return').textContent = '0.00%';
                 document.getElementById('metric-missed').textContent = '0.00';
+                renderPagination(0);
+                renderBulkActionBar();
                 renderDonutCharts({}, {});
                 renderMonthlyChart({});
                 renderSummaryTable();
@@ -1680,20 +1992,7 @@
                 return;
             }
 
-
-
-            const sortedTransactions = [...transactions]
-                .filter(transactionMatchesFilters)
-                .sort((a, b) => {
-                    const dateA = new Date(a.date || '1970-01-01');
-                    const dateB = new Date(b.date || '1970-01-01');
-                    if (dateB - dateA !== 0) return dateB - dateA;
-                    return String(b.id).localeCompare(String(a.id));
-                });
-
-            if (sortedTransactions.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="10" class="p-6 text-center text-xs text-slate-400 dark:text-slate-500">No transactions match the current filter.</td></tr>`;
-            }
+            const filteredTransactions = visibleTransactions.filter(transactionMatchesFilters);
 
             let totalSpend = 0;
             let totalCashback = 0;
@@ -1702,76 +2001,114 @@
             const cardMap = {};
             const monthlyData = {};
 
-            const rowsHtml = sortedTransactions.map(t => {
+            // Aggregates (metrics, donuts, monthly chart) are computed over EVERY filtered
+            // transaction, not just the page currently on screen.
+            filteredTransactions.forEach(t => {
                 const amount = parseFloat(t.amount) || 0;
                 const cashback = parseFloat(t.cashback) || 0;
                 const fee = parseFloat(t.serviceCharge) || 0;
-                let netReward = (t.type === 'Repaid') ? 0 : (cashback - fee);
+                const netReward = (t.type === 'Repaid') ? 0 : (cashback - fee);
 
-                {
-                    if (t.type === 'Purchase' || t.type === 'Cash Withdrawal') {
-                        totalSpend += amount;
+                if (t.type === 'Purchase' || t.type === 'Cash Withdrawal') {
+                    totalSpend += amount;
 
-                        // "Left on the table": what the best available card's rate would have
-                        // earned on this same purchase vs. what was actually earned. This is an
-                        // approximation from amount/cashback, not a tracked per-transaction rate,
-                        // so treat it as directional rather than exact.
-                        const actualRate = amount > 0 ? (cashback / amount) * 100 : 0;
-                        const best = bestRateForCategory(t.category);
-                        if (best > actualRate) {
-                            totalMissed += amount * (best - actualRate) / 100;
-                        }
+                    // "Left on the table": what the best available card's rate would have
+                    // earned on this same purchase vs. what was actually earned. This is an
+                    // approximation from amount/cashback, not a tracked per-transaction rate,
+                    // so treat it as directional rather than exact.
+                    const actualRate = amount > 0 ? (cashback / amount) * 100 : 0;
+                    const best = bestRateForCategory(t.category);
+                    if (best > actualRate) {
+                        totalMissed += amount * (best - actualRate) / 100;
                     }
-                    totalCashback += cashback;
+                }
+                totalCashback += cashback;
 
-                    const displayCategory = t.category ? t.category : 'Uncategorized';
-                    if (cashback > 0) {
-                        categoryMap[displayCategory] = (categoryMap[displayCategory] || 0) + cashback;
-                    }
-
-                    const displayCard = t.cardName ? t.cardName.trim() : 'Unknown Card';
-                    if (cashback > 0) {
-                        cardMap[displayCard] = (cardMap[displayCard] || 0) + cashback;
-                    }
-
-                    const monthKey = t.date ? t.date.substring(0, 7) : 'Unknown';
-                    if (!monthlyData[monthKey]) {
-                        monthlyData[monthKey] = { purchase: 0, withdrawal: 0, repaid: 0, fee: 0, cashback: 0, netReward: 0 };
-                    }
-
-                    if (t.type === 'Purchase') monthlyData[monthKey].purchase += amount;
-                    if (t.type === 'Cash Withdrawal') monthlyData[monthKey].withdrawal += amount;
-                    if (t.type === 'Repaid') monthlyData[monthKey].repaid += amount;
-                    monthlyData[monthKey].fee += fee;
-                    monthlyData[monthKey].cashback += cashback;
-                    monthlyData[monthKey].netReward += netReward;
+                const displayCategory = t.category ? t.category : 'Uncategorized';
+                if (cashback > 0) {
+                    categoryMap[displayCategory] = (categoryMap[displayCategory] || 0) + cashback;
                 }
 
-                const netClass = netReward < 0 ? 'text-red-600 font-bold' : 'text-emerald-600 font-bold';
+                const displayCard = t.cardName ? t.cardName.trim() : 'Unknown Card';
+                if (cashback > 0) {
+                    cardMap[displayCard] = (cardMap[displayCard] || 0) + cashback;
+                }
 
-                return `
-                    <tr class="hover:bg-slate-50 dark:bg-slate-900 transition">
-                        <td class="py-3.5 px-6 text-slate-500 dark:text-slate-400 whitespace-nowrap">${t.date}</td>
-                        <td class="py-3.5 px-6 font-medium text-slate-800 dark:text-slate-200 whitespace-nowrap">${t.cardName}</td>
-                        <td class="py-3.5 px-6"><span class="bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400 px-2.5 py-1 rounded text-xs whitespace-nowrap">${t.type}</span></td>
-                        <td class="py-3.5 px-6 text-slate-800 dark:text-slate-200 font-medium">${t.desc}</td>
-                        <td class="py-3.5 px-6 text-slate-600 dark:text-slate-400 whitespace-nowrap">${t.category ? t.category : '-'}</td>
-                        <td class="py-3.5 px-6 text-right text-slate-900 dark:text-slate-100 font-medium whitespace-nowrap">${amount ? amount.toFixed(2) : '-'}</td>
-                        <td class="py-3.5 px-6 text-right text-amber-600 font-medium whitespace-nowrap">${fee ? fee.toFixed(2) : '-'}</td>
-                        <td class="py-3.5 px-6 text-right text-emerald-600 font-semibold whitespace-nowrap">${cashback ? cashback.toFixed(2) : '-'}</td>
-                        <td class="py-3.5 px-6 text-right ${netClass} whitespace-nowrap">${netReward.toFixed(2)}</td>
-                        <td class="py-3.5 px-6 text-center whitespace-nowrap space-x-1">
-                            <button onclick="duplicateTransaction('${t.id}')" title="Repeat this transaction with today's date" class="text-emerald-600 hover:text-emerald-800 font-semibold px-2 py-1 rounded hover:bg-emerald-50 dark:hover:bg-emerald-950 transition">↻</button>
-                            <button onclick="editTransaction('${t.id}')" class="text-indigo-600 hover:text-indigo-800 font-semibold px-2 py-1 rounded hover:bg-indigo-50 dark:bg-indigo-950 transition">Edit</button>
-                            <button onclick="deleteTransaction('${t.id}')" class="text-red-500 hover:text-red-700 font-semibold px-2 py-1 rounded hover:bg-red-50 transition">Delete</button>
-                        </td>
-                    </tr>
-                `;
-            }).join('');
+                const monthKey = t.date ? t.date.substring(0, 7) : 'Unknown';
+                if (!monthlyData[monthKey]) {
+                    monthlyData[monthKey] = { purchase: 0, withdrawal: 0, repaid: 0, fee: 0, cashback: 0, netReward: 0 };
+                }
 
-            if (sortedTransactions.length > 0) {
-                tbody.innerHTML = rowsHtml;
+                if (t.type === 'Purchase') monthlyData[monthKey].purchase += amount;
+                if (t.type === 'Cash Withdrawal') monthlyData[monthKey].withdrawal += amount;
+                if (t.type === 'Repaid') monthlyData[monthKey].repaid += amount;
+                monthlyData[monthKey].fee += fee;
+                monthlyData[monthKey].cashback += cashback;
+                monthlyData[monthKey].netReward += netReward;
+            });
+
+            // Sort (defaults to newest-first by date, same as before; click a column header to change it)
+            const sorted = [...filteredTransactions].sort((a, b) => {
+                const va = txSortValue(a, txSortColumn);
+                const vb = txSortValue(b, txSortColumn);
+                let cmp = (typeof va === 'string') ? va.localeCompare(vb) : (va - vb);
+                if (cmp === 0) {
+                    cmp = (a.date || '').localeCompare(b.date || '') || String(a.id).localeCompare(String(b.id));
+                }
+                return txSortDir === 'asc' ? cmp : -cmp;
+            });
+
+            // Paginate: only the current page is rendered as rows; totals above already cover everything filtered
+            const totalPages = Math.max(1, Math.ceil(sorted.length / TX_PAGE_SIZE));
+            if (txCurrentPage > totalPages) txCurrentPage = totalPages;
+            if (txCurrentPage < 1) txCurrentPage = 1;
+            const pageStart = (txCurrentPage - 1) * TX_PAGE_SIZE;
+            const pageRows = sorted.slice(pageStart, pageStart + TX_PAGE_SIZE);
+            lastRenderedPageIds = pageRows.map(t => t.id);
+
+            if (sorted.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="11" class="p-6 text-center text-xs text-slate-400 dark:text-slate-500">No transactions match the current filter.</td></tr>`;
+            } else {
+                tbody.innerHTML = pageRows.map(t => {
+                    const amount = parseFloat(t.amount) || 0;
+                    const cashback = parseFloat(t.cashback) || 0;
+                    const fee = parseFloat(t.serviceCharge) || 0;
+                    const netReward = (t.type === 'Repaid') ? 0 : (cashback - fee);
+                    const netClass = netReward < 0 ? 'text-red-600 font-bold' : 'text-emerald-600 font-bold';
+                    const checked = selectedTxIds.has(t.id) ? 'checked' : '';
+
+                    return `
+                        <tr class="hover:bg-slate-50 dark:bg-slate-900 transition">
+                            <td class="py-3.5 px-4"><input type="checkbox" ${checked} onchange="toggleTxSelected('${t.id}', this.checked)" class="rounded border-slate-300 dark:border-slate-600"></td>
+                            <td class="py-3.5 px-4 text-slate-500 dark:text-slate-400 whitespace-nowrap">${t.date}</td>
+                            <td class="py-3.5 px-4 font-medium text-slate-800 dark:text-slate-200 whitespace-nowrap">${t.cardName}</td>
+                            <td class="py-3.5 px-4"><span class="bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400 px-2.5 py-1 rounded text-xs whitespace-nowrap">${t.type}</span></td>
+                            <td class="py-3.5 px-4 text-slate-800 dark:text-slate-200 font-medium">${t.desc}</td>
+                            <td class="py-3.5 px-4 text-slate-600 dark:text-slate-400 whitespace-nowrap">${t.category ? t.category : '-'}</td>
+                            <td class="py-3.5 px-4 text-right text-slate-900 dark:text-slate-100 font-medium whitespace-nowrap">${amount ? amount.toFixed(2) : '-'}</td>
+                            <td class="py-3.5 px-4 text-right text-amber-600 font-medium whitespace-nowrap">${fee ? fee.toFixed(2) : '-'}</td>
+                            <td class="py-3.5 px-4 text-right text-emerald-600 font-semibold whitespace-nowrap">${cashback ? cashback.toFixed(2) : '-'}</td>
+                            <td class="py-3.5 px-4 text-right ${netClass} whitespace-nowrap">${netReward.toFixed(2)}</td>
+                            <td class="py-3.5 px-4 text-center whitespace-nowrap space-x-1">
+                                <button onclick="duplicateTransaction('${t.id}')" title="Repeat this transaction with today's date" class="text-emerald-600 hover:text-emerald-800 font-semibold px-2 py-1 rounded hover:bg-emerald-50 dark:hover:bg-emerald-950 transition">↻</button>
+                                <button onclick="editTransaction('${t.id}')" class="text-indigo-600 hover:text-indigo-800 font-semibold px-2 py-1 rounded hover:bg-indigo-50 dark:bg-indigo-950 transition">Edit</button>
+                                <button onclick="deleteTransaction('${t.id}')" class="text-red-500 hover:text-red-700 font-semibold px-2 py-1 rounded hover:bg-red-50 transition">Delete</button>
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
             }
+
+            ['date', 'card', 'amount', 'cashback', 'net'].forEach(col => {
+                const arrowEl = document.getElementById(`sort-arrow-${col}`);
+                if (arrowEl) arrowEl.innerHTML = sortArrow(col);
+            });
+            const masterCheckbox = document.getElementById('tx-select-all');
+            if (masterCheckbox) {
+                masterCheckbox.checked = lastRenderedPageIds.length > 0 && lastRenderedPageIds.every(id => selectedTxIds.has(id));
+            }
+            renderPagination(sorted.length);
+            renderBulkActionBar();
 
             const effRate = totalSpend > 0 ? ((totalCashback / totalSpend) * 100).toFixed(2) : '0.00';
 
