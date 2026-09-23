@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Smart Credit Card Cashback Tracker</title>
+    <title>Credit Card Cashback Tracker</title>
     <!-- Tailwind CSS, Chart.js, SheetJS & Supabase JS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -22,8 +22,8 @@
     <header class="bg-indigo-700 text-white shadow-md">
         <div class="max-w-[100%] mx-auto px-4 sm:px-8 xl:px-12 py-5 flex justify-between items-center">
             <div>
-                <h1 class="text-2xl font-bold tracking-tight">Cashback & Spend Optimizer</h1>
-                <p class="text-indigo-200 text-xs mt-0.5">AED Credit Card & Cashback Manager</p>
+                <h1 class="text-2xl font-bold tracking-tight">Cashback & Spend Analyzer</h1>
+                <p class="text-indigo-200 text-xs mt-0.5">Credit Card & Cashback Manager</p>
             </div>
             <div class="flex items-center gap-3">
                 <span id="user-email-label" class="text-xs text-indigo-200 hidden"></span>
@@ -76,7 +76,7 @@
                             <input type="text" id="card-name" placeholder="e.g., ADCB - 365" required class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-sm bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 border-slate-200 dark:border-slate-600 placeholder-slate-400 dark:placeholder-slate-500">
                         </div>
                         <div>
-                            <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase mb-1">Available Limit (AED)</label>
+                            <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase mb-1">Available Limit</label>
                             <input type="number" step="any" min="0" id="card-limit" placeholder="e.g., 15000" required class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-sm bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 border-slate-200 dark:border-slate-600 placeholder-slate-400 dark:placeholder-slate-500">
                         </div>
                         <div>
@@ -133,7 +133,7 @@
                             <span class="text-lg">💳</span>
                         </div>
                         <p id="metric-spend" class="text-3xl font-bold text-slate-900 dark:text-slate-100 mt-1">0.00</p>
-                        <p class="text-[10px] text-slate-400 dark:text-slate-500 mt-1">AED, current filter</p>
+                        <p class="text-[10px] text-slate-400 dark:text-slate-500 mt-1"><Purchase + Cash Withdraw</p>
                     </div>
                     <div class="bg-emerald-50 dark:bg-emerald-950 p-5 rounded-xl border border-emerald-100 dark:border-emerald-800 shadow-sm relative overflow-hidden">
                         <div class="flex items-center justify-between">
@@ -141,7 +141,7 @@
                             <span class="text-lg">💰</span>
                         </div>
                         <p id="metric-cashback" class="text-3xl font-bold text-emerald-600 dark:text-emerald-400 mt-1">0.00</p>
-                        <p class="text-[10px] text-emerald-600/70 dark:text-emerald-500/70 mt-1">AED, current filter</p>
+                        <p class="text-[10px] text-emerald-600/70 dark:text-emerald-500/70 mt-1">Cashback</p>
                     </div>
                     <div class="bg-indigo-50 dark:bg-indigo-950 p-5 rounded-xl border border-indigo-100 dark:border-indigo-800 shadow-sm relative overflow-hidden">
                         <div class="flex items-center justify-between">
@@ -261,10 +261,10 @@
                                     <th class="py-3.5 px-6">Type</th>
                                     <th class="py-3.5 px-6">Description</th>
                                     <th class="py-3.5 px-6">Category</th>
-                                    <th class="py-3.5 px-6 text-right">Amount (AED)</th>
-                                    <th class="py-3.5 px-6 text-right">Service Fee (AED)</th>
-                                    <th class="py-3.5 px-6 text-right">Cashback (AED)</th>
-                                    <th class="py-3.5 px-6 text-right">Net Rewards (AED)</th>
+                                    <th class="py-3.5 px-6 text-right">Amount</th>
+                                    <th class="py-3.5 px-6 text-right">Service Fee</th>
+                                    <th class="py-3.5 px-6 text-right">Cashback</th>
+                                    <th class="py-3.5 px-6 text-right">Net Rewards</th>
                                     <th class="py-3.5 px-6 text-center">Actions</th>
                                 </tr>
                             </thead>
@@ -315,7 +315,7 @@
 
                 <div class="grid grid-cols-2 gap-3">
                     <div>
-                        <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase mb-1">Amount (AED)</label>
+                        <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase mb-1">Amount</label>
                         <input type="number" step="0.01" min="0.01" id="exp-amount" placeholder="0.00" required class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-sm bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 border-slate-200 dark:border-slate-600 placeholder-slate-400 dark:placeholder-slate-500">
                     </div>
                     <div>
@@ -327,11 +327,11 @@
 
                 <div class="grid grid-cols-2 gap-3">
                     <div>
-                        <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase mb-1">Service Fee (AED)</label>
+                        <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase mb-1">Service Fee</label>
                         <input type="number" step="0.01" id="exp-service" placeholder="0.00" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-sm bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 border-slate-200 dark:border-slate-600 placeholder-slate-400 dark:placeholder-slate-500">
                     </div>
                     <div>
-                        <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase mb-1">Cashback (AED)</label>
+                        <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase mb-1">Cashback</label>
                         <input type="number" step="0.01" id="exp-cashback" placeholder="0.00" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-sm bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 border-slate-200 dark:border-slate-600 placeholder-slate-400 dark:placeholder-slate-500">
                     </div>
                 </div>
@@ -931,9 +931,9 @@
                         const type = row['Type'] || 'Purchase';
                         const desc = row['Description'] || row['Desc'] || '';
                         let category = String(row['Category'] || '').trim();
-                        const amount = parseFloat(row['Amount (AED)']);
-                        const serviceCharge = parseFloat(row['Service Charge (AED)']) || parseFloat(row['Service Fee (AED)']) || 0;
-                        const cashbackRaw = row['Cashback (AED)'];
+                        const amount = parseFloat(row['Amount']);
+                        const serviceCharge = parseFloat(row['Service Charge']) || parseFloat(row['Service Fee']) || 0;
+                        const cashbackRaw = row['Cashback'];
                         const cashback = (type === 'Repaid' || cashbackRaw === '-' || cashbackRaw === '' || cashbackRaw === undefined) ? 0 : parseFloat(cashbackRaw);
                         const notes = row['Notes'] || '';
 
@@ -1221,7 +1221,7 @@
                 return;
             }
 
-            const headers = ['Date', 'Card', 'Type', 'Description', 'Category', 'Amount (AED)', 'Service Charge (AED)', 'Cashback (AED)', 'Notes'];
+            const headers = ['Date', 'Card', 'Type', 'Description', 'Category', 'Amount', 'Service Charg', 'Cashback', 'Notes'];
             const rows = filtered.map(t => [
                 t.date, t.cardName, t.type, t.desc, t.category || '', t.amount, t.serviceCharge || 0, t.cashback || 0, t.notes || ''
             ]);
@@ -1568,6 +1568,7 @@
                 </button>
             `;
 
+            /*
             if (uniqueMonths.length >= 2) {
                 monthHtml += `
                     <button onclick="selectLastNMonths(2)" class="px-2.5 py-1 text-[11px] font-medium rounded-md transition whitespace-nowrap bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-600">
@@ -1580,6 +1581,7 @@
                         Last 3 Months
                     </button>`;
             }
+            */
 
             uniqueMonths.forEach(m => {
                 const isMonthActive = selectedMonths.includes(m);
@@ -1806,12 +1808,12 @@
                 data: {
                     labels: months.length > 0 ? months : ['No Data'],
                     datasets: [
-                        { type: 'bar', label: 'Purchase (AED)', data: purchaseData, backgroundColor: '#3B82F6', yAxisID: 'y' },
-                        { type: 'bar', label: 'Cash Withdrawal (AED)', data: withdrawalData, backgroundColor: '#F59E0B', yAxisID: 'y' },
-                        { type: 'bar', label: 'Repaid (AED)', data: repaidData, backgroundColor: '#10B981', yAxisID: 'y' },
-                        { type: 'bar', label: 'Service Fees (AED)', data: feeData, backgroundColor: '#EF4444', yAxisID: 'y' },
-                        { type: 'bar', label: 'Cashback (AED)', data: cashbackData, backgroundColor: '#059669', yAxisID: 'y' },
-                        { type: 'bar', label: 'Net Rewards (AED)', data: netRewardData, backgroundColor: '#6366F1', yAxisID: 'y' },
+                        { type: 'bar', label: 'Purchase', data: purchaseData, backgroundColor: '#3B82F6', yAxisID: 'y' },
+                        { type: 'bar', label: 'Cash Withdrawal', data: withdrawalData, backgroundColor: '#F59E0B', yAxisID: 'y' },
+                        { type: 'bar', label: 'Repaid', data: repaidData, backgroundColor: '#10B981', yAxisID: 'y' },
+                        { type: 'bar', label: 'Service Fees', data: feeData, backgroundColor: '#EF4444', yAxisID: 'y' },
+                        { type: 'bar', label: 'Cashback', data: cashbackData, backgroundColor: '#059669', yAxisID: 'y' },
+                        { type: 'bar', label: 'Net Rewards', data: netRewardData, backgroundColor: '#6366F1', yAxisID: 'y' },
                         { type: 'line', label: 'Effective Rate (%)', data: effRateData, borderColor: '#DB2777', backgroundColor: '#DB2777', yAxisID: 'y1', tension: 0.3, pointRadius: 3 }
                     ]
                 },
@@ -1858,13 +1860,13 @@
             if (filteredTx.length === 0) {
                 headerTr.innerHTML = `
                     <th class="py-3 px-6">Summary</th>
-                    <th class="py-3 px-6 text-right">Purchase (AED)</th>
-                    <th class="py-3 px-6 text-right">Cash Withdrawal (AED)</th>
-                    <th class="py-3 px-6 text-right">Repaid (AED)</th>
-                    <th class="py-3 px-6 text-right">Service Charges (AED)</th>
-                    <th class="py-3 px-6 text-right">Cashback (AED)</th>
-                    <th class="py-3 px-6 text-right" title="Purchases + withdrawals − repayments − cashback already credited (cashback from earlier months). This month's cashback is credited next month.">Remaining Pay (AED)</th>
-                    <th class="py-3 px-6 text-right">Net Rewards (AED)</th>
+                    <th class="py-3 px-6 text-right">Purchase</th>
+                    <th class="py-3 px-6 text-right">Cash Withdrawal</th>
+                    <th class="py-3 px-6 text-right">Repaid</th>
+                    <th class="py-3 px-6 text-right">Service Charges</th>
+                    <th class="py-3 px-6 text-right">Cashback</th>
+                    <th class="py-3 px-6 text-right" title="Purchases + withdrawals − repayments − cashback already credited (cashback from earlier months). This month's cashback is credited next month.">Remaining Pay</th>
+                    <th class="py-3 px-6 text-right">Net Rewards</th>
                 `;
                 tbody.innerHTML = `<tr><td colspan="8" class="p-4 text-center text-xs text-slate-400 dark:text-slate-500">No data available for selected filter.</td></tr>`;
                 return;
@@ -1874,13 +1876,13 @@
                 titleEl.textContent = 'Summary for All Cards';
                 headerTr.innerHTML = `
                     <th class="py-3 px-6">Card Name</th>
-                    <th class="py-3 px-6 text-right">Purchase (AED)</th>
-                    <th class="py-3 px-6 text-right">Cash Withdrawal (AED)</th>
-                    <th class="py-3 px-6 text-right">Repaid (AED)</th>
-                    <th class="py-3 px-6 text-right">Service Charges (AED)</th>
-                    <th class="py-3 px-6 text-right">Cashback (AED)</th>
-                    <th class="py-3 px-6 text-right" title="Purchases + withdrawals − repayments − cashback already credited (cashback from earlier months). This month's cashback is credited next month.">Remaining Pay (AED)</th>
-                    <th class="py-3 px-6 text-right">Net Rewards (AED)</th>
+                    <th class="py-3 px-6 text-right">Purchase</th>
+                    <th class="py-3 px-6 text-right">Cash Withdrawal</th>
+                    <th class="py-3 px-6 text-right">Repaid</th>
+                    <th class="py-3 px-6 text-right">Service Charges</th>
+                    <th class="py-3 px-6 text-right">Cashback</th>
+                    <th class="py-3 px-6 text-right" title="Purchases + withdrawals − repayments − cashback already credited (cashback from earlier months). This month's cashback is credited next month.">Remaining Pay</th>
+                    <th class="py-3 px-6 text-right">Net Rewards</th>
                 `;
 
                 const cardAgg = {};
@@ -1958,13 +1960,13 @@
                 titleEl.textContent = `Summary for ${activeCardFilter}`;
                 headerTr.innerHTML = `
                     <th class="py-3 px-6">Category</th>
-                    <th class="py-3 px-6 text-right">Purchase (AED)</th>
-                    <th class="py-3 px-6 text-right">Cash Withdrawal (AED)</th>
-                    <th class="py-3 px-6 text-right">Repaid (AED)</th>
-                    <th class="py-3 px-6 text-right">Service Charges (AED)</th>
-                    <th class="py-3 px-6 text-right">Cashback (AED)</th>
-                    <th class="py-3 px-6 text-right" title="Purchases + withdrawals − repayments − cashback already credited (cashback from earlier months). This month's cashback is credited next month.">Remaining Pay (AED)</th>
-                    <th class="py-3 px-6 text-right">Net Rewards (AED)</th>
+                    <th class="py-3 px-6 text-right">Purchase</th>
+                    <th class="py-3 px-6 text-right">Cash Withdrawal</th>
+                    <th class="py-3 px-6 text-right">Repaid</th>
+                    <th class="py-3 px-6 text-right">Service Charges</th>
+                    <th class="py-3 px-6 text-right">Cashback</th>
+                    <th class="py-3 px-6 text-right" title="Purchases + withdrawals − repayments − cashback already credited (cashback from earlier months). This month's cashback is credited next month.">Remaining Pay</th>
+                    <th class="py-3 px-6 text-right">Net Rewards</th>
                 `;
 
                 const catAgg = {};
