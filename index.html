@@ -338,6 +338,36 @@
                     </div>
                 </div>
 
+                <!-- EMI / Installment conversion — only offered for Purchase entries -->
+                <div id="exp-emi-wrapper" class="hidden">
+                    <label class="flex items-center gap-2 text-xs font-medium text-slate-700 dark:text-slate-300 cursor-pointer">
+                        <input type="checkbox" id="exp-is-emi" class="rounded border-slate-300 dark:border-slate-600">
+                        Convert this purchase to installments (EMI)
+                    </label>
+                    <div id="exp-emi-details" class="hidden mt-2 p-3 rounded-lg bg-indigo-50 dark:bg-indigo-950 space-y-2">
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase mb-1">Tenure</label>
+                                <select id="exp-emi-tenure" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-sm bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 border-slate-200 dark:border-slate-600">
+                                    <option value="3">3 months</option>
+                                    <option value="6">6 months</option>
+                                    <option value="9">9 months</option>
+                                    <option value="12" selected>12 months</option>
+                                    <option value="18">18 months</option>
+                                    <option value="24">24 months</option>
+                                    <option value="custom">Custom…</option>
+                                </select>
+                            </div>
+                            <div id="exp-emi-custom-wrapper" class="hidden">
+                                <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase mb-1">Months</label>
+                                <input type="number" step="1" min="1" max="60" id="exp-emi-custom-months" placeholder="e.g., 15" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-sm bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 border-slate-200 dark:border-slate-600 placeholder-slate-400 dark:placeholder-slate-500">
+                            </div>
+                        </div>
+                        <p id="exp-emi-preview" class="text-[11px] text-indigo-700 dark:text-indigo-300 font-medium"></p>
+                        <p class="text-[10px] text-slate-500 dark:text-slate-400">The full purchase amount still counts against your limit today, same as your bank does it. This just tracks the monthly installment so you know what's left to pay off.</p>
+                    </div>
+                </div>
+
                 <div class="grid grid-cols-2 gap-3">
                     <div>
                         <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase mb-1">Service Fee</label>
@@ -934,7 +964,11 @@
                         amount: t.amount,
                         serviceCharge: t.service_charge,
                         cashback: t.cashback,
-                        notes: t.notes
+                        notes: t.notes,
+                        emiTotalMonths: t.emi_total_months ?? null,     // present once the emi_* columns exist
+                        emiMonthlyAmount: t.emi_monthly_amount ?? null,
+                        emiPaidMonths: t.emi_paid_months ?? null,
+                        emiRemainingMonths: t.emi_remaining_months ?? null
                     }));
                 }
             } else {
@@ -998,6 +1032,7 @@
             saveData();
         }
 
+        let warnedMissingEmiColumns = false;
         async function saveTransactionToDB(t) {
             if (_supabase) {
                 const payload = {
@@ -1012,15 +1047,42 @@
                     service_charge: t.serviceCharge,
                     cashback: t.cashback,
                     notes: t.notes,
+                    emi_total_months: t.emiTotalMonths ?? null,
+                    emi_monthly_amount: t.emiMonthlyAmount ?? null,
+                    emi_paid_months: t.emiPaidMonths ?? null,
+                    emi_remaining_months: t.emiRemainingMonths ?? null,
                     user_id: currentUserId
                 };
-                const { error } = await _supabase.from('transactions').upsert(payload);
-                if (error && /card_id/i.test(error.message || '')) {
-                    // The card_id column doesn't exist yet (migration not run) — retry
-                    // without it so saving still works; run the SQL migration to enable
-                    // reliable card linking (see the comment on the cardId field).
-                    delete payload.card_id;
-                    await _supabase.from('transactions').upsert(payload);
+
+                // Try the full payload first; if Supabase rejects it because a column doesn't
+                // exist yet (migration not run), drop just that group of columns and retry
+                // rather than failing the whole save.
+                for (let attempt = 0; attempt < 3; attempt++) {
+                    const { error } = await _supabase.from('transactions').upsert(payload);
+                    if (!error) break;
+
+                    const msg = error.message || '';
+                    if (/card_id/i.test(msg) && 'card_id' in payload) {
+                        delete payload.card_id;
+                        continue;
+                    }
+                    if (/emi_/i.test(msg) && 'emi_total_months' in payload) {
+                        delete payload.emi_total_months;
+                        delete payload.emi_monthly_amount;
+                        delete payload.emi_paid_months;
+                        delete payload.emi_remaining_months;
+                        if (!warnedMissingEmiColumns && t.emiTotalMonths) {
+                            warnedMissingEmiColumns = true;
+                            alert('Transaction saved, but the EMI details could not be stored in Supabase yet.\n\nRun this once in the Supabase SQL editor, then save the entry again:\n\n' +
+                                  'alter table transactions add column if not exists emi_total_months int;\n' +
+                                  'alter table transactions add column if not exists emi_monthly_amount numeric;\n' +
+                                  'alter table transactions add column if not exists emi_paid_months int;\n' +
+                                  'alter table transactions add column if not exists emi_remaining_months int;');
+                        }
+                        continue;
+                    }
+                    console.error('Saving transaction failed:', error);
+                    break;
                 }
             }
             saveData();
@@ -1103,6 +1165,9 @@
             document.getElementById('expense-form').reset();
             document.getElementById('exp-form-title').innerHTML = `<span>➕</span> Log New Transaction`;
             document.getElementById('tx-submit-btn').textContent = "Log Entry";
+            document.getElementById('exp-emi-details').classList.add('hidden');
+            document.getElementById('exp-emi-custom-wrapper').classList.add('hidden');
+            document.getElementById('exp-emi-preview').textContent = '';
             syncCategoryState(document.getElementById('exp-type').value);
         }
 
@@ -1132,8 +1197,60 @@
                 if (amountLabel) amountLabel.textContent = 'Amount';
             }
 
+            // EMI conversion only makes sense for a Purchase. Switching away from Purchase
+            // hides and clears it so a stray EMI plan can't attach itself to the wrong type.
+            const emiWrapper = document.getElementById('exp-emi-wrapper');
+            if (typeVal === 'Purchase') {
+                emiWrapper.classList.remove('hidden');
+            } else {
+                emiWrapper.classList.add('hidden');
+                document.getElementById('exp-is-emi').checked = false;
+                document.getElementById('exp-emi-details').classList.add('hidden');
+            }
+
             calculateDynamicCashback();
         }
+
+        // ---- EMI / INSTALLMENTS ----
+        function toggleEmiDetails() {
+            const checked = document.getElementById('exp-is-emi').checked;
+            document.getElementById('exp-emi-details').classList.toggle('hidden', !checked);
+            updateEmiPreview();
+        }
+
+        function toggleEmiCustomMonths() {
+            const isCustom = document.getElementById('exp-emi-tenure').value === 'custom';
+            document.getElementById('exp-emi-custom-wrapper').classList.toggle('hidden', !isCustom);
+            updateEmiPreview();
+        }
+
+        function getEmiTenureMonths() {
+            const tenureSelect = document.getElementById('exp-emi-tenure').value;
+            if (tenureSelect === 'custom') {
+                const n = parseInt(document.getElementById('exp-emi-custom-months').value, 10);
+                return (Number.isInteger(n) && n >= 1) ? n : null;
+            }
+            const n = parseInt(tenureSelect, 10);
+            return (Number.isInteger(n) && n >= 1) ? n : null;
+        }
+
+        function updateEmiPreview() {
+            const preview = document.getElementById('exp-emi-preview');
+            if (!preview) return;
+            const amount = parseFloat(document.getElementById('exp-amount').value) || 0;
+            const months = getEmiTenureMonths();
+            if (!document.getElementById('exp-is-emi').checked || amount <= 0 || !months) {
+                preview.textContent = '';
+                return;
+            }
+            const monthly = amount / months;
+            preview.textContent = `≈ AED ${monthly.toFixed(2)} / month for ${months} months (AED ${amount.toFixed(2)} total). The last installment is adjusted for rounding.`;
+        }
+
+        document.getElementById('exp-is-emi').addEventListener('change', toggleEmiDetails);
+        document.getElementById('exp-emi-tenure').addEventListener('change', toggleEmiCustomMonths);
+        document.getElementById('exp-emi-custom-months').addEventListener('input', updateEmiPreview);
+        document.getElementById('exp-amount').addEventListener('input', updateEmiPreview);
 
         document.getElementById('exp-type').addEventListener('change', (e) => {
             syncCategoryState(e.target.value);
@@ -1356,6 +1473,24 @@
 
             const existingTx = editingTxId ? transactions.find(t => t.id === editingTxId) : null;
 
+            // EMI: only meaningful on a Purchase. Editing an existing EMI purchase keeps
+            // whatever installments were already paid and just recomputes what's left.
+            let emiFields = { emiTotalMonths: null, emiMonthlyAmount: null, emiPaidMonths: 0, emiRemainingMonths: null };
+            if (type === 'Purchase' && document.getElementById('exp-is-emi').checked) {
+                const months = getEmiTenureMonths();
+                if (!months) {
+                    alert('Enter a valid number of months for the installment plan (or uncheck EMI).');
+                    return;
+                }
+                const paidMonths = (existingTx && existingTx.emiTotalMonths) ? (existingTx.emiPaidMonths || 0) : 0;
+                emiFields = {
+                    emiTotalMonths: months,
+                    emiMonthlyAmount: Math.round((amount / months) * 100) / 100,
+                    emiPaidMonths: Math.min(paidMonths, months),
+                    emiRemainingMonths: Math.max(months - paidMonths, 0)
+                };
+            }
+
             const txObj = {
                 id: editingTxId || Date.now().toString(),
                 date,
@@ -1367,6 +1502,7 @@
                 amount,
                 serviceCharge,
                 cashback,
+                ...emiFields,
                 notes: existingTx ? (existingTx.notes || '') : '' // form has no Notes field yet, so preserve what was already there
             };
 
@@ -1426,6 +1562,24 @@
             document.getElementById('exp-category').value = tx.category || '';
             document.getElementById('exp-cashback').value = tx.cashback || '0.00';
 
+            // Restore this purchase's EMI plan (if any) into the checkbox/tenure controls
+            const isEmiChecked = document.getElementById('exp-is-emi');
+            isEmiChecked.checked = !!(tx.type === 'Purchase' && tx.emiTotalMonths);
+            if (isEmiChecked.checked) {
+                const standardTenures = ['3', '6', '9', '12', '18', '24'];
+                const tenureStr = String(tx.emiTotalMonths);
+                const tenureSelect = document.getElementById('exp-emi-tenure');
+                if (standardTenures.includes(tenureStr)) {
+                    tenureSelect.value = tenureStr;
+                    document.getElementById('exp-emi-custom-wrapper').classList.add('hidden');
+                } else {
+                    tenureSelect.value = 'custom';
+                    document.getElementById('exp-emi-custom-months').value = tx.emiTotalMonths;
+                    document.getElementById('exp-emi-custom-wrapper').classList.remove('hidden');
+                }
+            }
+            toggleEmiDetails();
+
             document.getElementById('exp-form-title').innerHTML = `<span>✏️</span> Edit Transaction`;
             document.getElementById('tx-submit-btn').textContent = "Update Transaction";
             
@@ -1452,6 +1606,11 @@
             document.getElementById('exp-category').value = tx.category || '';
             calculateDynamicCashback(); // recompute cashback for today's rates rather than copying the old value
 
+            // A duplicated purchase is a fresh transaction — don't inherit the original's EMI plan/paid months
+            document.getElementById('exp-is-emi').checked = false;
+            document.getElementById('exp-emi-details').classList.add('hidden');
+            document.getElementById('exp-emi-preview').textContent = '';
+
             document.getElementById('exp-form-title').innerHTML = `<span>↻</span> Repeat Transaction`;
             document.getElementById('tx-submit-btn').textContent = "Log Transaction";
 
@@ -1465,6 +1624,60 @@
                 cancelEditTransaction();
             }
             softDeleteTransactions([id]);
+        }
+
+        // Logs this month's installment on an EMI purchase as a Repaid transaction (the same
+        // way you'd pay it off manually) and decrements how many months are left.
+        async function logEmiInstallment(id) {
+            const original = transactions.find(t => t.id === id);
+            if (!original || !original.emiTotalMonths || (original.emiRemainingMonths || 0) <= 0) return;
+
+            const paidSoFar = original.emiPaidMonths || 0;
+            const isLastInstallment = original.emiRemainingMonths === 1;
+            // True up the final installment to whatever principal is actually left, so rounding
+            // across the plan doesn't leave a few fils unpaid or overpaid.
+            const installmentAmount = isLastInstallment
+                ? Math.round((original.amount - (original.emiMonthlyAmount * paidSoFar)) * 100) / 100
+                : original.emiMonthlyAmount;
+
+            const ok = await showConfirm(
+                'Log this installment?',
+                `Records a Repaid entry of AED ${formatAED(installmentAmount)} on ${original.cardName} for "${original.desc}" (installment ${paidSoFar + 1} of ${original.emiTotalMonths}).`,
+                { confirmLabel: 'Log Payment' }
+            );
+            if (!ok) return;
+
+            const repaymentTx = {
+                id: Date.now().toString() + Math.random(),
+                date: new Date().toISOString().slice(0, 10),
+                cardName: original.cardName,
+                cardId: original.cardId,
+                type: 'Repaid',
+                desc: `EMI installment ${paidSoFar + 1}/${original.emiTotalMonths} — ${original.desc}`,
+                category: '',
+                amount: installmentAmount,
+                serviceCharge: 0,
+                cashback: 0,
+                notes: `Auto-logged installment for transaction ${original.id}`
+            };
+            transactions.unshift(repaymentTx);
+            await saveTransactionToDB(repaymentTx);
+
+            const idx = transactions.findIndex(t => t.id === id);
+            if (idx !== -1) {
+                transactions[idx] = {
+                    ...transactions[idx],
+                    emiPaidMonths: paidSoFar + 1,
+                    emiRemainingMonths: original.emiRemainingMonths - 1
+                };
+                await saveTransactionToDB(transactions[idx]);
+            }
+
+            render();
+            showToast(
+                isLastInstallment ? `Final installment logged — "${original.desc}" is fully paid off.` : `Installment logged (${paidSoFar + 1} of ${original.emiTotalMonths}).`,
+                { tone: 'success' }
+            );
         }
 
         async function deleteCard(id) {
@@ -1726,6 +1939,25 @@
                         <span class="font-semibold text-slate-800 dark:text-slate-200">AED ${formatAED(ob.afterPending)}</span>
                     </div>` : '';
 
+                // Active EMI plans: Purchases on this card converted to installments that
+                // still have unpaid months. The full purchase amount is already counted in
+                // "Outstanding today" above (it hit the limit like any purchase) — this is
+                // just a reminder of what's left to pay off and by how much each month.
+                const activeEmis = cardTx.filter(t => t.type === 'Purchase' && t.emiTotalMonths && (t.emiRemainingMonths || 0) > 0);
+                const emiHtml = activeEmis.length > 0 ? `
+                    <div class="pt-2 border-t border-dashed border-slate-200 dark:border-slate-600 space-y-1.5">
+                        <span class="text-[11px] font-semibold uppercase text-slate-500 dark:text-slate-400">Active Installments (${activeEmis.length})</span>
+                        ${activeEmis.map(t => `
+                            <div class="flex items-center justify-between gap-2 text-[11px] bg-slate-100 dark:bg-slate-800 rounded-md px-2 py-1.5">
+                                <div class="min-w-0">
+                                    <p class="font-medium text-slate-700 dark:text-slate-300 truncate">${escapeHtml(t.desc || 'Purchase')}</p>
+                                    <p class="text-slate-500 dark:text-slate-400">AED ${formatAED(t.emiMonthlyAmount)}/mo · ${t.emiRemainingMonths} of ${t.emiTotalMonths} left</p>
+                                </div>
+                                <button onclick="logEmiInstallment('${t.id}')" class="shrink-0 bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-2 py-1 rounded-md transition">Log Payment</button>
+                            </div>
+                        `).join('')}
+                    </div>` : '';
+
                 return `
                     <div class="p-4 rounded-xl border text-xs space-y-3 shadow-sm ${dateInfo.wrapperClass}">
                         <div class="flex justify-between items-start">
@@ -1768,6 +2000,7 @@
                                 </div>
                             </details>
                             ${pendingHtml}
+                            ${emiHtml}
                         </div>
                     </div>
                 `;
