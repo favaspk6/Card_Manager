@@ -385,8 +385,8 @@
 
                         <!-- Charge Percentage Input -->
                         <div id="exp-emi-charge-input-wrapper" class="hidden">
-                            <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase mb-1" id="exp-emi-charge-label">Charge (%)</label>
-                            <input type="number" step="0.01" min="0" max="100" id="exp-emi-charge-percentage" placeholder="e.g., 2.5" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-sm bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 border-slate-200 dark:border-slate-600 placeholder-slate-400 dark:placeholder-slate-500">
+                            <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase mb-1" id="exp-emi-charge-label">Charge</label>
+                            <input type="number" step="0.01" min="0" id="exp-emi-charge-percentage" placeholder="e.g., 200" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-sm bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 border-slate-200 dark:border-slate-600 placeholder-slate-400 dark:placeholder-slate-500">
                             <p id="exp-emi-charge-note" class="text-[10px] text-slate-500 dark:text-slate-400 mt-1"></p>
                         </div>
 
@@ -1136,11 +1136,16 @@
                 return;
             }
 
+            // If category is "None / Default" (empty string), don't calculate cashback
+            if (!category || category === '') {
+                cashbackInput.value = '0.00';
+                return;
+            }
+
             if (type === 'Purchase' || type === 'Cash Withdrawal') {
                 const selectedCard = cards.find(c => c.id === cardId);
                 if (selectedCard && amount > 0) {
-                    const activeCategory = category || 'All Other Spend';
-                    const rate = selectedCard.rates[activeCategory] !== undefined ? selectedCard.rates[activeCategory] : (selectedCard.rates['All Other Spend'] || 0);
+                    const rate = selectedCard.rates[category] !== undefined ? selectedCard.rates[category] : 0;
                     const calculatedCashback = (amount * (rate / 100)).toFixed(2);
                     cashbackInput.value = calculatedCashback;
                 }
@@ -1261,24 +1266,26 @@
             return (Number.isInteger(n) && n >= 1) ? n : null;
         }
 
-        function updateEmiPreview() {
         // ---- EMI CHARGE TYPE HANDLING ----
         function onEmiChargeTypeChange() {
             const chargeType = document.querySelector('input[name="emi-charge-type"]:checked').value;
             const inputWrapper = document.getElementById('exp-emi-charge-input-wrapper');
             const chargeLabel = document.getElementById('exp-emi-charge-label');
             const chargeNote = document.getElementById('exp-emi-charge-note');
-            
+            const chargeInput = document.getElementById('exp-emi-charge-percentage');
+
             if (chargeType === 'none') {
                 inputWrapper.classList.add('hidden');
             } else {
                 inputWrapper.classList.remove('hidden');
                 if (chargeType === 'fee') {
-                    chargeLabel.textContent = 'Processing Fee (%)';
-                    chargeNote.textContent = 'Fee calculated on principal and added to first month\'s payment';
+                    chargeLabel.textContent = 'Processing Fee (AED)';
+                    chargeInput.placeholder = 'e.g., 200';
+                    chargeNote.textContent = 'Fixed amount charged on first month\'s payment';
                 } else {
                     chargeLabel.textContent = 'Interest Rate (%)';
-                    chargeNote.textContent = 'Interest spread evenly across all monthly installments';
+                    chargeInput.placeholder = 'e.g., 5';
+                    chargeNote.textContent = 'Percentage spread evenly across all monthly installments';
                 }
             }
             updateEmiPreview();
@@ -1287,32 +1294,38 @@
         function getEmiChargeDetails() {
             const chargeType = document.querySelector('input[name="emi-charge-type"]:checked').value;
             const percentage = parseFloat(document.getElementById('exp-emi-charge-percentage').value) || 0;
-            
+
             return { chargeType, percentage };
         }
 
-        function calculateEmiWithCharges(principal, months, chargeType, chargePercentage) {
+        function calculateEmiWithCharges(principal, months, chargeType, chargeValue) {
             let totalAmount = principal;
             let chargeAmount = 0;
             let monthlyAmount = principal / months;
             let firstMonthAmount = monthlyAmount;
+            let monthlyChargeAmount = 0;
 
-            if (chargeType === 'fee' && chargePercentage > 0) {
-                chargeAmount = (principal * chargePercentage) / 100;
+            if (chargeType === 'fee' && chargeValue > 0) {
+                // Processing fee is a fixed amount added to first month only
+                chargeAmount = chargeValue;
                 totalAmount = principal + chargeAmount;
-                firstMonthAmount = monthlyAmount + chargeAmount;
-            } else if (chargeType === 'interest' && chargePercentage > 0) {
-                chargeAmount = (principal * chargePercentage) / 100;
+                firstMonthAmount = monthlyAmount + chargeAmount; // First month includes fee
+                monthlyChargeAmount = 0; // No charge on other months
+            } else if (chargeType === 'interest' && chargeValue > 0) {
+                // Interest is a percentage spread across all months
+                chargeAmount = (principal * chargeValue) / 100;
+                monthlyChargeAmount = chargeAmount / months; // Spread interest across all months
                 totalAmount = principal + chargeAmount;
-                monthlyAmount = totalAmount / months;
+                monthlyAmount = (principal / months) + monthlyChargeAmount; // Each month includes interest portion
                 firstMonthAmount = monthlyAmount;
             }
 
             return {
                 totalAmount,
                 chargeAmount,
-                monthlyAmount,
-                firstMonthAmount,
+                monthlyAmount,      // Amount including charge (for interest) or without charge (for fee)
+                firstMonthAmount,    // First month amount (includes fee if processing fee mode)
+                monthlyChargeAmount, // Charge portion per month (for interest breakdown)
                 remainingMonths: months
             };
         }
@@ -1337,11 +1350,15 @@
             if (chargeType === 'none') {
                 previewText = `≈ AED ${emiCalc.monthlyAmount.toFixed(2)} / month for ${months} months (AED ${amount.toFixed(2)} total). The last installment is adjusted for rounding.`;
             } else if (chargeType === 'fee') {
-                previewText = `Principal: AED ${amount.toFixed(2)} + Fee (${percentage}%): AED ${emiCalc.chargeAmount.toFixed(2)} = AED ${emiCalc.totalAmount.toFixed(2)} total.\n`;
-                previewText += `📍 Month 1: AED ${emiCalc.firstMonthAmount.toFixed(2)} (includes fee) + Months 2-${months}: AED ${emiCalc.monthlyAmount.toFixed(2)} each`;
+                // Processing Fee: Show first month with fee + installment, rest without fee
+                previewText = `Principal: AED ${amount.toFixed(2)} + Processing Fee: AED ${emiCalc.chargeAmount.toFixed(2)} = AED ${emiCalc.totalAmount.toFixed(2)} total.\n`;
+                previewText += `📍 Month 1 (with fee): AED ${emiCalc.firstMonthAmount.toFixed(2)} (AED ${emiCalc.monthlyAmount.toFixed(2)} + AED ${emiCalc.chargeAmount.toFixed(2)} fee)\n`;
+                previewText += `Months 2-${months} (without fee): AED ${emiCalc.monthlyAmount.toFixed(2)} each`;
             } else if (chargeType === 'interest') {
+                // Interest: Show that each month includes interest portion
+                const principalPortion = (amount / months).toFixed(2);
                 previewText = `Principal: AED ${amount.toFixed(2)} + Interest (${percentage}%): AED ${emiCalc.chargeAmount.toFixed(2)} = AED ${emiCalc.totalAmount.toFixed(2)} total.\n`;
-                previewText += `Monthly: AED ${emiCalc.monthlyAmount.toFixed(2)} × ${months} months`;
+                previewText += `Each Month: AED ${emiCalc.monthlyAmount.toFixed(2)} (AED ${principalPortion} principal + AED ${emiCalc.monthlyChargeAmount.toFixed(2)} interest) × ${months} months`;
             }
 
             preview.textContent = previewText;
@@ -1583,7 +1600,7 @@
 
             // EMI: only meaningful on a Purchase. Editing an existing EMI purchase keeps
             // whatever installments were already paid and just recomputes what's left.
-            let emiFields = { emiTotalMonths: null, emiMonthlyAmount: null, emiPaidMonths: 0, emiRemainingMonths: null };
+            let emiFields = { emiTotalMonths: null, emiMonthlyAmount: null, emiPaidMonths: 0, emiRemainingMonths: null, emiChargeType: null, emiChargePercentage: null, emiChargeAmount: null, emiFirstMonthAmount: null };
             if (type === 'Purchase' && document.getElementById('exp-is-emi').checked) {
                 const months = getEmiTenureMonths();
                 if (!months) {
@@ -1591,11 +1608,20 @@
                     return;
                 }
                 const paidMonths = (existingTx && existingTx.emiTotalMonths) ? (existingTx.emiPaidMonths || 0) : 0;
+
+                // Get charge details
+                const { chargeType, percentage } = getEmiChargeDetails();
+                const emiCalc = calculateEmiWithCharges(amount, months, chargeType, percentage);
+
                 emiFields = {
                     emiTotalMonths: months,
-                    emiMonthlyAmount: Math.round((amount / months) * 100) / 100,
+                    emiMonthlyAmount: Math.round(emiCalc.monthlyAmount * 100) / 100,
+                    emiFirstMonthAmount: Math.round(emiCalc.firstMonthAmount * 100) / 100,
                     emiPaidMonths: Math.min(paidMonths, months),
-                    emiRemainingMonths: Math.max(months - paidMonths, 0)
+                    emiRemainingMonths: Math.max(months - paidMonths, 0),
+                    emiChargeType: chargeType,
+                    emiChargePercentage: percentage,
+                    emiChargeAmount: Math.round(emiCalc.chargeAmount * 100) / 100
                 };
             }
 
@@ -1619,6 +1645,40 @@
                 if (idx !== -1) transactions[idx] = txObj;
             } else {
                 transactions.unshift(txObj);
+            }
+
+            // Auto-create fee/interest transaction if EMI has charges
+            if (!editingTxId && type === 'Purchase' && document.getElementById('exp-is-emi').checked) {
+                const { chargeType, percentage } = getEmiChargeDetails();
+                if (chargeType !== 'none' && percentage > 0) {
+                    const emiCalc = calculateEmiWithCharges(amount, document.getElementById('exp-emi-tenure').value === 'custom'
+                        ? parseInt(document.getElementById('exp-emi-custom-months').value)
+                        : parseInt(document.getElementById('exp-emi-tenure').value), chargeType, percentage);
+
+                    let feeDesc = '';
+                    if (chargeType === 'fee') {
+                        feeDesc = `Processing Fee - ${desc}`;
+                    } else if (chargeType === 'interest') {
+                        feeDesc = `Interest Rate (${percentage}%) - ${desc}`;
+                    }
+
+                    // Create automatic fee/interest transaction
+                    const feeTransaction = {
+                        id: Date.now().toString() + Math.random(),
+                        date: txObj.date,
+                        cardName: txObj.cardName,
+                        cardId: txObj.cardId,
+                        type: 'Purchase',
+                        desc: feeDesc,
+                        category: 'Service Fee',
+                        amount: emiCalc.chargeAmount,
+                        serviceCharge: 0,
+                        cashback: 0,
+                        notes: `Auto-created ${chargeType === 'fee' ? 'processing fee' : 'interest'} for EMI plan`
+                    };
+                    transactions.unshift(feeTransaction);
+                    await saveTransactionToDB(feeTransaction);
+                }
             }
 
             // Remember the last-used card & type so the next new entry starts prefilled with them.
@@ -1744,9 +1804,20 @@
             const isLastInstallment = original.emiRemainingMonths === 1;
             // True up the final installment to whatever principal is actually left, so rounding
             // across the plan doesn't leave a few fils unpaid or overpaid.
-            const installmentAmount = isLastInstallment
-                ? Math.round((original.amount - (original.emiMonthlyAmount * paidSoFar)) * 100) / 100
-                : original.emiMonthlyAmount;
+            let installmentAmount;
+
+            // For first month with processing fee, use emiFirstMonthAmount
+            if (paidSoFar === 0 && original.emiChargeType === 'fee' && original.emiFirstMonthAmount) {
+                installmentAmount = original.emiFirstMonthAmount;
+            } else if (isLastInstallment) {
+                // Calculate remaining balance for last month
+                const totalPaid = original.emiFirstMonthAmount
+                    ? original.emiFirstMonthAmount + (original.emiMonthlyAmount * (paidSoFar - 1))
+                    : original.emiMonthlyAmount * paidSoFar;
+                installmentAmount = Math.round((original.amount + (original.emiChargeAmount || 0) - totalPaid) * 100) / 100;
+            } else {
+                installmentAmount = original.emiMonthlyAmount;
+            }
 
             const ok = await showConfirm(
                 'Log this installment?',
@@ -2055,15 +2126,22 @@
                 const emiHtml = activeEmis.length > 0 ? `
                     <div class="pt-2 border-t border-dashed border-slate-200 dark:border-slate-600 space-y-1.5">
                         <span class="text-[11px] font-semibold uppercase text-slate-500 dark:text-slate-400">Active Installments (${activeEmis.length})</span>
-                        ${activeEmis.map(t => `
+                        ${activeEmis.map(t => {
+                            const paidSoFar = t.emiPaidMonths || 0;
+                            // For first unpaid month with processing fee, show emiFirstMonthAmount
+                            const nextPaymentAmount = (paidSoFar === 0 && t.emiChargeType === 'fee' && t.emiFirstMonthAmount)
+                                ? t.emiFirstMonthAmount
+                                : t.emiMonthlyAmount;
+                            return `
                             <div class="flex items-center justify-between gap-2 text-[11px] bg-slate-100 dark:bg-slate-800 rounded-md px-2 py-1.5">
                                 <div class="min-w-0">
                                     <p class="font-medium text-slate-700 dark:text-slate-300 truncate">${escapeHtml(t.desc || 'Purchase')}</p>
-                                    <p class="text-slate-500 dark:text-slate-400">AED ${formatAED(t.emiMonthlyAmount)}/mo · ${t.emiRemainingMonths} of ${t.emiTotalMonths} left</p>
+                                    <p class="text-slate-500 dark:text-slate-400">AED ${formatAED(nextPaymentAmount)}/mo · ${t.emiRemainingMonths} of ${t.emiTotalMonths} left</p>
                                 </div>
                                 <button onclick="logEmiInstallment('${t.id}')" class="shrink-0 bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-2 py-1 rounded-md transition">Log Payment</button>
                             </div>
-                        `).join('')}
+                        `;
+                        }).join('')}
                     </div>` : '';
 
                 return `
