@@ -602,6 +602,18 @@
             return n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
         }
 
+        // A plain Date.now() timestamp is NOT guaranteed unique — two rows created in the same
+        // millisecond (e.g. two rows in a fast import loop, or a retried save) collide, and a
+        // Supabase upsert can't tell them apart, sometimes even colliding with another user's
+        // row and getting blocked by Row Level Security. crypto.randomUUID() (falling back to a
+        // timestamp+random string on very old browsers) avoids this entirely.
+        function newId() {
+            if (window.crypto && typeof window.crypto.randomUUID === 'function') {
+                return window.crypto.randomUUID();
+            }
+            return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
+        }
+
         // ---- TOASTS ----
         // Lightweight, non-blocking feedback for things that used to be alert(). Pass
         // { actionLabel, onAction } to show an action button (e.g. "Undo") instead of
@@ -962,10 +974,10 @@
                         paymentDay: c.payment_day ?? null
                     }));
                 } else {
-              //      cards = [
-              //          { id: '1', name: 'ADCB - 365', availableLimit: 15000, rates: { 'Dining': 6, 'Grocery': 5, 'Travel': 1, 'Gas/Fuel': 1, 'Online Shopping': 1, 'Govt': 0.15, 'All Other Spend': 1 } },
-              //          { id: '2', name: 'MASHREQ - NEO', availableLimit: 22000, rates: { 'Dining': 5, 'Grocery': 1, 'Travel': 1, 'Gas/Fuel': 1, 'Online Shopping': 1, 'Govt': 0.15, 'All Other Spend': 1 } }
-              //      ];
+                    cards = [
+                        { id: '1', name: 'ADCB - 365', availableLimit: 15000, rates: { 'Dining': 6, 'Grocery': 5, 'Travel': 1, 'Gas/Fuel': 1, 'Online Shopping': 1, 'Govt': 0.15, 'All Other Spend': 1 } },
+                        { id: '2', name: 'MASHREQ - NEO', availableLimit: 22000, rates: { 'Dining': 5, 'Grocery': 1, 'Travel': 1, 'Gas/Fuel': 1, 'Online Shopping': 1, 'Govt': 0.15, 'All Other Spend': 1 } }
+                    ];
                 }
 
                 if (!txError && dbTx) {
@@ -1380,7 +1392,7 @@
                         let rowFailed = false;
                         if (!cards.some(c => c.name.trim().toLowerCase() === cardName.toLowerCase())) {
                             const newCard = {
-                                id: Date.now().toString() + Math.random(),
+                                id: newId(),
                                 name: cardName,
                                 availableLimit: 20000,
                                 rates: defaultRates(1)
@@ -1390,7 +1402,7 @@
                         }
 
                         const newTx = {
-                            id: Date.now().toString() + Math.random(),
+                            id: newId(),
                             date, cardName, type, desc, category, amount,
                             serviceCharge, cashback, notes
                         };
@@ -1460,7 +1472,7 @@
                     cardObj = cards[index];
                 }
             } else {
-                cardObj = { id: Date.now().toString(), name, availableLimit, rates, statementDay, paymentDay };
+                cardObj = { id: newId(), name, availableLimit, rates, statementDay, paymentDay };
                 cards.push(cardObj);
             }
 
@@ -1573,7 +1585,7 @@
             }
 
             const txObj = {
-                id: editingTxId || Date.now().toString(),
+                id: editingTxId || newId(),
                 date,
                 cardName: selectedCard ? selectedCard.name : 'Unknown',
                 cardId: selectedCard ? selectedCard.id : undefined,
@@ -1737,7 +1749,7 @@
             if (!ok) return;
 
             const repaymentTx = {
-                id: Date.now().toString() + Math.random(),
+                id: newId(),
                 date: new Date().toISOString().slice(0, 10),
                 cardName: original.cardName,
                 cardId: original.cardId,
