@@ -33,6 +33,7 @@
                     Import Backup
                     <input type="file" id="backup-file-input" accept="application/json" class="hidden">
                 </label>
+                <button onclick="repairMissingCardLinks()" class="bg-indigo-800 hover:bg-indigo-900 text-xs px-3 py-2 rounded text-indigo-100 transition duration-150" title="Fixes transactions saved before card_id was tracked (e.g. via CSV import) by matching them to a card by name">Fix Card Links</button>
                 <button onclick="clearAllData()" class="bg-indigo-800 hover:bg-red-600 text-xs px-3 py-2 rounded text-indigo-100 transition duration-150">Reset Data</button>
             </div>
         </div>
@@ -974,10 +975,7 @@
                         paymentDay: c.payment_day ?? null
                     }));
                 } else {
-                    cards = [
-                        { id: '1', name: 'ADCB - 365', availableLimit: 15000, rates: { 'Dining': 6, 'Grocery': 5, 'Travel': 1, 'Gas/Fuel': 1, 'Online Shopping': 1, 'Govt': 0.15, 'All Other Spend': 1 } },
-                        { id: '2', name: 'MASHREQ - NEO', availableLimit: 22000, rates: { 'Dining': 5, 'Grocery': 1, 'Travel': 1, 'Gas/Fuel': 1, 'Online Shopping': 1, 'Govt': 0.15, 'All Other Spend': 1 } }
-                    ];
+                  
                 }
 
                 if (!txError && dbTx) {
@@ -1390,20 +1388,21 @@
                         }
 
                         let rowFailed = false;
-                        if (!cards.some(c => c.name.trim().toLowerCase() === cardName.toLowerCase())) {
-                            const newCard = {
+                        let matchedCard = cards.find(c => c.name.trim().toLowerCase() === cardName.toLowerCase());
+                        if (!matchedCard) {
+                            matchedCard = {
                                 id: newId(),
                                 name: cardName,
                                 availableLimit: 20000,
                                 rates: defaultRates(1)
                             };
-                            cards.push(newCard);
-                            if ((await saveCardToDB(newCard)) === false) rowFailed = true;
+                            cards.push(matchedCard);
+                            if ((await saveCardToDB(matchedCard)) === false) rowFailed = true;
                         }
 
                         const newTx = {
                             id: newId(),
-                            date, cardName, type, desc, category, amount,
+                            date, cardName, cardId: matchedCard.id, type, desc, category, amount,
                             serviceCharge, cashback, notes
                         };
                         transactions.push(newTx);
@@ -1899,6 +1898,33 @@
             };
             reader.readAsText(file);
         });
+
+        // Repairs transactions that were saved with a card name but no card_id — this affects
+        // anything imported before the CSV importer started setting cardId, and any row saved
+        // while the emi_*/card_id columns hadn't been migrated in yet. Matches purely by name,
+        // so it can't recover a transaction whose card was since renamed or deleted.
+        async function repairMissingCardLinks() {
+            const orphaned = transactions.filter(t => !t.cardId && t.cardName);
+            if (orphaned.length === 0) {
+                showToast('Nothing to fix — every transaction already has a linked card.', { tone: 'success' });
+                return;
+            }
+
+            let matched = 0, unmatched = 0, failed = 0;
+            for (const t of orphaned) {
+                const card = cards.find(c => c.name.trim().toLowerCase() === (t.cardName || '').trim().toLowerCase());
+                if (!card) { unmatched++; continue; }
+                t.cardId = card.id;
+                if ((await saveTransactionToDB(t)) === false) failed++;
+                else matched++;
+            }
+
+            render();
+            let summary = `Linked ${matched} of ${orphaned.length} transaction(s) to their card.`;
+            if (unmatched > 0) summary += `\n${unmatched} had no card matching their saved name (renamed or deleted card).`;
+            if (failed > 0) summary += `\n${failed} matched but failed to save — see the error above.`;
+            showToast(summary, { tone: failed > 0 ? 'error' : 'success', duration: 8000 });
+        }
 
         async function clearAllData() {
             const ok = await showConfirm('Clear all data?', 'This permanently deletes every stored card and transaction. This cannot be undone.', { confirmLabel: 'Clear Everything' });
