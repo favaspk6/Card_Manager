@@ -962,10 +962,10 @@
                         paymentDay: c.payment_day ?? null
                     }));
                 } else {
-                //    cards = [
-                //        { id: '1', name: 'ADCB - 365', availableLimit: 15000, rates: { 'Dining': 6, 'Grocery': 5, 'Travel': 1, 'Gas/Fuel': 1, 'Online Shopping': 1, 'Govt': 0.15, 'All Other Spend': 1 } },
-                //        { id: '2', name: 'MASHREQ - NEO', availableLimit: 22000, rates: { 'Dining': 5, 'Grocery': 1, 'Travel': 1, 'Gas/Fuel': 1, 'Online Shopping': 1, 'Govt': 0.15, 'All Other Spend': 1 } }
-                //    ];
+                    cards = [
+                        { id: '1', name: 'ADCB - 365', availableLimit: 15000, rates: { 'Dining': 6, 'Grocery': 5, 'Travel': 1, 'Gas/Fuel': 1, 'Online Shopping': 1, 'Govt': 0.15, 'All Other Spend': 1 } },
+                        { id: '2', name: 'MASHREQ - NEO', availableLimit: 22000, rates: { 'Dining': 5, 'Grocery': 1, 'Travel': 1, 'Gas/Fuel': 1, 'Online Shopping': 1, 'Govt': 0.15, 'All Other Spend': 1 } }
+                    ];
                 }
 
                 if (!txError && dbTx) {
@@ -1344,7 +1344,7 @@
                 const rawData = XLSX.utils.sheet_to_json(worksheet, { defval: '' });
 
                 const knownCategories = new Set([...RATE_CATEGORIES, ...TX_ONLY_CATEGORIES]);
-                let imported = 0, skipped = 0, unknownCategoryRows = 0;
+                let imported = 0, skipped = 0, unknownCategoryRows = 0, dbFailed = 0;
 
                 for (let i = 0; i < rawData.length; i++) {
                     const row = rawData[i];
@@ -1372,6 +1372,7 @@
                             category = ''; // falls back to "All Other Spend" rate at calculation time
                         }
 
+                        let rowFailed = false;
                         if (!cards.some(c => c.name.trim().toLowerCase() === cardName.toLowerCase())) {
                             const newCard = {
                                 id: Date.now().toString() + Math.random(),
@@ -1380,7 +1381,7 @@
                                 rates: defaultRates(1)
                             };
                             cards.push(newCard);
-                            await saveCardToDB(newCard);
+                            if ((await saveCardToDB(newCard)) === false) rowFailed = true;
                         }
 
                         const newTx = {
@@ -1389,8 +1390,9 @@
                             serviceCharge, cashback, notes
                         };
                         transactions.push(newTx);
-                        await saveTransactionToDB(newTx);
-                        imported++;
+                        if ((await saveTransactionToDB(newTx)) === false) rowFailed = true;
+
+                        if (rowFailed) dbFailed++; else imported++;
                     } catch (err) {
                         console.error(`Row ${i + 2} failed to import:`, err);
                         skipped++;
@@ -1398,9 +1400,10 @@
                 }
 
                 let summary = `Imported ${imported} of ${rawData.length} rows.`;
+                if (dbFailed > 0) summary += `\n${dbFailed} row(s) parsed fine but failed to save to Supabase — see the error above.`;
                 if (skipped > 0) summary += `\n${skipped} row(s) skipped — missing a Card name or a valid Amount.`;
                 if (unknownCategoryRows > 0) summary += `\n${unknownCategoryRows} row(s) had a Category not in the app's list — filed as "All Other Spend".`;
-                showToast(summary, { tone: 'success', duration: 6000 });
+                showToast(summary, { tone: dbFailed > 0 ? 'error' : 'success', duration: dbFailed > 0 ? 10000 : 6000 });
                 e.target.value = '';
                 render();
             };
