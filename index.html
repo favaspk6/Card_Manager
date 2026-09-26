@@ -1015,10 +1015,11 @@
                     }));
                 }
             } else {
-                cards = JSON.parse(localStorage.getItem('cb_cards')) || [
-                    { id: '1', name: 'ADCB - 365', availableLimit: 15000, rates: { 'Dining': 6, 'Grocery': 5, 'Travel': 1, 'Gas/Fuel': 1, 'Online Shopping': 1, 'Govt': 0.15, 'All Other Spend': 1 } },
-                    { id: '2', name: 'MASHREQ - NEO', availableLimit: 22000, rates: { 'Dining': 5, 'Grocery': 1, 'Travel': 1, 'Gas/Fuel': 1, 'Online Shopping': 1, 'Govt': 0.15, 'All Other Spend': 1 } }
-                ];
+                cards = JSON.parse(localStorage.getItem('cb_cards')) || 
+               //     [
+               //     { id: '1', name: 'ADCB - 365', availableLimit: 15000, rates: { 'Dining': 6, 'Grocery': 5, 'Travel': 1, 'Gas/Fuel': 1, 'Online Shopping': 1, 'Govt': 0.15, 'All Other Spend': 1 } },
+               //     { id: '2', name: 'MASHREQ - NEO', availableLimit: 22000, rates: { 'Dining': 5, 'Grocery': 1, 'Travel': 1, 'Gas/Fuel': 1, 'Online Shopping': 1, 'Govt': 0.15, 'All Other Spend': 1 } }
+               // ];
                 transactions = JSON.parse(localStorage.getItem('cb_transactions')) || [];
             }
             populateCategorySelects();
