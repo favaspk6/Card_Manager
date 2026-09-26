@@ -1203,6 +1203,12 @@
                 return;
             }
 
+            // If category is "None / Default" (empty string), don't calculate cashback
+            if (!category || category === '') {
+                cashbackInput.value = '0.00';
+                return;
+            }
+
             if (type === 'Purchase' || type === 'Cash Withdrawal') {
                 const selectedCard = cards.find(c => c.id === cardId);
                 if (selectedCard && amount > 0) {
@@ -1888,13 +1894,24 @@
 
             const paidSoFar = original.emiPaidMonths || 0;
             const isLastInstallment = original.emiRemainingMonths === 1;
+            
             // True up the final installment to whatever's actually left of the total repayable
             // (principal + interest), so rounding across the plan doesn't leave a few fils
             // unpaid or overpaid.
-            const totalRepayable = original.amount + (original.emiTotalInterest || 0);
-            const installmentAmount = isLastInstallment
-                ? Math.round((totalRepayable - (original.emiMonthlyAmount * paidSoFar)) * 100) / 100
-                : original.emiMonthlyAmount;
+            let installmentAmount;
+// For first month with processing fee, use emiFirstMonthAmount
+            if (paidSoFar === 0 && original.emiChargeType === 'fee' && original.emiFirstMonthAmount) {
+                installmentAmount = original.emiFirstMonthAmount;
+            } else if (isLastInstallment) {
+                // Calculate remaining balance for last month
+                const totalPaid = original.emiFirstMonthAmount
+                    ? original.emiFirstMonthAmount + (original.emiMonthlyAmount * (paidSoFar - 1))
+                    : original.emiMonthlyAmount * paidSoFar;
+ installmentAmount = Math.round((original.amount + (original.emiChargeAmount || 0) - totalPaid) * 100) / 100;
+            } else {
+                installmentAmount = original.emiMonthlyAmount;
+            }                
+            
 
             const ok = await showConfirm(
                 'Log this installment?',
@@ -2233,7 +2250,13 @@
                 const emiHtml = activeEmis.length > 0 ? `
                     <div class="pt-2 border-t border-dashed border-slate-200 dark:border-slate-600 space-y-1.5">
                         <span class="text-[11px] font-semibold uppercase text-slate-500 dark:text-slate-400">Active Installments (${activeEmis.length})</span>
-                        ${activeEmis.map(t => `
+                        ${activeEmis.map(t =>  {
+                            const paidSoFar = t.emiPaidMonths || 0;
+                            // For first unpaid month with processing fee, show emiFirstMonthAmount
+                            const nextPaymentAmount = (paidSoFar === 0 && t.emiChargeType === 'fee' && t.emiFirstMonthAmount)
+                                ? t.emiFirstMonthAmount
+                                : t.emiMonthlyAmount;
+                            return `
                             <div class="flex items-center justify-between gap-2 text-[11px] bg-slate-100 dark:bg-slate-800 rounded-md px-2 py-1.5">
                                 <div class="min-w-0">
                                     <p class="font-medium text-slate-700 dark:text-slate-300 truncate">${escapeHtml(t.desc || 'Purchase')}</p>
@@ -2241,7 +2264,7 @@
                                 </div>
                                 <button onclick="logEmiInstallment('${t.id}')" class="shrink-0 bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-2 py-1 rounded-md transition">Log Payment</button>
                             </div>
-                        `).join('')}
+                         `;}).join('')}
                     </div>` : '';
 
                 return `
@@ -2249,7 +2272,7 @@
                         <div class="flex justify-between items-start">
                             <div>
                                 <span class="font-bold text-slate-900 dark:text-slate-100 text-sm block">${escapeHtml(c.name)}</span>
-                                <span class="text-slate-500 dark:text-slate-400 text-[11px]">Limit: AED ${totalLimit.toLocaleString()} (97% Cap: AED ${targetLimit.toLocaleString()})</span>
+                                <span class="text-slate-500 dark:text-slate-400 text-[11px]">Limit: AED ${totalLimit.toLocaleString()} (Remaining: AED ${(totalLimit - currentMonthSpend).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})</span>
                             </div>
                             <div class="flex items-center gap-2">
                                 <button onclick="editCard('${c.id}')" class="text-indigo-600 hover:text-indigo-800 font-semibold">Edit</button>
