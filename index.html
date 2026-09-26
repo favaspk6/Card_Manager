@@ -33,9 +33,7 @@
                     Import Backup
                     <input type="file" id="backup-file-input" accept="application/json" class="hidden">
                 </label>
-                <!--
                 <button onclick="repairMissingCardLinks()" class="bg-indigo-800 hover:bg-indigo-900 text-xs px-3 py-2 rounded text-indigo-100 transition duration-150" title="Fixes transactions saved before card_id was tracked (e.g. via CSV import) by matching them to a card by name">Fix Card Links</button>
-                -->
                 <button onclick="clearAllData()" class="bg-indigo-800 hover:bg-red-600 text-xs px-3 py-2 rounded text-indigo-100 transition duration-150">Reset Data</button>
             </div>
         </div>
@@ -347,7 +345,7 @@
                         <input type="checkbox" id="exp-is-emi" class="rounded border-slate-300 dark:border-slate-600">
                         Convert this purchase to installments (EMI)
                     </label>
-                    <div id="exp-emi-details" class="hidden mt-2 p-3 rounded-lg bg-indigo-50 dark:bg-indigo-950 space-y-2">
+                    <div id="exp-emi-details" class="hidden mt-2 p-3 rounded-lg bg-indigo-50 dark:bg-indigo-950 space-y-3">
                         <div class="grid grid-cols-2 gap-3">
                             <div>
                                 <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase mb-1">Tenure</label>
@@ -366,18 +364,35 @@
                                 <input type="number" step="1" min="1" max="60" id="exp-emi-custom-months" placeholder="e.g., 15" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-sm bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 border-slate-200 dark:border-slate-600 placeholder-slate-400 dark:placeholder-slate-500">
                             </div>
                         </div>
-                        <div class="grid grid-cols-2 gap-3">
-                            <div>
-                                <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase mb-1">Processing Charge (%)</label>
-                                <input type="number" step="0.01" min="0" id="exp-emi-processing-pct" placeholder="e.g., 1" value="0" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-sm bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 border-slate-200 dark:border-slate-600 placeholder-slate-400 dark:placeholder-slate-500">
-                            </div>
-                            <div>
-                                <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase mb-1">Interest Rate (% p.a.)</label>
-                                <input type="number" step="0.01" min="0" id="exp-emi-interest-pct" placeholder="e.g., 0 for 0% EMI" value="0" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-sm bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 border-slate-200 dark:border-slate-600 placeholder-slate-400 dark:placeholder-slate-500">
+
+                        <!-- Charge Type Selection -->
+                        <div class="pt-1 border-t border-indigo-200 dark:border-indigo-800">
+                            <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase mb-2">EMI Charge Type</label>
+                            <div class="flex gap-3 flex-wrap">
+                                <label class="flex items-center gap-2 text-xs cursor-pointer">
+                                    <input type="radio" id="exp-emi-charge-none" name="emi-charge-type" value="none" checked class="rounded border-slate-300 dark:border-slate-600">
+                                    <span class="text-slate-700 dark:text-slate-300">No Charge</span>
+                                </label>
+                                <label class="flex items-center gap-2 text-xs cursor-pointer">
+                                    <input type="radio" id="exp-emi-charge-fee" name="emi-charge-type" value="fee" class="rounded border-slate-300 dark:border-slate-600">
+                                    <span class="text-slate-700 dark:text-slate-300">Processing Fee</span>
+                                </label>
+                                <label class="flex items-center gap-2 text-xs cursor-pointer">
+                                    <input type="radio" id="exp-emi-charge-interest" name="emi-charge-type" value="interest" class="rounded border-slate-300 dark:border-slate-600">
+                                    <span class="text-slate-700 dark:text-slate-300">Interest Rate</span>
+                                </label>
                             </div>
                         </div>
+
+                        <!-- Charge Percentage Input -->
+                        <div id="exp-emi-charge-input-wrapper" class="hidden">
+                            <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase mb-1" id="exp-emi-charge-label">Charge</label>
+                            <input type="number" step="0.01" min="0" id="exp-emi-charge-percentage" placeholder="e.g., 200" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-sm bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 border-slate-200 dark:border-slate-600 placeholder-slate-400 dark:placeholder-slate-500">
+                            <p id="exp-emi-charge-note" class="text-[10px] text-slate-500 dark:text-slate-400 mt-1"></p>
+                        </div>
+
                         <p id="exp-emi-preview" class="text-[11px] text-indigo-700 dark:text-indigo-300 font-medium whitespace-pre-line"></p>
-                        <p class="text-[10px] text-slate-500 dark:text-slate-400">Interest is calculated as a flat annual rate prorated over the tenure (principal × rate% × months ÷ 12) and is added on top of the purchase amount you owe. The processing charge is a one-time fee, tracked the same way Service Fee is — it only affects Outstanding Balance if INCLUDE_FEES_IN_OUTSTANDING is switched on in the script.</p>
+                        <p class="text-[10px] text-slate-500 dark:text-slate-400">The full purchase amount still counts against your limit today, same as your bank does it. This just tracks the monthly installment so you know what's left to pay off.</p>
                     </div>
                 </div>
 
@@ -732,7 +747,7 @@
         // Entries dated after asOfDate are ignored - they are not owed yet.
         function calculateOutstanding(txList, asOfDate = localDateKey()) {
             const currentMonth = asOfDate.substring(0, 7);
-            const r = { purchases: 0, withdrawals: 0, fees: 0, repaid: 0, cashbackCredited: 0, cashbackPending: 0, emiInterest: 0 };
+            const r = { purchases: 0, withdrawals: 0, fees: 0, repaid: 0, cashbackCredited: 0, cashbackPending: 0 };
 
             txList.forEach(t => {
                 const date = t.date || '';
@@ -741,23 +756,17 @@
                 const amount = parseFloat(t.amount) || 0;
                 const cashback = parseFloat(t.cashback) || 0;
                 const fee = parseFloat(t.serviceCharge) || 0;
-                const emiInterest = parseFloat(t.emiTotalInterest) || 0;
-                const emiProcessing = parseFloat(t.emiProcessingAmount) || 0;
 
-                if (t.type === 'Purchase') {
-                    // An EMI purchase's total obligation is the price PLUS the interest the
-                    // bank will charge across the installments — both get blocked from day one.
-                    r.purchases += amount;
-                    r.emiInterest += emiInterest;
-                } else if (t.type === 'Cash Withdrawal') r.withdrawals += amount;
+                if (t.type === 'Purchase') r.purchases += amount;
+                else if (t.type === 'Cash Withdrawal') r.withdrawals += amount;
                 else if (t.type === 'Repaid') r.repaid += amount;
-                r.fees += fee + emiProcessing;
+                r.fees += fee;
 
                 if (date.substring(0, 7) < currentMonth) r.cashbackCredited += cashback;
                 else r.cashbackPending += cashback;
             });
 
-            r.outstanding = r.purchases + r.emiInterest + r.withdrawals + (INCLUDE_FEES_IN_OUTSTANDING ? r.fees : 0)
+            r.outstanding = r.purchases + r.withdrawals + (INCLUDE_FEES_IN_OUTSTANDING ? r.fees : 0)
                           - r.repaid - r.cashbackCredited;
             r.afterPending = r.outstanding - r.cashbackPending;
             return r;
@@ -907,7 +916,10 @@
             }
 
             _supabase.auth.onAuthStateChange((event, session) => {
-                if (event === 'SIGNED_IN' && session) {
+                // Subscribing fires once immediately with whatever the CURRENT session already
+                // is — since we just handled that exact session above via getSession(), skip it
+                // here or every page load re-runs onSignedIn (and its initData() fetch) twice.
+                if (event === 'SIGNED_IN' && session && session.user.id !== currentUserId) {
                     onSignedIn(session);
                 } else if (event === 'SIGNED_OUT') {
                     location.reload();
@@ -977,7 +989,10 @@
                         paymentDay: c.payment_day ?? null
                     }));
                 } else {
-                  
+                    cards = [
+                        { id: '1', name: 'ADCB - 365', availableLimit: 15000, rates: { 'Dining': 6, 'Grocery': 5, 'Travel': 1, 'Gas/Fuel': 1, 'Online Shopping': 1, 'Govt': 0.15, 'All Other Spend': 1 } },
+                        { id: '2', name: 'MASHREQ - NEO', availableLimit: 22000, rates: { 'Dining': 5, 'Grocery': 1, 'Travel': 1, 'Gas/Fuel': 1, 'Online Shopping': 1, 'Govt': 0.15, 'All Other Spend': 1 } }
+                    ];
                 }
 
                 if (!txError && dbTx) {
@@ -1020,7 +1035,7 @@
         }
 
         let warnedMissingDayColumns = false;
-        async function saveCardToDB(c) {
+        async function _saveCardToDBImpl(c) {
             if (_supabase) {
                 const base = {
                     id: String(c.id),
@@ -1065,6 +1080,20 @@
             return true;
         }
 
+        // If a save for this exact card id is already in flight (a double-click before the
+        // button disabled, a duplicate event handler, a retried auth callback — whatever the
+        // cause), piggyback on the existing request instead of sending a second one. Two
+        // concurrent inserts of the same id is what produced the confusing "duplicate key" /
+        // RLS errors chased down earlier — this makes that class of bug impossible outright.
+        const cardSaveInFlight = new Map();
+        function saveCardToDB(c) {
+            const key = String(c.id);
+            if (cardSaveInFlight.has(key)) return cardSaveInFlight.get(key);
+            const promise = _saveCardToDBImpl(c).finally(() => cardSaveInFlight.delete(key));
+            cardSaveInFlight.set(key, promise);
+            return promise;
+        }
+
         async function deleteCardFromDB(id) {
             if (_supabase) {
                 const { error } = await _supabase.from('cards').delete().eq('id', String(id));
@@ -1079,7 +1108,7 @@
         }
 
         let warnedMissingEmiColumns = false;
-        async function saveTransactionToDB(t) {
+        async function _saveTransactionToDBImpl(t) {
             if (_supabase) {
                 const payload = {
                     id: String(t.id),
@@ -1136,6 +1165,16 @@
             }
             saveData();
             return true;
+        }
+
+        // Same reasoning as cardSaveInFlight above, for transactions.
+        const txSaveInFlight = new Map();
+        function saveTransactionToDB(t) {
+            const key = String(t.id);
+            if (txSaveInFlight.has(key)) return txSaveInFlight.get(key);
+            const promise = _saveTransactionToDBImpl(t).finally(() => txSaveInFlight.delete(key));
+            txSaveInFlight.set(key, promise);
+            return promise;
         }
 
         async function deleteTransactionFromDB(id) {
@@ -1222,6 +1261,7 @@
             document.getElementById('tx-submit-btn').textContent = "Log Entry";
             document.getElementById('exp-emi-details').classList.add('hidden');
             document.getElementById('exp-emi-custom-wrapper').classList.add('hidden');
+            document.getElementById('exp-emi-charge-input-wrapper').classList.add('hidden');
             document.getElementById('exp-emi-preview').textContent = '';
             syncCategoryState(document.getElementById('exp-type').value);
         }
@@ -1289,46 +1329,116 @@
             return (Number.isInteger(n) && n >= 1) ? n : null;
         }
 
-        // Shared by the live preview and the submit handler so both use identical math.
-        // Interest: flat rate per annum, prorated by tenure (principal × rate% × months ÷ 12).
-        // Processing charge: one-time, a straight percentage of the principal.
-        function computeEmiBreakdown(principal, months, interestPctAnnual, processingPct) {
-            const totalInterest = Math.round(principal * (interestPctAnnual / 100) * (months / 12) * 100) / 100;
-            const processingAmount = Math.round(principal * (processingPct / 100) * 100) / 100;
-            const totalRepayable = principal + totalInterest;
-            const monthlyInstallment = months > 0 ? Math.round((totalRepayable / months) * 100) / 100 : 0;
-            return { totalInterest, processingAmount, totalRepayable, monthlyInstallment };
+        // ---- EMI CHARGE TYPE HANDLING ----
+        function onEmiChargeTypeChange() {
+            const chargeType = document.querySelector('input[name="emi-charge-type"]:checked').value;
+            const inputWrapper = document.getElementById('exp-emi-charge-input-wrapper');
+            const chargeLabel = document.getElementById('exp-emi-charge-label');
+            const chargeNote = document.getElementById('exp-emi-charge-note');
+            const chargeInput = document.getElementById('exp-emi-charge-percentage');
+
+            if (chargeType === 'none') {
+                inputWrapper.classList.add('hidden');
+            } else {
+                inputWrapper.classList.remove('hidden');
+                if (chargeType === 'fee') {
+                    chargeLabel.textContent = 'Processing Fee (AED)';
+                    chargeInput.placeholder = 'e.g., 200';
+                    chargeNote.textContent = 'Fixed amount charged on first month\'s payment';
+                } else {
+                    chargeLabel.textContent = 'Interest Rate (%)';
+                    chargeInput.placeholder = 'e.g., 5';
+                    chargeNote.textContent = 'Percentage spread evenly across all monthly installments';
+                }
+            }
+            updateEmiPreview();
+        }
+
+        function getEmiChargeDetails() {
+            const chargeType = document.querySelector('input[name="emi-charge-type"]:checked').value;
+            const percentage = parseFloat(document.getElementById('exp-emi-charge-percentage').value) || 0;
+
+            return { chargeType, percentage };
+        }
+
+        function calculateEmiWithCharges(principal, months, chargeType, chargeValue) {
+            let totalAmount = principal;
+            let chargeAmount = 0;
+            let monthlyAmount = principal / months;
+            let firstMonthAmount = monthlyAmount;
+            let monthlyChargeAmount = 0;
+
+            if (chargeType === 'fee' && chargeValue > 0) {
+                // Processing fee is a fixed amount added to first month only
+                chargeAmount = chargeValue;
+                totalAmount = principal + chargeAmount;
+                firstMonthAmount = monthlyAmount + chargeAmount; // First month includes fee
+                monthlyChargeAmount = 0; // No charge on other months
+            } else if (chargeType === 'interest' && chargeValue > 0) {
+                // Interest is a percentage spread across all months
+                chargeAmount = (principal * chargeValue) / 100;
+                monthlyChargeAmount = chargeAmount / months; // Spread interest across all months
+                totalAmount = principal + chargeAmount;
+                monthlyAmount = (principal / months) + monthlyChargeAmount; // Each month includes interest portion
+                firstMonthAmount = monthlyAmount;
+            }
+
+            return {
+                totalAmount,
+                chargeAmount,
+                monthlyAmount,      // Amount including charge (for interest) or without charge (for fee)
+                firstMonthAmount,    // First month amount (includes fee if processing fee mode)
+                monthlyChargeAmount, // Charge portion per month (for interest breakdown)
+                remainingMonths: months
+            };
         }
 
         function updateEmiPreview() {
             const preview = document.getElementById('exp-emi-preview');
             if (!preview) return;
+
             const amount = parseFloat(document.getElementById('exp-amount').value) || 0;
             const months = getEmiTenureMonths();
+
             if (!document.getElementById('exp-is-emi').checked || amount <= 0 || !months) {
                 preview.textContent = '';
                 return;
             }
-            const interestPct = parseFloat(document.getElementById('exp-emi-interest-pct').value) || 0;
-            const processingPct = parseFloat(document.getElementById('exp-emi-processing-pct').value) || 0;
-            const b = computeEmiBreakdown(amount, months, interestPct, processingPct);
 
-            const lines = [`AED ${b.monthlyInstallment.toFixed(2)} / month for ${months} months (last installment adjusted for rounding).`];
-            if (b.totalInterest > 0) {
-                lines.push(`Includes AED ${b.totalInterest.toFixed(2)} interest — total repayable AED ${b.totalRepayable.toFixed(2)} vs. AED ${amount.toFixed(2)} purchase price.`);
+            const { chargeType, percentage } = getEmiChargeDetails();
+            const emiCalc = calculateEmiWithCharges(amount, months, chargeType, percentage);
+
+            let previewText = '';
+
+            if (chargeType === 'none') {
+                previewText = `≈ AED ${emiCalc.monthlyAmount.toFixed(2)} / month for ${months} months (AED ${amount.toFixed(2)} total). The last installment is adjusted for rounding.`;
+            } else if (chargeType === 'fee') {
+                // Processing Fee: Show first month with fee + installment, rest without fee
+                previewText = `Principal: AED ${amount.toFixed(2)} + Processing Fee: AED ${emiCalc.chargeAmount.toFixed(2)} = AED ${emiCalc.totalAmount.toFixed(2)} total.\n`;
+                previewText += `📍 Month 1 (with fee): AED ${emiCalc.firstMonthAmount.toFixed(2)} (AED ${emiCalc.monthlyAmount.toFixed(2)} + AED ${emiCalc.chargeAmount.toFixed(2)} fee)\n`;
+                previewText += `Months 2-${months} (without fee): AED ${emiCalc.monthlyAmount.toFixed(2)} each`;
+            } else if (chargeType === 'interest') {
+                // Interest: Show that each month includes interest portion
+                const principalPortion = (amount / months).toFixed(2);
+                previewText = `Principal: AED ${amount.toFixed(2)} + Interest (${percentage}%): AED ${emiCalc.chargeAmount.toFixed(2)} = AED ${emiCalc.totalAmount.toFixed(2)} total.\n`;
+                previewText += `Each Month: AED ${emiCalc.monthlyAmount.toFixed(2)} (AED ${principalPortion} principal + AED ${emiCalc.monthlyChargeAmount.toFixed(2)} interest) × ${months} months`;
             }
-            if (b.processingAmount > 0) {
-                lines.push(`Processing charge: AED ${b.processingAmount.toFixed(2)} (one-time, not part of the monthly installment).`);
-            }
-            preview.textContent = lines.join('\n');
+
+            preview.textContent = previewText;
         }
 
         document.getElementById('exp-is-emi').addEventListener('change', toggleEmiDetails);
         document.getElementById('exp-emi-tenure').addEventListener('change', toggleEmiCustomMonths);
         document.getElementById('exp-emi-custom-months').addEventListener('input', updateEmiPreview);
         document.getElementById('exp-amount').addEventListener('input', updateEmiPreview);
-        document.getElementById('exp-emi-interest-pct').addEventListener('input', updateEmiPreview);
-        document.getElementById('exp-emi-processing-pct').addEventListener('input', updateEmiPreview);
+
+        // Charge type radio button listeners
+        document.querySelectorAll('input[name="emi-charge-type"]').forEach(radio => {
+            radio.addEventListener('change', onEmiChargeTypeChange);
+        });
+
+        // Percentage input listener
+        document.getElementById('exp-emi-charge-percentage').addEventListener('input', updateEmiPreview);
 
         document.getElementById('exp-type').addEventListener('change', (e) => {
             syncCategoryState(e.target.value);
@@ -1559,29 +1669,28 @@
 
             // EMI: only meaningful on a Purchase. Editing an existing EMI purchase keeps
             // whatever installments were already paid and just recomputes what's left.
-            let emiFields = {
-                emiTotalMonths: null, emiMonthlyAmount: null, emiPaidMonths: 0, emiRemainingMonths: null,
-                emiInterestPct: null, emiTotalInterest: null, emiProcessingPct: null, emiProcessingAmount: null
-            };
+            let emiFields = { emiTotalMonths: null, emiMonthlyAmount: null, emiPaidMonths: 0, emiRemainingMonths: null, emiChargeType: null, emiChargePercentage: null, emiChargeAmount: null, emiFirstMonthAmount: null };
             if (type === 'Purchase' && document.getElementById('exp-is-emi').checked) {
                 const months = getEmiTenureMonths();
                 if (!months) {
                     alert('Enter a valid number of months for the installment plan (or uncheck EMI).');
                     return;
                 }
-                const interestPct = parseFloat(document.getElementById('exp-emi-interest-pct').value) || 0;
-                const processingPct = parseFloat(document.getElementById('exp-emi-processing-pct').value) || 0;
-                const b = computeEmiBreakdown(amount, months, interestPct, processingPct);
                 const paidMonths = (existingTx && existingTx.emiTotalMonths) ? (existingTx.emiPaidMonths || 0) : 0;
+
+                // Get charge details
+                const { chargeType, percentage } = getEmiChargeDetails();
+                const emiCalc = calculateEmiWithCharges(amount, months, chargeType, percentage);
+
                 emiFields = {
                     emiTotalMonths: months,
-                    emiMonthlyAmount: b.monthlyInstallment,
+                    emiMonthlyAmount: Math.round(emiCalc.monthlyAmount * 100) / 100,
+                    emiFirstMonthAmount: Math.round(emiCalc.firstMonthAmount * 100) / 100,
                     emiPaidMonths: Math.min(paidMonths, months),
                     emiRemainingMonths: Math.max(months - paidMonths, 0),
-                    emiInterestPct: interestPct,
-                    emiTotalInterest: b.totalInterest,
-                    emiProcessingPct: processingPct,
-                    emiProcessingAmount: b.processingAmount
+                    emiChargeType: chargeType,
+                    emiChargePercentage: percentage,
+                    emiChargeAmount: Math.round(emiCalc.chargeAmount * 100) / 100
                 };
             }
 
@@ -1605,6 +1714,40 @@
                 if (idx !== -1) transactions[idx] = txObj;
             } else {
                 transactions.unshift(txObj);
+            }
+
+            // Auto-create fee/interest transaction if EMI has charges
+            if (!editingTxId && type === 'Purchase' && document.getElementById('exp-is-emi').checked) {
+                const { chargeType, percentage } = getEmiChargeDetails();
+                if (chargeType !== 'none' && percentage > 0) {
+                    const emiCalc = calculateEmiWithCharges(amount, document.getElementById('exp-emi-tenure').value === 'custom'
+                        ? parseInt(document.getElementById('exp-emi-custom-months').value)
+                        : parseInt(document.getElementById('exp-emi-tenure').value), chargeType, percentage);
+
+                    let feeDesc = '';
+                    if (chargeType === 'fee') {
+                        feeDesc = `Processing Fee - ${desc}`;
+                    } else if (chargeType === 'interest') {
+                        feeDesc = `Interest Rate (${percentage}%) - ${desc}`;
+                    }
+
+                    // Create automatic fee/interest transaction
+                    const feeTransaction = {
+                        id: newId(),
+                        date: txObj.date,
+                        cardName: txObj.cardName,
+                        cardId: txObj.cardId,
+                        type: 'Purchase',
+                        desc: feeDesc,
+                        category: 'Service Fee',
+                        amount: emiCalc.chargeAmount,
+                        serviceCharge: 0,
+                        cashback: 0,
+                        notes: `Auto-created ${chargeType === 'fee' ? 'processing fee' : 'interest'} for EMI plan`
+                    };
+                    transactions.unshift(feeTransaction);
+                    await saveTransactionToDB(feeTransaction);
+                }
             }
 
             // Remember the last-used card & type so the next new entry starts prefilled with them.
@@ -1661,8 +1804,6 @@
             // Restore this purchase's EMI plan (if any) into the checkbox/tenure controls
             const isEmiChecked = document.getElementById('exp-is-emi');
             isEmiChecked.checked = !!(tx.type === 'Purchase' && tx.emiTotalMonths);
-            document.getElementById('exp-emi-interest-pct').value = isEmiChecked.checked ? (tx.emiInterestPct || 0) : 0;
-            document.getElementById('exp-emi-processing-pct').value = isEmiChecked.checked ? (tx.emiProcessingPct || 0) : 0;
             if (isEmiChecked.checked) {
                 const standardTenures = ['3', '6', '9', '12', '18', '24'];
                 const tenureStr = String(tx.emiTotalMonths);
@@ -1675,6 +1816,18 @@
                     document.getElementById('exp-emi-custom-months').value = tx.emiTotalMonths;
                     document.getElementById('exp-emi-custom-wrapper').classList.remove('hidden');
                 }
+
+                // Restore the charge type radio (No Charge / Processing Fee / Interest Rate) and
+                // its percentage — otherwise editing an EMI purchase that had a fee or interest
+                // would silently keep whatever the radio/field last showed from a prior session.
+                const chargeType = tx.emiChargeType || 'none';
+                const chargeRadio = document.getElementById(
+                    chargeType === 'fee' ? 'exp-emi-charge-fee' :
+                    chargeType === 'interest' ? 'exp-emi-charge-interest' : 'exp-emi-charge-none'
+                );
+                chargeRadio.checked = true;
+                document.getElementById('exp-emi-charge-percentage').value = tx.emiChargePercentage || 0;
+                onEmiChargeTypeChange();
             }
             toggleEmiDetails();
 
@@ -1708,8 +1861,9 @@
             document.getElementById('exp-is-emi').checked = false;
             document.getElementById('exp-emi-details').classList.add('hidden');
             document.getElementById('exp-emi-preview').textContent = '';
-            document.getElementById('exp-emi-interest-pct').value = 0;
-            document.getElementById('exp-emi-processing-pct').value = 0;
+            document.getElementById('exp-emi-charge-none').checked = true;
+            document.getElementById('exp-emi-charge-percentage').value = '';
+            document.getElementById('exp-emi-charge-input-wrapper').classList.add('hidden');
 
             document.getElementById('exp-form-title').innerHTML = `<span>↻</span> Repeat Transaction`;
             document.getElementById('tx-submit-btn').textContent = "Log Transaction";
