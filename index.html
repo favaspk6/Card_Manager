@@ -979,20 +979,18 @@
                 const { data: dbCards, error: cardError } = await _supabase.from('cards').select('*');
                 const { data: dbTx, error: txError } = await _supabase.from('transactions').select('*');
                 
-                if (!cardError && dbCards && dbCards.length > 0) {
+                if (!cardError && dbCards) {
                     cards = dbCards.map(c => ({
                         id: String(c.id),
                         name: c.name,
                         availableLimit: c.available_limit,
                         rates: c.rates || {},
                         statementDay: c.statement_day ?? null, // present once the statement_day / payment_day columns exist
-                        paymentDay: c.payment_day ?? null
+                        paymentDay: c.payment_day ?? null,
+                        colorGradient: c.color_gradient ?? null // present once the color_gradient column exists
                     }));
                 } else {
-                    cards = [
-                        { id: '1', name: 'ADCB - 365', availableLimit: 15000, rates: { 'Dining': 6, 'Grocery': 5, 'Travel': 1, 'Gas/Fuel': 1, 'Online Shopping': 1, 'Govt': 0.15, 'All Other Spend': 1 } },
-                        { id: '2', name: 'MASHREQ - NEO', availableLimit: 22000, rates: { 'Dining': 5, 'Grocery': 1, 'Travel': 1, 'Gas/Fuel': 1, 'Online Shopping': 1, 'Govt': 0.15, 'All Other Spend': 1 } }
-                    ];
+                    cards = []; // new account, or the cards table couldn't be reached — start empty, not with demo cards
                 }
 
                 if (!txError && dbTx) {
