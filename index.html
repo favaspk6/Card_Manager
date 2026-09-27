@@ -847,6 +847,7 @@
         function getCardDateInfo(c, todayDate = new Date()) {
             const today = new Date(todayDate.getFullYear(), todayDate.getMonth(), todayDate.getDate());
             let wrapperClass = 'bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-600';
+            let isAlert = false;
             let statementHtml = '';
             let badgeHtml = '';
 
@@ -862,10 +863,12 @@
                 let badgeClass, label;
                 if (n === 0) {
                     wrapperClass = 'bg-red-50 dark:bg-red-950/40 border-red-500 ring-2 ring-red-300 dark:ring-red-700';
+                    isAlert = true;
                     badgeClass = 'bg-red-600 text-white';
                     label = `🚨 Payment due TODAY · ${shortDate(due)}`;
                 } else if (n <= PAYMENT_WARNING_DAYS) {
                     wrapperClass = 'bg-amber-50 dark:bg-amber-950/40 border-amber-400 dark:border-amber-600';
+                    isAlert = true;
                     badgeClass = 'bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200';
                     label = `⏰ Payment due ${countdownText(n)} · ${shortDate(due)}`;
                 } else {
@@ -881,7 +884,7 @@
             } else {
                 rowHtml = `<p class="text-[11px] text-slate-400 dark:text-slate-500">Add a statement &amp; payment day (Edit) to get due-date alerts.</p>`;
             }
-            return { wrapperClass, rowHtml };
+            return { wrapperClass, rowHtml, isAlert };
         }
 
         const openCalcCards = new Set(); // remembers which "How it's calculated" panels are open across re-renders
@@ -1104,6 +1107,7 @@
         }
 
         let warnedMissingDayColumns = false;
+        let warnedMissingColorColumn = false;
         async function _saveCardToDBImpl(c) {
             if (_supabase) {
                 const base = {
@@ -1118,32 +1122,46 @@
                 // which can silently reroute this into an UPDATE on a DIFFERENT user's row with a
                 // matching card name, and RLS correctly (but confusingly) blocks that as a security
                 // violation rather than a normal insert.
-                const { error } = await _supabase.from('cards').upsert({
+                const payload = {
                     ...base,
                     statement_day: c.statementDay ?? null,
-                    payment_day: c.paymentDay ?? null
-                }, { onConflict: 'id' });
+                    payment_day: c.paymentDay ?? null,
+                    color_gradient: c.colorGradient ?? null
+                };
 
-                if (error && /statement_day|payment_day/.test(error.message || '')) {
-                    // The two new columns are not in the table yet. Save the card without them so
-                    // nothing else breaks, and tell the user (once) how to finish the setup.
-                    const { error: retryError } = await _supabase.from('cards').upsert(base, { onConflict: 'id' });
-                    if (retryError) {
-                        console.error('Saving card failed:', retryError);
-                        showToast(`Save failed on Supabase: ${retryError.message}`, { tone: 'error', duration: 10000 });
-                        return false;
+                // Try the full payload first; if a column doesn't exist yet (migration not run),
+                // drop just that group and retry rather than failing the whole save.
+                let succeeded = false;
+                for (let attempt = 0; attempt < 3; attempt++) {
+                    const { error } = await _supabase.from('cards').upsert(payload, { onConflict: 'id' });
+                    if (!error) { succeeded = true; break; }
+
+                    const msg = error.message || '';
+                    if (/statement_day|payment_day/.test(msg) && 'statement_day' in payload) {
+                        delete payload.statement_day;
+                        delete payload.payment_day;
+                        if (!warnedMissingDayColumns && (c.statementDay || c.paymentDay)) {
+                            warnedMissingDayColumns = true;
+                            alert('Card saved, but the statement/payment day could not be stored in Supabase yet.\n\nRun this once in the Supabase SQL editor, then save the card again:\n\n' +
+                                  'alter table cards add column if not exists statement_day int check (statement_day between 1 and 31);\n' +
+                                  'alter table cards add column if not exists payment_day int check (payment_day between 1 and 31);');
+                        }
+                        continue;
                     }
-                    if (!warnedMissingDayColumns && (c.statementDay || c.paymentDay)) {
-                        warnedMissingDayColumns = true;
-                        alert('Card saved, but the statement/payment day could not be stored in Supabase yet.\n\nRun this once in the Supabase SQL editor, then save the card again:\n\n' +
-                              'alter table cards add column if not exists statement_day int check (statement_day between 1 and 31);\n' +
-                              'alter table cards add column if not exists payment_day int check (payment_day between 1 and 31);');
+                    if (/color_gradient/.test(msg) && 'color_gradient' in payload) {
+                        delete payload.color_gradient;
+                        if (!warnedMissingColorColumn && c.colorGradient) {
+                            warnedMissingColorColumn = true;
+                            alert('Card saved, but its color could not be stored in Supabase yet.\n\nRun this once in the Supabase SQL editor, then save the card again:\n\n' +
+                                  'alter table cards add column if not exists color_gradient text;');
+                        }
+                        continue;
                     }
-                } else if (error) {
                     console.error('Saving card failed:', error);
                     showToast(`Save failed on Supabase: ${error.message}`, { tone: 'error', duration: 10000 });
-                    return false; // don't fall through to saveData() looking like a success
+                    break;
                 }
+                if (!succeeded) { saveData(); return false; }
             }
             saveData();
             return true;
@@ -1656,6 +1674,7 @@
             }
 
             const rates = getCardRatesFromForm();
+            const colorGradient = document.getElementById('card-color-gradient').value || null;
 
             let cardObj;
             if (editingId) {
@@ -1666,10 +1685,11 @@
                     cards[index].rates = rates;
                     cards[index].statementDay = statementDay;
                     cards[index].paymentDay = paymentDay;
+                    cards[index].colorGradient = colorGradient;
                     cardObj = cards[index];
                 }
             } else {
-                cardObj = { id: newId(), name, availableLimit, rates, statementDay, paymentDay };
+                cardObj = { id: newId(), name, availableLimit, rates, statementDay, paymentDay, colorGradient };
                 cards.push(cardObj);
             }
 
@@ -1701,6 +1721,7 @@
             document.getElementById('card-statement-day').value = card.statementDay ?? '';
             document.getElementById('card-payment-day').value = card.paymentDay ?? '';
             renderRateInputs(card.rates || {});
+            setCardColorGradient(card.colorGradient || 'none');
 
             document.getElementById('card-form-title').innerHTML = `<span>✏️</span> Edit Card`;
             document.getElementById('card-submit-btn').textContent = "Update Card";
@@ -1711,6 +1732,7 @@
             document.getElementById('editing-card-id').value = "";
             document.getElementById('card-form').reset();
             renderRateInputs({});
+            setCardColorGradient('none');
             document.getElementById('card-form-title').innerHTML = `<span>💳</span> Add / Manage Cards`;
             document.getElementById('card-submit-btn').textContent = "Save Card";
             document.getElementById('cancel-edit-btn').classList.add('hidden');
@@ -2346,8 +2368,16 @@
                         }).join('')}
                     </div>` : '';
 
+                // A custom card color only applies in light mode and when there's no active
+                // due-date alert — the red/orange alert background takes priority over
+                // aesthetics, and dark mode keeps its normal slate background regardless of the
+                // chosen color (a light pastel gradient would fight with light text there).
+                const isDarkMode = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+                const cardGradient = (!dateInfo.isAlert && !isDarkMode && c.colorGradient && CARD_GRADIENTS[c.colorGradient])
+                    ? ` style="background: ${CARD_GRADIENTS[c.colorGradient]};"` : '';
+
                 return `
-                    <div class="p-4 rounded-xl border text-xs space-y-3 shadow-sm ${dateInfo.wrapperClass}">
+                    <div class="p-4 rounded-xl border text-xs space-y-3 shadow-sm ${dateInfo.wrapperClass}"${cardGradient}>
                         <div class="flex justify-between items-start">
                             <div>
                                 <span class="font-bold text-slate-900 dark:text-slate-100 text-sm block">${escapeHtml(c.name)}</span>
