@@ -19,22 +19,35 @@
     </div>
 
     <!-- Navbar -->
-    <header class="bg-indigo-700 text-white shadow-md">
+    <header class="bg-indigo-700 text-white shadow-md relative">
         <div class="max-w-[100%] mx-auto px-4 sm:px-8 xl:px-12 py-5 flex justify-between items-center">
             <div>
                 <h1 class="text-2xl font-bold tracking-tight">Cashback & Spend Analyzer</h1>
                 <p class="text-indigo-200 text-xs mt-0.5">Credit Card & Cashback Manager</p>
             </div>
             <div class="flex items-center gap-3">
-                <span id="user-email-label" class="text-xs text-indigo-200 hidden"></span>
-                <button id="sign-out-btn" onclick="signOut()" class="hidden bg-indigo-800 hover:bg-indigo-900 text-xs px-3 py-2 rounded text-indigo-100 transition duration-150">Sign Out</button>
-                <button onclick="exportBackup()" class="bg-indigo-800 hover:bg-indigo-900 text-xs px-3 py-2 rounded text-indigo-100 transition duration-150">Export Backup</button>
-                <label class="bg-indigo-800 hover:bg-indigo-900 text-xs px-3 py-2 rounded text-indigo-100 transition duration-150 cursor-pointer">
-                    Import Backup
-                    <input type="file" id="backup-file-input" accept="application/json" class="hidden">
-                </label>
                 <button onclick="repairMissingCardLinks()" class="bg-indigo-800 hover:bg-indigo-900 text-xs px-3 py-2 rounded text-indigo-100 transition duration-150" title="Fixes transactions saved before card_id was tracked (e.g. via CSV import) by matching them to a card by name">Fix Card Links</button>
                 <button onclick="clearAllData()" class="bg-indigo-800 hover:bg-red-600 text-xs px-3 py-2 rounded text-indigo-100 transition duration-150">Reset Data</button>
+
+                <!-- Hamburger menu: account + import/export, tucked away to keep the header uncluttered -->
+                <div class="relative">
+                    <button onclick="toggleHeaderMenu()" id="header-menu-btn" class="bg-indigo-800 hover:bg-indigo-900 p-2 rounded text-indigo-100 transition duration-150" aria-label="Menu">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                            <line x1="4" y1="6" x2="20" y2="6"></line>
+                            <line x1="4" y1="12" x2="20" y2="12"></line>
+                            <line x1="4" y1="18" x2="20" y2="18"></line>
+                        </svg>
+                    </button>
+                    <div id="header-menu-dropdown" class="hidden absolute right-0 mt-2 w-56 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 rounded-xl shadow-xl border border-slate-100 dark:border-slate-700 py-2 z-50">
+                        <p id="user-email-label" class="hidden px-4 py-1.5 text-xs text-slate-400 dark:text-slate-500 truncate"></p>
+                        <button onclick="exportBackup()" class="w-full text-left px-4 py-2 text-sm hover:bg-slate-50 dark:hover:bg-slate-700 transition">⬇ Export Backup</button>
+                        <label class="block w-full text-left px-4 py-2 text-sm hover:bg-slate-50 dark:hover:bg-slate-700 transition cursor-pointer">
+                            ⬆ Import Backup
+                            <input type="file" id="backup-file-input" accept="application/json" class="hidden">
+                        </label>
+                        <button id="sign-out-btn" onclick="signOut()" class="hidden w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-950 transition border-t border-slate-100 dark:border-slate-700 mt-1 pt-2">Sign Out</button>
+                    </div>
+                </div>
             </div>
         </div>
     </header>
@@ -45,7 +58,7 @@
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
 
             <!-- Left Column: Controls & Card Management (3/12 width) -->
-            <div class="space-y-6 lg:col-span-3">
+            <div class="space-y-6 lg:col-span-2">
 
                 <!-- Excel File Upload & Add Transaction Section -->
                 <div class="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-sm border border-slate-200 dark:border-slate-600">
@@ -94,6 +107,11 @@
                             <p class="text-[10px] text-slate-400 dark:text-slate-500 mt-1">Day of the month (1–31). The card turns orange 5 days before the payment day and red on it.</p>
                         </div>
                         <div>
+                            <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase mb-2">Card Color</label>
+                            <div id="card-color-picker" class="flex flex-wrap gap-2"></div>
+                            <input type="hidden" id="card-color-gradient" value="">
+                        </div>
+                        <div>
                             <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase mb-2">Category Rates (%)</label>
                             <div id="rate-inputs-container" class="grid grid-cols-2 gap-2 text-xs">
                                 <!-- populated by renderRateInputs() from RATE_CATEGORIES -->
@@ -123,8 +141,8 @@
 
             </div>
 
-            <!-- Right Column: Analytics & History (9/12 width) -->
-            <div class="space-y-6 lg:col-span-9">
+            <!-- Right Column: Analytics & History (10/12 width) -->
+            <div class="space-y-6 lg:col-span-10">
 
                 <div id="no-cards-banner" class="hidden bg-indigo-50 dark:bg-indigo-950 border border-indigo-100 dark:border-indigo-800 rounded-xl px-4 py-3 text-xs text-indigo-800 dark:text-indigo-300">
                     👋 Welcome! Add your first card on the left to unlock the dashboard, charts and best-card recommender below.
@@ -183,7 +201,15 @@
                     <div id="cards-list" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4"></div>
                 </div>
 
-                <!-- Month-Wise Multi-Metric Chart, Filters & Donut Charts - all in one row -->
+                <!-- CARD, CATEGORY & MONTH FILTERS — its own section so it never competes with the charts for space -->
+                <div class="bg-white dark:bg-slate-800 p-6 rounded-xl border border-slate-200 dark:border-slate-600 shadow-sm space-y-3">
+                    <h3 class="text-sm font-bold text-slate-800 dark:text-slate-200">Filters</h3>
+                    <div class="flex flex-wrap items-center gap-2" id="card-filter-container"></div>
+                    <div id="category-filter-wrapper" class="hidden flex flex-wrap items-center gap-2 pt-2 border-t border-dashed border-slate-100 dark:border-slate-700"></div>
+                    <div id="month-filter-container" class="flex flex-wrap items-center gap-2 pt-2 border-t border-dashed border-slate-100 dark:border-slate-700"></div>
+                </div>
+
+                <!-- Month-Wise Multi-Metric Chart & Donut Charts - all in one row -->
                 <div class="grid grid-cols-1 lg:grid-cols-4 gap-4 items-stretch">
                     <div class="lg:col-span-3 bg-white dark:bg-slate-800 p-6 rounded-xl border border-slate-200 dark:border-slate-600 shadow-sm space-y-4">
                         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -191,13 +217,6 @@
                                 <h3 class="text-base font-bold text-slate-800 dark:text-slate-200">Financial Performance</h3>
                                 <p class="text-xs text-slate-500 dark:text-slate-400">Breakdown of purchases, cash withdrawals, repayments, fees, cashback & net rewards</p>
                             </div>
-                        </div>
-
-                        <!-- CARD, CATEGORY & MONTH FILTERS (month chips support multi-select) -->
-                        <div class="space-y-2 pt-2 border-t border-slate-100 dark:border-slate-700">
-                            <div class="flex items-center gap-2 overflow-x-auto pb-1" id="card-filter-container"></div>
-                            <div id="category-filter-wrapper" class="hidden flex items-center gap-2 overflow-x-auto pb-1 pt-1 border-t border-dashed border-slate-100 dark:border-slate-700"></div>
-                            <div id="month-filter-container" class="flex items-center gap-2 overflow-x-auto pb-1 pt-1 border-t border-dashed border-slate-100 dark:border-slate-700"></div>
                         </div>
 
                         <div class="h-80">
@@ -594,6 +613,42 @@
         const RATE_CATEGORIES = ['Dining', 'Grocery', 'Travel', 'Gas/Fuel', 'Online Shopping', 'Govt', 'All Other Spend'];
         const TX_ONLY_CATEGORIES = ['Cashback', 'Monthly Payment', 'Annual Fee']; // bookkeeping labels, not spend rates
 
+        // ---- CARD COLOR GRADIENTS ----
+        // Light, pastel gradients chosen so the existing dark card-tile text stays readable on
+        // top of them. Applied in light mode only — dark mode keeps the normal slate background,
+        // since these light gradients would fight with light-on-dark text otherwise.
+        const CARD_GRADIENTS = {
+            none:     null,
+            sunrise:  'linear-gradient(135deg, #fef3c7, #fecaca)',
+            ocean:    'linear-gradient(135deg, #dbeafe, #e0e7ff)',
+            mint:     'linear-gradient(135deg, #d1fae5, #ccfbf1)',
+            lavender: 'linear-gradient(135deg, #ede9fe, #fce7f3)',
+            peach:    'linear-gradient(135deg, #ffedd5, #fef9c3)',
+            sky:      'linear-gradient(135deg, #e0f2fe, #f0f9ff)',
+            rose:     'linear-gradient(135deg, #fce7f3, #fee2e2)'
+        };
+
+        function renderColorPicker(selected = 'none') {
+            const container = document.getElementById('card-color-picker');
+            if (!container) return;
+            container.innerHTML = Object.keys(CARD_GRADIENTS).map(key => {
+                const isActive = key === selected;
+                const swatchStyle = key === 'none' ? '' : `style="background: ${CARD_GRADIENTS[key]};"`;
+                const noneClasses = key === 'none' ? 'bg-white dark:bg-slate-700' : '';
+                return `
+                    <button type="button" onclick="setCardColorGradient('${key}')" title="${key === 'none' ? 'Default (no color)' : key}"
+                        class="w-8 h-8 rounded-full border-2 transition ${noneClasses} ${isActive ? 'border-indigo-600 ring-2 ring-indigo-300 dark:ring-indigo-700' : 'border-slate-200 dark:border-slate-600'}"
+                        ${swatchStyle}>
+                        ${key === 'none' ? '<span class="text-slate-400 text-xs">∅</span>' : ''}
+                    </button>`;
+            }).join('');
+        }
+
+        function setCardColorGradient(key) {
+            document.getElementById('card-color-gradient').value = key === 'none' ? '' : key;
+            renderColorPicker(key);
+        }
+
         // ---- OUTSTANDING BALANCE ----
         // Cashback earned in a month is credited on the NEXT month's statement, so it only
         // reduces the outstanding balance once that month has started. Cashback earned in the
@@ -894,6 +949,20 @@
         // With Row Level Security enabled on 'cards' and 'transactions' (see the
         // accompanying SQL), each signed-in user can only read/write rows where
         // user_id = auth.uid(). Nothing loads from Supabase until a session exists.
+        function toggleHeaderMenu() {
+            document.getElementById('header-menu-dropdown').classList.toggle('hidden');
+        }
+        // Close the header dropdown on an outside click, without swallowing the click
+        // that just opened it (that one is handled by toggleHeaderMenu itself).
+        document.addEventListener('click', (e) => {
+            const dropdown = document.getElementById('header-menu-dropdown');
+            const btn = document.getElementById('header-menu-btn');
+            if (!dropdown || dropdown.classList.contains('hidden')) return;
+            if (!dropdown.contains(e.target) && !btn.contains(e.target)) {
+                dropdown.classList.add('hidden');
+            }
+        });
+
         function hideLoadingOverlay() {
             const overlay = document.getElementById('app-loading-overlay');
             if (overlay) overlay.classList.add('hidden');
@@ -1017,14 +1086,12 @@
                     }));
                 }
             } else {
-                cards = JSON.parse(localStorage.getItem('cb_cards')) || [
-                    { id: '1', name: 'ADCB - 365', availableLimit: 15000, rates: { 'Dining': 6, 'Grocery': 5, 'Travel': 1, 'Gas/Fuel': 1, 'Online Shopping': 1, 'Govt': 0.15, 'All Other Spend': 1 } },
-                    { id: '2', name: 'MASHREQ - NEO', availableLimit: 22000, rates: { 'Dining': 5, 'Grocery': 1, 'Travel': 1, 'Gas/Fuel': 1, 'Online Shopping': 1, 'Govt': 0.15, 'All Other Spend': 1 } }
-                ];
+                cards = JSON.parse(localStorage.getItem('cb_cards')) || []; // new/local-only account — start empty, no demo cards
                 transactions = JSON.parse(localStorage.getItem('cb_transactions')) || [];
             }
             populateCategorySelects();
             renderRateInputs({});
+            renderColorPicker();
             render();
         }
 
@@ -1218,10 +1285,15 @@
             }
 
             if (type === 'Purchase' || type === 'Cash Withdrawal') {
+                if (!category) {
+                    // "None / Default" — no category means no rate to apply, so no cashback.
+                    // Pick an actual category if this purchase should earn something.
+                    cashbackInput.value = '0.00';
+                    return;
+                }
                 const selectedCard = cards.find(c => c.id === cardId);
                 if (selectedCard && amount > 0) {
-                    const activeCategory = category || 'All Other Spend';
-                    const rate = selectedCard.rates[activeCategory] !== undefined ? selectedCard.rates[activeCategory] : (selectedCard.rates['All Other Spend'] || 0);
+                    const rate = selectedCard.rates[category] !== undefined ? selectedCard.rates[category] : (selectedCard.rates['All Other Spend'] || 0);
                     const calculatedCashback = (amount * (rate / 100)).toFixed(2);
                     cashbackInput.value = calculatedCashback;
                 }
