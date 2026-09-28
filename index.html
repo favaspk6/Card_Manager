@@ -71,11 +71,13 @@
             <a href="#saved-cards-section" class="flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] text-slate-400 hover:text-white hover:bg-white/5 transition w-full text-left"><svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg> Cards</a>
             <a href="#analytics-section" class="flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] text-slate-400 hover:text-white hover:bg-white/5 transition w-full text-left"><svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg> Analytics &amp; Rewards</a>
             <a href="#history-section" class="flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] text-slate-400 hover:text-white hover:bg-white/5 transition w-full text-left"><svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg> Transactions</a>
+            <!--
             <p class="eyebrow px-3 mt-6 mb-2">Utilities</p>
             <a href="#import-section" class="flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] text-slate-400 hover:text-white hover:bg-white/5 transition w-full text-left"><svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg> Import / Export</a>
             <button onclick="openCardModal()" class="flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] text-slate-400 hover:text-white hover:bg-white/5 transition w-full text-left"><svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg> Manage Cards</button>
             <button onclick="repairMissingCardLinks()" class="flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] text-slate-400 hover:text-white hover:bg-white/5 transition w-full text-left"><svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg> Fix Card Links</button>
             <button onclick="clearAllData()" class="flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] text-red-400/90 hover:text-red-300 hover:bg-red-500/10 transition w-full text-left"><svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg> Reset Data</button>
+            -->
         </nav>
         <div class="mt-auto p-4">
             <div class="p-4 rounded-xl border border-[#1d2230] bg-[#0f121a]">
@@ -98,6 +100,15 @@
                     <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-emerald-400 grid place-items-center text-[#0a0c12]"><svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg></div>
                     <button onclick="openTxModal()" class="flex items-center gap-1 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold px-3 py-2 rounded-lg transition"><svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Log</button>
                 </div>
+
+                 <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-indigo-500/15 text-indigo-300 grid place-items-center"><svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg></div>
+                    <div>
+                        <h1 class="text-[17px] font-semibold text-white flex items-center gap-2">Portfolio Intelligence Deck <span id="sync-badge" class="mono text-[9px] tracking-widest font-semibold text-emerald-400 bg-emerald-500/10 border border-emerald-500/25 px-1.5 py-0.5 rounded">LIVE SYNC</span></h1>
+                        <p id="deck-subtitle" class="text-xs text-slate-500 mt-0.5">Real-time yield optimization across your registered cards</p>
+                    </div>
+                </div>
+                
                 <div class="relative flex-1 max-w-xl">
                     <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500"><svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></span>
                     <input id="top-search" type="text" oninput="onTopSearch(this.value)" placeholder="Search transactions by description…" class="w-full pl-9 pr-3 py-2 rounded-xl text-sm bg-[#0f121a] border border-[#1d2230] text-slate-200 placeholder-slate-500 outline-none focus:border-indigo-500/60">
@@ -119,7 +130,8 @@
                             <p id="user-email-label" class="hidden px-4 py-1.5 text-xs text-slate-400 dark:text-slate-500 truncate"></p>
                             <button onclick="exportBackup()" class="w-full text-left px-4 py-2 text-sm hover:bg-white/5 transition">⬇ Export Backup</button>
                             <label for="backup-file-input" class="block w-full text-left px-4 py-2 text-sm hover:bg-white/5 transition cursor-pointer">⬆ Import Backup</label>
-                            <button onclick="repairMissingCardLinks()" class="w-full text-left px-4 py-2 text-sm hover:bg-white/5 transition">🔗 Fix Card Links</button>
+                            <!-- <button onclick="repairMissingCardLinks()" class="w-full text-left px-4 py-2 text-sm hover:bg-white/5 transition">🔗 Fix Card Links</button> -->
+                            <button onclick="clearAllData()" class="flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] text-red-400/90 hover:text-red-300 hover:bg-red-500/10 transition w-full text-left"><svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg> Reset Data</button>
                             <button id="sign-out-btn" onclick="signOut()" class="hidden w-full text-left px-4 py-2 text-sm text-red-400 hover:bg-red-500/10 transition border-t border-slate-100 dark:border-slate-700 mt-1 pt-2">Sign Out</button>
                         </div>
                     </div>
@@ -138,12 +150,14 @@
                         <p id="deck-subtitle" class="text-xs text-slate-500 mt-0.5">Real-time yield optimization across your registered cards</p>
                     </div>
                 </div>
+                <!--
                 <div class="flex flex-wrap items-center gap-2">
                     <button onclick="repairMissingCardLinks()" title="Fixes transactions saved before card_id was tracked by matching them to a card by name" class="flex items-center gap-1.5 text-xs text-slate-300 bg-white/5 hover:bg-white/10 border border-[#1d2230] px-3 py-2 rounded-lg transition"><svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg> Fix Card Links</button>
                     <button onclick="exportBackup()" class="flex items-center gap-1.5 text-xs text-slate-300 bg-white/5 hover:bg-white/10 border border-[#1d2230] px-3 py-2 rounded-lg transition"><svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Export Backup</button>
                     <label for="backup-file-input" class="flex items-center gap-1.5 text-xs text-slate-300 bg-white/5 hover:bg-white/10 border border-[#1d2230] px-3 py-2 rounded-lg transition cursor-pointer"><svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg> Import Backup<input type="file" id="backup-file-input" accept="application/json" class="hidden"></label>
                     <button onclick="clearAllData()" title="Reset Data" aria-label="Reset Data" class="text-slate-400 hover:text-red-300 bg-white/5 hover:bg-red-500/10 border border-[#1d2230] p-2 rounded-lg transition"><svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg></button>
                 </div>
+                -->
             </section>
 
             <div id="no-cards-banner" class="hidden bg-indigo-500/10 border border-indigo-500/25 rounded-2xl px-4 py-3 text-xs text-indigo-200">
