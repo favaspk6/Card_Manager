@@ -369,6 +369,108 @@
         .rec-mini { width: 56px; height: 41px; border-radius: 9px; }
         .rec-mini-chip { left: 7px; top: 7px; width: 13px; height: 10px; }
         .rec-mini-name { font-size: 7.5px; bottom: 5px; }
+    
+
+        /* ---- Sidebar: active installments (EMI) ---- */
+        .emi-card { padding: 14px 16px; border-radius: 16px; background: linear-gradient(145deg, rgba(255,255,255,.05), rgba(255,255,255,.02)); border: 1px solid rgba(255,255,255,.09); box-shadow: inset 0 1px 0 rgba(255,255,255,.05); }
+        .emi-eyebrow { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 9.5px; letter-spacing: .12em; text-transform: uppercase; color: #7d869b; }
+        .emi-pill { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 9.5px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; padding: 4px 9px; border-radius: 999px; white-space: nowrap; color: #a5b4fc; background: rgba(99,102,241,.14); border: 1px solid rgba(129,140,248,.32); }
+        .emi-name { margin-top: 10px; font-family: 'Plus Jakarta Sans', Inter, sans-serif; font-weight: 700; font-size: 14px; letter-spacing: -.01em; color: #fff; }
+        .emi-sub { margin-top: 3px; font-size: 12px; color: #98a1b5; }
+        .emi-track { margin-top: 11px; height: 6px; border-radius: 999px; background: rgba(255,255,255,.07); overflow: hidden; box-shadow: inset 0 1px 2px rgba(0,0,0,.4); }
+        .emi-fill { height: 100%; border-radius: 999px; background: linear-gradient(90deg, #5b5bf0, #818cf8); box-shadow: 0 0 10px rgba(99,102,241,.5); transition: width .5s ease; }
+        .emi-card-name { font-size: 11px; color: #6b7488; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .emi-log { font-size: 11px; font-weight: 600; color: #a5b4fc; padding: 4px 9px; border-radius: 8px; background: rgba(99,102,241,.12); border: 1px solid rgba(129,140,248,.25); transition: background .2s, color .2s; }
+        .emi-log:hover { background: rgba(99,102,241,.28); color: #fff; }
+    
+
+        /* ---- Transaction History header: title row + filter bar ---- */
+        .th-head { padding: 22px 26px 18px; border-bottom: 1px solid rgba(255,255,255,.06); }
+        .th-title { display: inline-flex; align-items: center; gap: 10px; font-family: 'Plus Jakarta Sans', Inter, sans-serif; font-weight: 700; font-size: 17px; letter-spacing: -.02em; color: #fff; }
+        .th-count { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 11px; font-weight: 600; padding: 4px 11px; border-radius: 999px; color: #98a1b5; background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.08); }
+        .th-sub { margin-top: 5px; font-size: 12.5px; color: #8b93a7; }
+        .th-btn { display: inline-flex; align-items: center; gap: 8px; padding: 9px 15px; border-radius: 11px; font-size: 12.5px; font-weight: 600; color: #b4bccd; background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.1); transition: all .2s ease; }
+        .th-btn:hover { color: #fff; background: rgba(255,255,255,.1); }
+        .th-btn.primary { color: #fff; background: linear-gradient(135deg, #6366f1, #4f46e5); border-color: rgba(165,180,252,.4); box-shadow: 0 6px 22px rgba(79,70,229,.45), inset 0 1px 0 rgba(255,255,255,.25); }
+        .th-btn.primary:hover { filter: brightness(1.1); }
+        .th-bar { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 18px; padding: 8px; border-radius: 16px; background: rgba(0,0,0,.3); border: 1px solid rgba(255,255,255,.06); box-shadow: inset 0 2px 8px rgba(0,0,0,.25); }
+        .th-field { position: relative; display: flex; align-items: center; gap: 10px; flex: 1 1 200px; min-width: 0; padding: 0 14px; height: 42px; border-radius: 12px; background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.08); transition: border-color .2s, box-shadow .2s; }
+        .th-field:focus-within { border-color: rgba(129,140,248,.6); box-shadow: 0 0 0 3px rgba(99,102,241,.18); }
+        .th-field select { appearance: none; -webkit-appearance: none; flex: 1; min-width: 0; height: 100%; padding-right: 26px; background: transparent !important; border: 0 !important; box-shadow: none !important; outline: none; color: #e2e8f0; font-size: 13px; font-weight: 600; cursor: pointer; backdrop-filter: none; }
+        .th-field select option { background: #12151f; color: #e2e8f0; }
+        .th-field .th-chev { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); color: #cbd5e1; pointer-events: none; }
+        .th-search { flex: 1.4 1 240px; cursor: text; }
+        .th-search input { flex: 1; min-width: 0; height: 100%; background: transparent !important; border: 0 !important; box-shadow: none !important; outline: none; color: #e2e8f0; font-size: 13px; backdrop-filter: none; }
+        .th-search input::placeholder { color: #6b7488; }
+        @media (max-width: 640px) { .th-head { padding: 18px 16px 14px; } .th-btn { padding: 8px 11px; } }
+    
+
+        /* ---- Transaction row action menu ---- */
+        .tx-dots { display: inline-grid; place-items: center; width: 34px; height: 34px; border-radius: 10px; color: #8b93a7; background: transparent; border: 1px solid transparent; transition: all .18s ease; }
+        .tx-dots:hover, .tx-dots:focus-visible { color: #fff; background: rgba(255,255,255,.08); border-color: rgba(255,255,255,.12); outline: none; }
+        .tx-menu { position: fixed; z-index: 120; min-width: 168px; padding: 6px; border-radius: 14px; background: rgba(16,19,30,.94); border: 1px solid rgba(255,255,255,.12);
+              -webkit-backdrop-filter: blur(18px) saturate(160%); backdrop-filter: blur(18px) saturate(160%);
+              box-shadow: 0 18px 50px rgba(0,0,0,.6), inset 0 1px 0 rgba(255,255,255,.08), 0 0 30px rgba(99,102,241,.12); }
+        .tx-menu.hidden { display: none; }
+        .tx-menu-item { display: flex; align-items: center; gap: 11px; width: 100%; padding: 9px 12px; border-radius: 9px; font-size: 13px; font-weight: 600; color: #e2e8f0; text-align: left; transition: background .15s; }
+        .tx-menu-item:hover, .tx-menu-item:focus-visible { background: rgba(255,255,255,.08); outline: none; }
+        .tx-menu-item.danger { color: #fca5a5; }
+        .tx-menu-item.danger:hover { background: rgba(239,68,68,.16); }
+        .tx-menu-sep { height: 1px; margin: 5px 6px; background: rgba(255,255,255,.08); }
+    
+
+        .emi-head-title { display: inline-flex; align-items: center; gap: 10px; font-family: 'Plus Jakarta Sans', Inter, sans-serif; font-weight: 700; font-size: 17px; letter-spacing: -.02em; color: #fff; }
+    
+
+        /* ---- Transaction history table (redesign) ---- */
+        .tx-table { width: 100%; border-collapse: separate; border-spacing: 0; text-align: left; font-size: 13px; }
+        .tx-th { padding: 15px 16px; font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 11px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; color: #7d869b; white-space: nowrap; border-bottom: 1px solid rgba(255,255,255,.06); }
+        html.dark .tx-table thead th { background: transparent !important; }
+        .tx-th.right { text-align: right; } .tx-th.center { text-align: center; }
+        .tx-th.sortable { cursor: pointer; user-select: none; transition: color .15s; }
+        .tx-th.sortable:hover { color: #cbd5e1; }
+        .tx-td { padding: 15px 16px; border-bottom: 1px solid rgba(255,255,255,.045); vertical-align: middle; white-space: nowrap; color: #cbd5e1; }
+        .tx-td.right { text-align: right; } .tx-td.center { text-align: center; }
+        .tx-row:last-child .tx-td { border-bottom: 0; }
+        html.dark .tx-row:hover td { background-color: rgba(255,255,255,.03) !important; }
+        .tx-date { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 12px; letter-spacing: .06em; color: #7d869b; }
+        .tx-chip { display: inline-flex; align-items: center; gap: 8px; padding: 6px 12px; border-radius: 10px; font-size: 12.5px; font-weight: 600; color: #e6ebf5; background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.08); }
+        .tx-cdot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; box-shadow: 0 0 8px currentColor; }
+        .tx-type { display: inline-block; padding: 4px 13px; border-radius: 999px; font-size: 12px; font-weight: 600; border: 1px solid; }
+        .tx-type.indigo { color: #c7d2fe; background: rgba(99,102,241,.16); border-color: rgba(129,140,248,.4); }
+        .tx-type.green  { color: #6ee7b7; background: rgba(16,185,129,.15); border-color: rgba(52,211,153,.42); }
+        .tx-type.amber  { color: #fcd34d; background: rgba(245,158,11,.14); border-color: rgba(245,158,11,.4); }
+        .tx-type.red    { color: #fca5a5; background: rgba(239,68,68,.14); border-color: rgba(248,113,113,.4); }
+        .tx-type.slate  { color: #cbd5e1; background: rgba(255,255,255,.06); border-color: rgba(255,255,255,.14); }
+        .tx-desc { white-space: normal; min-width: 180px; max-width: 340px; font-weight: 600; color: #f1f5f9; }
+        .tx-cat { display: inline-block; padding: 4px 11px; border-radius: 9px; font-size: 12px; color: #b4bccd; background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.08); }
+        .tx-num { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 13px; font-weight: 600; }
+        .tx-amt { font-weight: 700; color: #fff; }
+        .tx-num.pos, .tx-amt.pos { color: #34d399; }
+        .tx-num.neg { color: #f87171; }
+        .tx-num.warn { color: #fbbf24; }
+        .tx-num.muted, .tx-dash { color: #566076; font-weight: 500; }
+    
+
+        /* ---- History filter bar: custom dropdown ---- */
+        .th-field { padding: 0; }
+        .th-field.open { border-color: rgba(129,140,248,.65); box-shadow: 0 0 0 3px rgba(99,102,241,.2); }
+        .th-trigger { display: flex; align-items: center; gap: 10px; width: 100%; height: 100%; padding: 0 14px; background: transparent; border: 0; color: #e2e8f0; font-size: 13px; font-weight: 600; text-align: left; cursor: pointer; border-radius: 12px; }
+        .th-trigger:focus-visible { outline: 2px solid rgba(129,140,248,.7); outline-offset: -2px; }
+        .th-trigger svg:first-child { flex: none; }
+        .th-trigger-label { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .th-tchev { flex: none; color: #cbd5e1; transition: transform .2s ease; }
+        .th-field.open .th-tchev { transform: rotate(180deg); }
+
+        .th-dd { position: fixed; z-index: 130; max-height: 300px; overflow-y: auto; padding: 6px; border-radius: 16px; background: rgba(15,18,29,.96); border: 1px solid rgba(255,255,255,.12);
+              -webkit-backdrop-filter: blur(20px) saturate(160%); backdrop-filter: blur(20px) saturate(160%);
+              box-shadow: 0 22px 60px rgba(0,0,0,.65), inset 0 1px 0 rgba(255,255,255,.08), 0 0 34px rgba(99,102,241,.14); }
+        .th-dd.hidden { display: none; }
+        .th-opt { display: flex; align-items: center; justify-content: space-between; gap: 12px; width: 100%; padding: 10px 12px; border-radius: 10px; font-size: 13px; font-weight: 600; color: #cbd5e1; text-align: left; transition: background .12s, color .12s; }
+        .th-opt-label { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .th-opt:hover, .th-opt:focus-visible { background: rgba(255,255,255,.07); color: #fff; outline: none; }
+        .th-opt.selected { color: #fff; background: rgba(99,102,241,.22); box-shadow: inset 0 0 0 1px rgba(129,140,248,.35); }
+        .th-opt-check { flex: none; color: #a5b4fc; }
         </style>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
@@ -566,7 +668,16 @@
                     <button onclick="openCardModal()" class="eyebrow !text-emerald-400 bg-emerald-500/10 hover:bg-emerald-500/20 px-2.5 py-1.5 rounded-md transition whitespace-nowrap">+ Manage</button>
                 </div>
 
-                <div id="cards-list" class="grid grid-cols-1 md:grid-cols-4 gap-4"></div>
+                <div id="cards-list" class="grid grid-cols-1 md:grid-cols-3 gap-4"></div>
+            </section>
+
+            <!-- ACTIVE INSTALLMENTS (EMI) -->
+            <section id="emi-section" class="panel hidden p-5 sm:p-6 scroll-mt-20">
+                <div class="flex items-center justify-between gap-3">
+                    <h3 class="emi-head-title"><span class="text-indigo-300"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="15" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4M8 14.5h3"/></svg></span>Active Installments (EMI)</h3>
+                    <span id="emi-count" class="th-count">0 plans</span>
+                </div>
+                <div id="emi-list" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 mt-4"></div>
             </section>
 
             <!-- BEST CARD RECOMMENDER (moved from the sidebar) -->
@@ -642,47 +753,52 @@
                 <!-- History Table -->
                  <section class="panel">
                 <div id="history-section" class="scroll-mt-20 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-600 shadow-sm overflow-hidden">
-                    <div class="px-6 py-4 border-b border-slate-100 dark:border-slate-700 flex flex-col md:flex-row md:justify-between md:items-center gap-3">
-                        <div class="flex items-center gap-3 flex-wrap">
-                            <h3 class="font-semibold text-slate-900 dark:text-slate-100">Transaction History</h3>
-                            <span id="tx-count" class="text-xs bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400 px-2.5 py-1 rounded-full font-medium">0 entries</span>
-                            <input type="text" id="tx-search-input" oninput="setSearchQuery(this.value)" placeholder="🔍 Search description…" class="text-xs px-3 py-1.5 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none w-48 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 border-slate-200 dark:border-slate-600 placeholder-slate-400 dark:placeholder-slate-500">
-                            <div id="type-filter-container" class="flex items-center gap-1"></div>
+                    <div class="th-head">
+                        <div class="flex flex-wrap items-start justify-between gap-4">
+                            <div>
+                                <div class="flex items-center gap-3 flex-wrap">
+                                    <h3 class="th-title"><span class="text-emerald-400"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3h14v18l-3-2-2 2-2-2-2 2-2-2-3 2V3Z"/><path d="M9 8h6M9 12h6"/></svg></span>Transaction History</h3>
+                                    <span id="tx-count" class="th-count">0 entries</span>
+                                </div>
+                                <p class="th-sub">Real-time settlement log with automated cashback attribution</p>
+                            </div>
+                            <div class="flex items-center gap-2.5">
+                                <button onclick="exportFilteredCsv()" class="th-btn">
+                                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11M7.5 10.5 12 15l4.5-4.5M5 19h14"/></svg>Export Filtered CSV
+                                </button>
+                                <button onclick="openTxModal()" class="th-btn primary">
+                                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>Log Entry
+                                </button>
+                            </div>
                         </div>
-                        <div class="flex items-center gap-2">
-                            <button onclick="exportFilteredCsv()" class="bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-600 dark:text-slate-400 text-xs font-medium px-3 py-1.5 rounded-lg transition">
-                                ⬇ Export Filtered CSV
-                            </button>
-                            <button onclick="openTxModal()" class="bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-medium px-3 py-1.5 rounded-lg transition">
-                                + Log Entry
-                            </button>
-                        </div>
-                    </div>
-                    <div id="tx-bulk-actions" class="hidden px-6 py-2.5 bg-indigo-50 dark:bg-indigo-950 border-b border-indigo-100 dark:border-indigo-800 flex items-center justify-between gap-3">
-                        <span id="tx-bulk-count" class="text-xs font-semibold text-indigo-700 dark:text-indigo-300">0 selected</span>
-                        <div class="flex items-center gap-2">
-                            <button onclick="bulkDeleteSelected()" class="bg-red-600 hover:bg-red-700 text-white text-xs font-medium px-3 py-1.5 rounded-lg transition">Delete Selected</button>
-                            <button onclick="clearTxSelection()" class="bg-white dark:bg-slate-700 hover:bg-slate-100 dark:hover:bg-slate-600 text-slate-600 dark:text-slate-400 text-xs font-medium px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-600 transition">Clear</button>
+                        <!-- second line: card filter, type filter, category filter and search -->
+                        <div class="th-bar">
+                            <div id="history-card-container" class="th-field"></div>
+                            <div id="type-filter-container" class="th-field"></div>
+                            <div id="history-category-container" class="th-field"></div>
+                            <label class="th-field th-search">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fbbf24" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.5 4.5"/></svg>
+                                <input type="text" id="tx-search-input" oninput="setSearchQuery(this.value)" placeholder="Search description…" autocomplete="off">
+                            </label>
                         </div>
                     </div>
                     <div class="overflow-x-auto">
-                        <table class="w-full text-left border-collapse text-xs">
+                        <table class="tx-table">
                             <thead>
-                                <tr class="bg-slate-50 dark:bg-slate-900 text-slate-500 dark:text-slate-400 uppercase tracking-wider border-b border-slate-100 dark:border-slate-700">
-                                    <th class="py-3.5 px-4 w-8"><input type="checkbox" id="tx-select-all" onchange="onTxSelectAllChange(this.checked)" class="rounded border-slate-300 dark:border-slate-600"></th>
-                                    <th class="py-3.5 px-4 cursor-pointer select-none hover:text-slate-700 dark:hover:text-slate-200" onclick="toggleTxSort('date')">Date <span id="sort-arrow-date"></span></th>
-                                    <th class="py-3.5 px-4 cursor-pointer select-none hover:text-slate-700 dark:hover:text-slate-200" onclick="toggleTxSort('card')">Card <span id="sort-arrow-card"></span></th>
-                                    <th class="py-3.5 px-4">Type</th>
-                                    <th class="py-3.5 px-4">Description</th>
-                                    <th class="py-3.5 px-4">Category</th>
-                                    <th class="py-3.5 px-4 text-right cursor-pointer select-none hover:text-slate-700 dark:hover:text-slate-200" onclick="toggleTxSort('amount')">Amount <span id="sort-arrow-amount"></span></th>
-                                    <th class="py-3.5 px-4 text-right">Service Fee</th>
-                                    <th class="py-3.5 px-4 text-right cursor-pointer select-none hover:text-slate-700 dark:hover:text-slate-200" onclick="toggleTxSort('cashback')">Cashback <span id="sort-arrow-cashback"></span></th>
-                                    <th class="py-3.5 px-4 text-right cursor-pointer select-none hover:text-slate-700 dark:hover:text-slate-200" onclick="toggleTxSort('net')">Net Rewards <span id="sort-arrow-net"></span></th>
-                                    <th class="py-3.5 px-4 text-center">Actions</th>
+                                <tr>
+                                    <th class="tx-th sortable" onclick="toggleTxSort('date')">Date <span id="sort-arrow-date"></span></th>
+                                    <th class="tx-th sortable" onclick="toggleTxSort('card')">Card <span id="sort-arrow-card"></span></th>
+                                    <th class="tx-th">Type</th>
+                                    <th class="tx-th">Description</th>
+                                    <th class="tx-th">Category</th>
+                                    <th class="tx-th right sortable" onclick="toggleTxSort('amount')">Amount <span id="sort-arrow-amount"></span></th>
+                                    <th class="tx-th right">Fee</th>
+                                    <th class="tx-th right sortable" onclick="toggleTxSort('cashback')">Cashback <span id="sort-arrow-cashback"></span></th>
+                                    <th class="tx-th right sortable" onclick="toggleTxSort('net')">Net Rewards <span id="sort-arrow-net"></span></th>
+                                    <th class="tx-th center">Action</th>
                                 </tr>
                             </thead>
-                            <tbody id="tx-table-body" class="divide-y divide-slate-100 dark:divide-slate-700"></tbody>
+                            <tbody id="tx-table-body"></tbody>
                         </table>
                     </div>
                     <div id="tx-pagination" class="px-6 py-3 border-t border-slate-100 dark:border-slate-700 flex items-center justify-between gap-3 text-xs text-slate-500 dark:text-slate-400"></div>
@@ -1006,8 +1122,6 @@
         let txSortDir = 'desc'; // 'asc' | 'desc'
         const TX_PAGE_SIZE = 25;
         let txCurrentPage = 1;
-        const selectedTxIds = new Set();
-        let lastRenderedPageIds = []; // ids on the currently visible table page, used by the 'select all' checkbox
         const TX_SORT_COLUMNS = { date: 'date', card: 'cardName', amount: 'amount', cashback: 'cashback', net: '__net' };
 
         function toggleTxSort(column) {
@@ -1031,41 +1145,6 @@
             renderTransactionsAndMetrics();
         }
 
-        function toggleTxSelected(id, checked) {
-            if (checked) selectedTxIds.add(id); else selectedTxIds.delete(id);
-            renderBulkActionBar();
-            const master = document.getElementById('tx-select-all');
-            if (master) master.checked = false; // visible page selection changed; re-derive on next render
-        }
-
-        function clearTxSelection() {
-            selectedTxIds.clear();
-            renderTransactionsAndMetrics();
-        }
-
-        function renderBulkActionBar() {
-            const el = document.getElementById('tx-bulk-actions');
-            if (!el) return;
-            if (selectedTxIds.size === 0) {
-                el.classList.add('hidden');
-                return;
-            }
-            el.classList.remove('hidden');
-            document.getElementById('tx-bulk-count').textContent = `${selectedTxIds.size} selected`;
-        }
-
-        async function bulkDeleteSelected() {
-            const ids = [...selectedTxIds];
-            if (ids.length === 0) return;
-            const ok = await showConfirm(
-                `Delete ${ids.length} transaction${ids.length === 1 ? '' : 's'}?`,
-                'You can undo this for a few seconds after deleting.',
-                { confirmLabel: 'Delete' }
-            );
-            if (!ok) return;
-            softDeleteTransactions(ids);
-        }
-
         function transactionMatchesFilters(t) {
             const matchesCard = (activeCardFilter === 'ALL' || t.cardName.trim() === activeCardFilter);
             const matchesCategory = (selectedCategories.length === 0 || (t.category && selectedCategories.includes(t.category.trim())));
@@ -1075,17 +1154,147 @@
             return matchesCard && matchesCategory && matchesMonth && matchesSearch && matchesType;
         }
 
+        // ---- Custom dropdowns for the history filter bar (replaces the browser's native <select> popup) ----
+        const thDd = {};          // key -> { options: [{value,label}], selected, onSelect }
+        let thDdOpenKey = null;
+
+        function thTrigger(key, iconHtml, label) {
+            return `<button type="button" class="th-trigger" data-dd="${key}" aria-haspopup="listbox" aria-expanded="false" onclick="openThDropdown(event, '${key}')">
+                ${iconHtml}<span class="th-trigger-label">${escapeHtml(label)}</span>
+                <svg class="th-tchev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+            </button>`;
+        }
+
+        function closeThDropdown() {
+            const pop = document.getElementById('th-dd');
+            if (pop) pop.classList.add('hidden');
+            document.querySelectorAll('.th-trigger[aria-expanded="true"]').forEach(b => { b.setAttribute('aria-expanded', 'false'); b.parentElement.classList.remove('open'); });
+            thDdOpenKey = null;
+        }
+
+        function openThDropdown(event, key) {
+            event.stopPropagation();
+            const wasOpen = thDdOpenKey === key;
+            closeTxMenu();
+            closeThDropdown();
+            if (wasOpen) return;
+            const data = thDd[key];
+            if (!data) return;
+            const trigger = event.currentTarget;
+            let pop = document.getElementById('th-dd');
+            if (!pop) {
+                pop = document.createElement('div');
+                pop.id = 'th-dd';
+                pop.setAttribute('role', 'listbox');
+                pop.className = 'th-dd hidden';
+                document.body.appendChild(pop);
+            }
+            const check = '<svg class="th-opt-check" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>';
+            pop.innerHTML = data.options.map((o, i) => {
+                const sel = String(o.value) === String(data.selected);
+                return `<button type="button" role="option" aria-selected="${sel}" class="th-opt ${sel ? 'selected' : ''}" onclick="pickThOption('${key}', ${i})"><span class="th-opt-label">${escapeHtml(o.label)}</span>${sel ? check : ''}</button>`;
+            }).join('');
+            thDdOpenKey = key;
+            trigger.setAttribute('aria-expanded', 'true');
+            trigger.parentElement.classList.add('open');
+
+            const rect = trigger.parentElement.getBoundingClientRect();
+            pop.style.width = `${Math.max(rect.width, 200)}px`;
+            pop.classList.remove('hidden');
+            const h = pop.offsetHeight;
+            let top = rect.bottom + 6;
+            if (top + h > window.innerHeight - 8 && rect.top - h - 6 > 8) top = rect.top - h - 6; // flip up if there's room
+            pop.style.top = `${top}px`;
+            pop.style.left = `${Math.max(8, Math.min(rect.left, window.innerWidth - pop.offsetWidth - 8))}px`;
+            const sel = pop.querySelector('.th-opt.selected');
+            if (sel) sel.scrollIntoView({ block: 'nearest' });
+        }
+
+        function pickThOption(key, index) {
+            const data = thDd[key];
+            closeThDropdown();
+            if (!data || !data.options[index]) return;
+            data.onSelect(data.options[index].value);
+        }
+
+        document.addEventListener('click', e => { if (!e.target.closest('#th-dd')) closeThDropdown(); });
+        document.addEventListener('keydown', e => {
+            if (!thDdOpenKey) return;
+            if (e.key === 'Escape') { const k = thDdOpenKey; closeThDropdown(); const t = document.querySelector(`.th-trigger[data-dd="${k}"]`); if (t) t.focus(); return; }
+            if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return;
+            e.preventDefault();
+            const items = [...document.querySelectorAll('#th-dd .th-opt')];
+            if (!items.length) return;
+            const i = items.indexOf(document.activeElement);
+            const next = e.key === 'ArrowDown' ? (i + 1) % items.length : (i <= 0 ? items.length - 1 : i - 1);
+            items[next].focus();
+        });
+        window.addEventListener('resize', closeThDropdown);
+        window.addEventListener('scroll', e => {
+            const t = e.target;
+            if (t && t.nodeType === 1 && t.closest('#th-dd')) return; // scrolling the list itself keeps it open
+            closeThDropdown();
+        }, true);
+
+        const TH_ICON_FILTER = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#a5b4fc" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M7 12h10M10 17h4"/></svg>';
+        const TH_ICON_SHAPES = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#34d399" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3 4 7H8l4-7Z"/><rect x="3.5" y="14" width="7" height="7" rx="1.2"/><circle cx="17.5" cy="17.5" r="3.5"/></svg>';
+        const TH_CHEVRON = '<svg class="th-chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>';
+
+        const TH_ICON_CARD = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#7dd3fc" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5.5" width="18" height="13" rx="2.5"/><path d="M3 10h18M7 15h3"/></svg>';
+
+        // Card dropdown for the history toolbar. Same state (activeCardFilter) as the card chips
+        // in the Filters section, so both stay in sync.
+        function renderHistoryCardFilter() {
+            const el = document.getElementById('history-card-container');
+            if (!el) return;
+            const names = Array.from(new Set(transactions.map(t => (t.cardName || '').trim()))).filter(Boolean)
+                .sort((a, b) => a.localeCompare(b));
+            if (activeCardFilter !== 'ALL' && !names.includes(activeCardFilter)) names.push(activeCardFilter);
+            thDd.card = {
+                options: [{ value: 'ALL', label: 'Filter: All Cards' }, ...names.map(n => ({ value: n, label: n }))],
+                selected: activeCardFilter,
+                onSelect: v => setCardFilter(v)
+            };
+            el.innerHTML = thTrigger('card', TH_ICON_CARD, activeCardFilter === 'ALL' ? 'Filter: All Cards' : activeCardFilter);
+        }
+
         function renderTypeFilter() {
             const el = document.getElementById('type-filter-container');
             if (!el) return;
-            const options = [['ALL', 'All Types'], ...TYPE_FILTER_OPTIONS.map(t => [t, t])]
-                .map(([value, label]) => `<option value="${value}" ${activeTypeFilter === value ? 'selected' : ''}>${label}</option>`)
-                .join('');
-            el.innerHTML = `
-                <select onchange="setTypeFilter(this.value)" aria-label="Filter by transaction type"
-                    class="text-xs px-3 py-1.5 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 border-slate-200 dark:border-slate-600">
-                    ${options}
-                </select>`;
+            thDd.type = {
+                options: [{ value: 'ALL', label: 'All Types' }, ...TYPE_FILTER_OPTIONS.map(t => ({ value: t, label: t }))],
+                selected: activeTypeFilter,
+                onSelect: v => setTypeFilter(v)
+            };
+            el.innerHTML = thTrigger('type', TH_ICON_FILTER, activeTypeFilter === 'ALL' ? 'All Types' : activeTypeFilter);
+        }
+
+        // Category dropdown for the history toolbar. Uses the same selectedCategories state as the
+        // category chips in the Filters section, so both stay in sync.
+        function renderHistoryCategoryFilter() {
+            const el = document.getElementById('history-category-container');
+            if (!el) return;
+            const names = Array.from(new Set(
+                transactions
+                    .filter(t => t.category && (activeCardFilter === 'ALL' || (t.cardName || '').trim() === activeCardFilter))
+                    .map(t => t.category.trim())
+            )).sort((a, b) => a.localeCompare(b));
+            selectedCategories.forEach(c => { if (!names.includes(c)) names.push(c); });
+            const multi = selectedCategories.length > 1;
+            const current = multi ? '__multi' : (selectedCategories[0] || '');
+            const options = [{ value: '', label: 'All Categories' }]
+                .concat(multi ? [{ value: '__multi', label: `${selectedCategories.length} categories` }] : [])
+                .concat(names.map(n => ({ value: n, label: n })));
+            thDd.category = { options, selected: current, onSelect: v => setHistoryCategory(v) };
+            const cur = options.find(o => o.value === current);
+            el.innerHTML = thTrigger('category', TH_ICON_SHAPES, cur ? cur.label : 'All Categories');
+        }
+
+        function setHistoryCategory(value) {
+            if (value === '__multi') return;
+            selectedCategories = value ? [value] : [];
+            renderCardFilters();
+            renderTransactionsAndMetrics();
         }
 
         function setTypeFilter(type) {
@@ -1266,7 +1475,6 @@
 
         function softDeleteTransactions(ids) {
             ids.forEach(id => hiddenTxIds.add(id));
-            selectedTxIds.forEach(id => { if (ids.includes(id)) selectedTxIds.delete(id); });
             render();
 
             const label = ids.length === 1 ? 'Transaction deleted' : `${ids.length} transactions deleted`;
@@ -1688,7 +1896,44 @@
         }
 
         // Sidebar / top-bar readouts that summarise the same data the panels show.
+        // List of every EMI purchase that still has months left to pay (main-area section).
+        function renderEmiSection() {
+            const wrap = document.getElementById('emi-section');
+            const list = document.getElementById('emi-list');
+            if (!wrap || !list) return;
+            const plans = transactions.filter(t =>
+                !hiddenTxIds.has(t.id) && t.type === 'Purchase' && t.emiTotalMonths && (t.emiRemainingMonths || 0) > 0
+            );
+            if (!plans.length) { wrap.classList.add('hidden'); list.innerHTML = ''; return; }
+            wrap.classList.remove('hidden');
+            const countEl = document.getElementById('emi-count');
+            if (countEl) countEl.textContent = `${plans.length} plan${plans.length === 1 ? '' : 's'}`;
+            const planLabel = t => t.emiChargeType === 'fee' ? 'Processing fee' : t.emiChargeType === 'interest' ? 'Interest plan' : '0% APR plan';
+            list.innerHTML = plans.map(t => {
+                const total = Number(t.emiTotalMonths) || 0;
+                const paid = Math.min(Number(t.emiPaidMonths) || 0, total);
+                const width = total ? Math.max(3, Math.round((paid / total) * 100)) : 0;
+                const card = cards.find(c => c.id === t.cardId);
+                const name = (t.description || t.desc || t.category || 'Installment plan');
+                return `
+                    <div class="emi-card">
+                        <div class="flex items-center justify-between gap-2">
+                            <span class="emi-eyebrow">Active Installment (EMI)</span>
+                            <span class="emi-pill">${escapeHtml(planLabel(t))}</span>
+                        </div>
+                        <p class="emi-name">${escapeHtml(name)}</p>
+                        <p class="emi-sub">AED ${formatAED(Number(t.emiMonthlyAmount) || 0)}/mo for ${total} months (${paid}/${total} completed)</p>
+                        <div class="emi-track"><div class="emi-fill" style="width:${width}%"></div></div>
+                        <div class="flex items-center justify-between gap-2 mt-2.5">
+                            <span class="emi-card-name">${card ? escapeHtml(card.name) : '&nbsp;'}</span>
+                            <button type="button" class="emi-log" onclick="logEmiInstallment('${t.id}')">Log payment</button>
+                        </div>
+                    </div>`;
+            }).join('');
+        }
+
         function updateShellWidgets(outstanding, pending) {
+            renderEmiSection();
             const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
             set('pill-outstanding', formatAED(outstanding));
             set('pill-pending', formatAED(pending));
@@ -3391,10 +3636,11 @@
             });
 
             container.innerHTML = html;
+            renderHistoryCardFilter();
+            renderHistoryCategoryFilter();
 
             if (activeCardFilter === 'ALL') {
                 categoryWrapper.classList.add('hidden');
-                selectedCategories = [];
             } else {
                 categoryWrapper.classList.remove('hidden');
                 const cardCategories = Array.from(new Set(
@@ -3566,9 +3812,85 @@
                 </div>`;
         }
 
-        function onTxSelectAllChange(checked) {
-            lastRenderedPageIds.forEach(id => { if (checked) selectedTxIds.add(id); else selectedTxIds.delete(id); });
-            renderTransactionsAndMetrics();
+        // ---- Row action menu (⋯ → Edit / Repeat / Delete) ----
+        // One shared menu, fixed-positioned next to the clicked button so the table's horizontal
+        // scroll container can't clip it.
+        let txMenuOpenId = null;
+
+        function closeTxMenu() {
+            const menu = document.getElementById('tx-menu');
+            if (menu) menu.classList.add('hidden');
+            txMenuOpenId = null;
+        }
+
+        function openTxMenu(event, id) {
+            event.stopPropagation();
+            closeThDropdown();
+            if (txMenuOpenId === id) { closeTxMenu(); return; }
+            let menu = document.getElementById('tx-menu');
+            if (!menu) {
+                menu = document.createElement('div');
+                menu.id = 'tx-menu';
+                menu.setAttribute('role', 'menu');
+                menu.className = 'tx-menu hidden';
+                document.body.appendChild(menu);
+            }
+            const icon = (d, color) => `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${d}</svg>`;
+            menu.innerHTML = `
+                <button type="button" role="menuitem" class="tx-menu-item" onclick="txMenuAction('edit')">${icon('<path d="M4 20h4L19 9l-4-4L4 16v4Z"/><path d="m13.5 6.5 4 4"/>', '#a5b4fc')}Edit</button>
+                <button type="button" role="menuitem" class="tx-menu-item" onclick="txMenuAction('repeat')">${icon('<path d="M20 11a8 8 0 0 0-14.3-4.6L4 8"/><path d="M4 4v4h4"/><path d="M4 13a8 8 0 0 0 14.3 4.6L20 16"/><path d="M20 20v-4h-4"/>', '#34d399')}Repeat</button>
+                <div class="tx-menu-sep"></div>
+                <button type="button" role="menuitem" class="tx-menu-item danger" onclick="txMenuAction('delete')">${icon('<path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3"/>', '#f87171')}Delete</button>`;
+            txMenuOpenId = id;
+            menu.classList.remove('hidden');
+
+            const rect = event.currentTarget.getBoundingClientRect();
+            const w = menu.offsetWidth, h = menu.offsetHeight;
+            let top = rect.bottom + 6;
+            if (top + h > window.innerHeight - 8) top = Math.max(8, rect.top - h - 6); // flip up near the bottom
+            const left = Math.max(8, Math.min(rect.right - w, window.innerWidth - w - 8));
+            menu.style.top = `${top}px`;
+            menu.style.left = `${left}px`;
+        }
+
+        function txMenuAction(action) {
+            const id = txMenuOpenId;
+            closeTxMenu();
+            if (!id) return;
+            if (action === 'edit') editTransaction(id);
+            else if (action === 'repeat') duplicateTransaction(id);
+            else if (action === 'delete') deleteTransaction(id);
+        }
+
+        document.addEventListener('click', e => { if (!e.target.closest('#tx-menu')) closeTxMenu(); });
+        document.addEventListener('keydown', e => { if (e.key === 'Escape') closeTxMenu(); });
+        window.addEventListener('resize', closeTxMenu);
+        window.addEventListener('scroll', closeTxMenu, true);
+
+        // ---- Transaction table helpers ----
+        const TX_DOT_BY_THEME = { titanium: '#e2e8f0', blue: '#818cf8', cyan: '#22d3ee', gold: '#fbbf24', green: '#34d399', violet: '#a78bfa', rose: '#fb7185' };
+        // Coloured dot on the card chip follows the card's saved colour.
+        function txCardDotColor(t) {
+            const c = cards.find(x => x.id === t.cardId) || cards.find(x => (x.name || '').trim() === (t.cardName || '').trim());
+            const theme = c ? (CARD_THEME_BY_GRADIENT[c.colorGradient || 'none'] || 'titanium') : 'titanium';
+            return TX_DOT_BY_THEME[theme] || '#e2e8f0';
+        }
+        function txTypeClass(type) {
+            const v = String(type || '').toLowerCase();
+            if (/repa|payment|settle/.test(v)) return 'green';
+            if (/purchase|spend/.test(v)) return 'indigo';
+            if (/cash|withdraw/.test(v)) return 'amber';
+            if (/fee|charge|interest/.test(v)) return 'red';
+            return 'slate';
+        }
+        // "2026-05-08" -> "MAY 08" (adds 'YY when it isn't the current year)
+        function fmtTxDate(dateStr) {
+            const d = new Date(`${dateStr}T00:00:00`);
+            if (!dateStr || isNaN(d)) return escapeHtml(dateStr || '-');
+            const mon = d.toLocaleString('en-US', { month: 'short' }).toUpperCase();
+            const day = String(d.getDate()).padStart(2, '0');
+            const yr = d.getFullYear() !== new Date().getFullYear() ? ` '${String(d.getFullYear()).slice(2)}` : '';
+            return `${mon} ${day}${yr}`;
         }
 
         function renderTransactionsAndMetrics() {
@@ -3577,14 +3899,13 @@
             document.getElementById('tx-count').textContent = `${visibleTransactions.length} entries`;
 
             if (visibleTransactions.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="11" class="p-6 text-center text-xs text-slate-400 dark:text-slate-500">No transactions recorded yet.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="10" class="p-6 text-center text-xs text-slate-400 dark:text-slate-500">No transactions recorded yet.</td></tr>`;
                 document.getElementById('metric-spend').textContent = '0.00';
                 document.getElementById('metric-cashback').textContent = '0.00';
                 document.getElementById('metric-return').textContent = '0.00%';
                 document.getElementById('metric-missed').textContent = '0.00';
                 document.getElementById('metric-net-rewards').textContent = '0.00';
                 renderPagination(0);
-                renderBulkActionBar();
                 currentReportTransactions = [];
                 renderFinancialPerformance({}, {}, 0);
                 renderSummaryTable();
@@ -3666,35 +3987,36 @@
             if (txCurrentPage < 1) txCurrentPage = 1;
             const pageStart = (txCurrentPage - 1) * TX_PAGE_SIZE;
             const pageRows = sorted.slice(pageStart, pageStart + TX_PAGE_SIZE);
-            lastRenderedPageIds = pageRows.map(t => t.id);
 
             if (sorted.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="11" class="p-6 text-center text-xs text-slate-400 dark:text-slate-500">No transactions match the current filter.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="10" class="p-6 text-center text-xs text-slate-400 dark:text-slate-500">No transactions match the current filter.</td></tr>`;
             } else {
                 tbody.innerHTML = pageRows.map(t => {
                     const amount = parseFloat(t.amount) || 0;
                     const cashback = parseFloat(t.cashback) || 0;
                     const fee = parseFloat(t.serviceCharge) || 0;
-                    const netReward = (t.type === 'Repaid') ? 0 : (cashback - fee);
-                    const netClass = netReward < 0 ? 'text-red-600 font-bold' : 'text-emerald-600 font-bold';
-                    const checked = selectedTxIds.has(t.id) ? 'checked' : '';
+                    const isRepaid = t.type === 'Repaid';
+                    const netReward = isRepaid ? 0 : (cashback - fee);
+                    // Net Rewards = cashback − service fee (an amount, not a percentage)
+                    const netCls = isRepaid ? 'muted' : netReward < 0 ? 'neg' : netReward === 0 ? 'muted' : 'pos';
+                    const netRate = amount > 0 ? ((netReward / amount) * 100).toFixed(2) + '% of amount' : '';
+                    const dash = '<span class="tx-dash">—</span>';
 
                     return `
-                        <tr class="hover:bg-slate-50 dark:bg-slate-900 transition">
-                            <td class="py-3.5 px-4"><input type="checkbox" ${checked} onchange="toggleTxSelected('${t.id}', this.checked)" class="rounded border-slate-300 dark:border-slate-600"></td>
-                            <td class="py-3.5 px-4 text-slate-500 dark:text-slate-400 whitespace-nowrap">${t.date}</td>
-                            <td class="py-3.5 px-4 font-medium text-slate-800 dark:text-slate-200 whitespace-nowrap">${t.cardName}</td>
-                            <td class="py-3.5 px-4"><span class="bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400 px-2.5 py-1 rounded text-xs whitespace-nowrap">${t.type}</span></td>
-                            <td class="py-3.5 px-4 text-slate-800 dark:text-slate-200 font-medium">${t.desc}</td>
-                            <td class="py-3.5 px-4 text-slate-600 dark:text-slate-400 whitespace-nowrap">${t.category ? t.category : '-'}</td>
-                            <td class="py-3.5 px-4 text-right text-slate-900 dark:text-slate-100 font-medium whitespace-nowrap">${amount ? amount.toFixed(2) : '-'}</td>
-                            <td class="py-3.5 px-4 text-right text-amber-600 font-medium whitespace-nowrap">${fee ? fee.toFixed(2) : '-'}</td>
-                            <td class="py-3.5 px-4 text-right text-emerald-600 font-semibold whitespace-nowrap">${cashback ? cashback.toFixed(2) : '-'}</td>
-                            <td class="py-3.5 px-4 text-right ${netClass} whitespace-nowrap">${netReward.toFixed(2)}</td>
-                            <td class="py-3.5 px-4 text-center whitespace-nowrap space-x-1">
-                                <button onclick="duplicateTransaction('${t.id}')" title="Repeat this transaction with today's date" class="text-emerald-600 hover:text-emerald-800 font-semibold px-2 py-1 rounded hover:bg-emerald-50 dark:hover:bg-emerald-950 transition">↻</button>
-                                <button onclick="editTransaction('${t.id}')" class="text-indigo-600 hover:text-indigo-800 font-semibold px-2 py-1 rounded hover:bg-indigo-50 dark:bg-indigo-950 transition">Edit</button>
-                                <button onclick="deleteTransaction('${t.id}')" class="text-red-500 hover:text-red-700 font-semibold px-2 py-1 rounded hover:bg-red-50 transition">Delete</button>
+                        <tr class="tx-row">
+                            <td class="tx-td"><span class="tx-date" title="${escapeHtml(t.date)}">${fmtTxDate(t.date)}</span></td>
+                            <td class="tx-td"><span class="tx-chip"><i class="tx-cdot" style="background:${txCardDotColor(t)}"></i>${escapeHtml(t.cardName)}</span></td>
+                            <td class="tx-td"><span class="tx-type ${txTypeClass(t.type)}">${escapeHtml(t.type)}</span></td>
+                            <td class="tx-td tx-desc">${escapeHtml(t.desc)}</td>
+                            <td class="tx-td">${t.category ? `<span class="tx-cat">${escapeHtml(t.category)}</span>` : dash}</td>
+                            <td class="tx-td right tx-num tx-amt ${isRepaid ? 'pos' : ''}">${amount ? (isRepaid ? '-' : '') + formatAED(amount) : dash}</td>
+                            <td class="tx-td right tx-num ${fee ? 'warn' : 'muted'}">${formatAED(fee)}</td>
+                            <td class="tx-td right tx-num ${cashback ? 'pos' : 'muted'}">${cashback ? '+' + formatAED(cashback) : dash}</td>
+                            <td class="tx-td right tx-num ${netCls}" title="${netRate}">${isRepaid ? dash : (netReward > 0 ? '+' : netReward < 0 ? '-' : '') + formatAED(Math.abs(netReward))}</td>
+                            <td class="tx-td center">
+                                <button type="button" class="tx-dots" aria-label="Transaction actions" aria-haspopup="menu" onclick="openTxMenu(event, '${t.id}')">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="12" cy="19" r="1.8"/></svg>
+                                </button>
                             </td>
                         </tr>
                     `;
@@ -3705,12 +4027,7 @@
                 const arrowEl = document.getElementById(`sort-arrow-${col}`);
                 if (arrowEl) arrowEl.innerHTML = sortArrow(col);
             });
-            const masterCheckbox = document.getElementById('tx-select-all');
-            if (masterCheckbox) {
-                masterCheckbox.checked = lastRenderedPageIds.length > 0 && lastRenderedPageIds.every(id => selectedTxIds.has(id));
-            }
             renderPagination(sorted.length);
-            renderBulkActionBar();
 
             const effRate = totalSpend > 0 ? ((totalCashback / totalSpend) * 100).toFixed(2) : '0.00';
 
