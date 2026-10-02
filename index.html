@@ -593,8 +593,9 @@
             <button onclick="clearAllData()" class="flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] text-red-400/90 hover:text-red-300 hover:bg-red-500/10 transition w-full text-left"><svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg> Reset Data</button>
             -->
             <button onclick="openCardModal()" class="flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] text-slate-400 hover:text-white hover:bg-white/5 transition w-full text-left"><svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg> Manage Cards</button>
+            <!--
             <button id="manage-category-type-btn" onclick="openSettings()" class="flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] text-slate-400 hover:text-white hover:bg-white/5 transition w-full text-left"><svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1-1.8 1.8-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.6v.2h-2.5V20a1.7 1.7 0 0 0-1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1-1.8-1.8.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.6-1H6v-2.5h.2a1.7 1.7 0 0 0 1.6-1 1.7 1.7 0 0 0-.3-1.9l-.1-.1 1.8-1.8.1.1a1.7 1.7 0 0 0 1.9.3 1.7 1.7 0 0 0 1-1.6V5h2.5v.2a1.7 1.7 0 0 0 1 1.6 1.7 1.7 0 0 0 1.9-.3l.1-.1 1.8 1.8-.1.1a1.7 1.7 0 0 0-.3 1.9 1.7 1.7 0 0 0 1.6 1h.2v2.5h-.2a1.7 1.7 0 0 0-1.6 1Z"/></svg> Manage Category / Type</button>
-          
+            -->
         </nav>
 
 
@@ -1982,14 +1983,16 @@
             document.getElementById('exp-category').innerHTML =
                 `<option value="">None / Default</option>` +
                 RATE_CATEGORIES.map(cat => `<option value="${cat}">${cat}</option>`).join('') +
-                TX_ONLY_CATEGORIES.map(cat => `<option value="${cat}">${cat}</option>`).join('');
+                TX_ONLY_CATEGORIES.map(cat => `<option value="${cat}">${cat}</option>`).join('') +
+                '<option value="__add_new_category__">+ Add new category...</option>';
         }
 
         function populateTransactionTypes() {
             const select = document.getElementById('exp-type');
             if (!select) return;
             const selected = select.value;
-            select.innerHTML = TYPE_FILTER_OPTIONS.map(type => `<option value="${type}">${type}</option>`).join('');
+            select.innerHTML = TYPE_FILTER_OPTIONS.map(type => `<option value="${type}">${type}</option>`).join('') +
+                '<option value="__add_new_type__">+ Add new type...</option>';
             if (TYPE_FILTER_OPTIONS.includes(selected)) select.value = selected;
         }
 
@@ -2085,8 +2088,35 @@
             refreshOptionUI();
         }
 
+        let transactionSettingsReturn = null;
+
+        async function openTransactionSettings(kind) {
+            const select = document.getElementById(kind === 'type' ? 'exp-type' : 'exp-category');
+            transactionSettingsReturn = { kind, previousValue: select.value };
+            document.getElementById('tx-modal').classList.add('hidden');
+            await openSettings();
+            document.getElementById(kind === 'type' ? 'new-transaction-type' : 'new-category').focus();
+        }
+
+        function returnToTransactionSettingsSelection(kind, value) {
+            if (!transactionSettingsReturn) return;
+            document.getElementById('settings-modal').classList.add('hidden');
+            document.getElementById('tx-modal').classList.remove('hidden');
+            const select = document.getElementById(kind === 'type' ? 'exp-type' : 'exp-category');
+            select.value = value;
+            if (kind === 'type') syncCategoryState(value);
+            calculateDynamicCashback();
+            transactionSettingsReturn = null;
+        }
+
         function closeSettings() {
             document.getElementById('settings-modal').classList.add('hidden');
+            if (transactionSettingsReturn) {
+                const { kind, previousValue } = transactionSettingsReturn;
+                document.getElementById('tx-modal').classList.remove('hidden');
+                document.getElementById(kind === 'type' ? 'exp-type' : 'exp-category').value = previousValue;
+                transactionSettingsReturn = null;
+            }
         }
 
         function addCustomTransactionType() {
@@ -2104,6 +2134,7 @@
             renderTypeFilter();
             input.value = '';
             showToast(`Added transaction type: ${value}`, { tone: 'success' });
+            returnToTransactionSettingsSelection('type', value);
         }
 
         function addCustomCategory() {
@@ -2121,6 +2152,7 @@
             renderRateInputs({});
             input.value = '';
             showToast(`Added category: ${value}`, { tone: 'success' });
+            returnToTransactionSettingsSelection('category', value);
         }
 
         // ---- BEST CARD RECOMMENDER ----
@@ -2680,6 +2712,12 @@
         ['exp-amount', 'exp-category', 'exp-card'].forEach(id => {
             document.getElementById(id).addEventListener('input', calculateDynamicCashback);
             document.getElementById(id).addEventListener('change', calculateDynamicCashback);
+        });
+        document.getElementById('exp-type').addEventListener('change', event => {
+            if (event.target.value === '__add_new_type__') openTransactionSettings('type');
+        });
+        document.getElementById('exp-category').addEventListener('change', event => {
+            if (event.target.value === '__add_new_category__') openTransactionSettings('category');
         });
 
         function openTxModal(prefillLast = true) {
