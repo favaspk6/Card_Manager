@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Credit Card Cashback Tracker</title>
+    <title>DueDates</title>
     <!-- Tailwind CSS, Chart.js, SheetJS & Supabase JS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>tailwind.config = { darkMode: 'class' };</script>
@@ -179,9 +179,11 @@
         html.dark tr.hover\:bg-slate-50:hover { background-color: rgba(129,140,248,.08) !important; }
         html.dark span.dark\:bg-slate-700 { background-color: rgba(255,255,255,.07) !important; }
         html.dark table td, html.dark table th { border-color: rgba(255,255,255,.06) !important; }
+        #app-sidebar { transform: translateX(-100%); visibility: hidden; pointer-events: none; }
+        #app-sidebar.is-open { transform: translateX(0); visibility: visible; pointer-events: auto; }
+        #app-shell { transition: padding-left .3s ease; }
+        @media (min-width: 1024px) { #app-shell.sidebar-collapsed { padding-left: 0; } }
     
-        .marg {margin-top: 2%;}
-        .marg-1 {margin-top: 1%;}
 
         /* ================================================================
            PREMIUM CARD TILES (saved cards on the dashboard)
@@ -203,8 +205,6 @@
         .cc-t-blue   { --cc-bg: linear-gradient(145deg, rgba(22,44,104,.88), rgba(10,22,54,.92) 58%, rgba(9,17,38,.94)); --cc-bd: rgba(96,140,255,.36); --cc-glow: rgba(59,130,246,.20); --cc-bar: linear-gradient(90deg,#3b82f6,#22d3ee); --cc-lim: #c7d7ff; --cc-lbl: #8fa3c9; --cc-pill-bg: rgba(59,130,246,.18); --cc-pill-bd: rgba(96,165,250,.5); --cc-pill-c: #93c5fd; }
         .cc-t-cyan   { --cc-bg: linear-gradient(145deg, rgba(8,70,96,.85), rgba(6,36,52,.92) 58%, rgba(5,24,36,.94)); --cc-bd: rgba(34,211,238,.34); --cc-glow: rgba(6,182,212,.18); --cc-bar: linear-gradient(90deg,#06b6d4,#67e8f9); --cc-lim: #bdf0fb; --cc-lbl: #86b6c6; --cc-pill-bg: rgba(6,182,212,.16); --cc-pill-bd: rgba(34,211,238,.5); --cc-pill-c: #67e8f9; }
         .cc-t-gold   { --cc-bg: linear-gradient(145deg, rgba(104,72,12,.78), rgba(50,35,9,.88) 58%, rgba(30,22,8,.92)); --cc-bd: rgba(217,163,52,.44); --cc-glow: rgba(245,158,11,.15); --cc-bar: linear-gradient(90deg,#d97706,#fbbf24); --cc-lim: #e6c76f; --cc-lbl: #b59b5c; --cc-pill-bg: rgba(217,163,52,.15); --cc-pill-bd: rgba(217,163,52,.55); --cc-pill-c: #f3cf74; }
-        .cc-t-gold::after { content: ''; position: absolute; right: 8px; top: 34px; width: 130px; height: 156px; opacity: .13; pointer-events: none; z-index: 0;
-              background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 120'><path d='M50 6 L92 22 V60 C92 88 72 106 50 114 C28 106 8 88 8 60 V22 Z' fill='none' stroke='%23f5b942' stroke-width='9' stroke-linejoin='round'/></svg>") center/contain no-repeat; }
         .cc-t-green  { --cc-bg: linear-gradient(145deg, rgba(8,84,62,.82), rgba(5,40,30,.9) 58%, rgba(4,26,20,.93)); --cc-bd: rgba(52,211,153,.34); --cc-glow: rgba(16,185,129,.17); --cc-bar: linear-gradient(90deg,#10b981,#6ee7b7); --cc-lim: #b7f0d8; --cc-lbl: #83b8a3; --cc-pill-bg: rgba(16,185,129,.16); --cc-pill-bd: rgba(52,211,153,.5); --cc-pill-c: #6ee7b7; }
         .cc-t-violet { --cc-bg: linear-gradient(145deg, rgba(66,36,138,.84), rgba(34,18,72,.92) 58%, rgba(22,12,48,.94)); --cc-bd: rgba(167,139,250,.36); --cc-glow: rgba(139,92,246,.19); --cc-bar: linear-gradient(90deg,#8b5cf6,#c4b5fd); --cc-lim: #ddd3ff; --cc-lbl: #a396cf; --cc-pill-bg: rgba(139,92,246,.18); --cc-pill-bd: rgba(167,139,250,.5); --cc-pill-c: #c4b5fd; }
         .cc-t-rose   { --cc-bg: linear-gradient(145deg, rgba(120,24,62,.82), rgba(58,12,32,.9) 58%, rgba(36,9,22,.93)); --cc-bd: rgba(251,113,133,.36); --cc-glow: rgba(244,63,94,.17); --cc-bar: linear-gradient(90deg,#f43f5e,#fda4af); --cc-lim: #ffd0d8; --cc-lbl: #c98a99; --cc-pill-bg: rgba(244,63,94,.16); --cc-pill-bd: rgba(251,113,133,.5); --cc-pill-c: #fda4af; }
@@ -252,9 +252,9 @@
         /* ================================================================
            BEST CARD RECOMMENDER (main section)
            ================================================================ */
-        .rec-ico { width: 52px; height: 52px; border-radius: 16px; display: grid; place-items: center; flex: none; color: #5eead4;
-              background: linear-gradient(145deg, rgba(20,184,166,.28), rgba(16,185,129,.12)); border: 1px solid rgba(45,212,191,.35);
-              box-shadow: 0 0 26px rgba(20,184,166,.22), inset 0 1px 0 rgba(255,255,255,.12); }
+        .rec-ico {  width: 52px; height: 52px; border-radius: 16px;  display: grid; place-items: center; flex: none; color: #5eead4;
+              /* background: linear-gradient(145deg, rgba(20,184,166,.28), rgba(16,185,129,.12)); */ /* border: 1px solid rgba(45,212,191,.35)*/;
+              /* box-shadow: 0 0 26px rgba(20,184,166,.22), inset 0 1px 0 rgba(255,255,255,.12); */ }
         .rec-title { font-family: 'Plus Jakarta Sans', Inter, sans-serif; font-weight: 700; font-size: 21px; line-height: 1.15; letter-spacing: -.02em; color: #fff; }
         .rec-desc { margin-top: 4px; font-size: 13.5px; color: #8b93a7; }
         .rec-router { display: inline-flex; align-items: center; gap: 8px; font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 11px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase;
@@ -329,6 +329,8 @@
         @media (min-width: 1280px) and (max-width: 1535px) { .fp-val { font-size: 22px; } .fp-tile { padding: 18px 16px; } .fp-cur { margin-right: 4px; } }
         @media (max-width: 640px) { .fp-seg { width: 100%; justify-content: space-between; } .fp-seg-btn { padding: 8px 10px; font-size: 13px; } .fp-val { font-size: 23px; } }
     
+        .marg {margin-top: 2%;}
+        .marg-1 {margin-top: 1%;}
 
         /* ---- Compact type scale: Financial Performance + Best Card Recommender ---- */
         .fp-title { font-size: 17px; gap: 8px; }
@@ -355,8 +357,9 @@
         .fp-cat-amt { font-size: 13px; }
         .fp-cat-track { height: 8px; }
 
-        .rec-ico { width: 44px; height: 44px; border-radius: 14px; }
+        /*.rec-ico { width: 44px; height: 44px; border-radius: 14px; } 
         .rec-ico svg { width: 21px; height: 21px; }
+        */
         .rec-title { font-size: 17px; }
         .rec-desc { font-size: 12px; margin-top: 3px; }
         .rec-router { font-size: 10px; padding: 7px 13px; letter-spacing: .12em; }
@@ -473,6 +476,76 @@
         .th-opt:hover, .th-opt:focus-visible { background: rgba(255,255,255,.07); color: #fff; outline: none; }
         .th-opt.selected { color: #fff; background: rgba(99,102,241,.22); box-shadow: inset 0 0 0 1px rgba(129,140,248,.35); }
         .th-opt-check { flex: none; color: #a5b4fc; }
+    
+
+        /* ---- Summary table ---- */
+        .sm-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 20px 26px; border-bottom: 1px solid rgba(255,255,255,.06); }
+        .sm-title { font-family: 'Plus Jakarta Sans', Inter, sans-serif; font-weight: 700; font-size: 17px; letter-spacing: -.02em; color: #fff; }
+        .sm-badge { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 11.5px; font-weight: 600; padding: 6px 12px; border-radius: 10px; color: #a5b4fc; background: rgba(99,102,241,.15); border: 1px solid rgba(129,140,248,.3); max-width: 60%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .sm-note { padding: 12px 26px; font-size: 12px; color: #7d869b; border-top: 1px solid rgba(255,255,255,.06); }
+        .sm-note.hidden { display: none; }
+        .tx-num.plain { color: #e2e8f0; }
+        .tx-num.strong { color: #fff; font-weight: 700; }
+        .tx-td.muted { color: #566076; }
+        .tx-total .tx-td { padding: 16px; font-weight: 700; color: #fff; background: rgba(99,102,241,.09) !important; border-top: 1px solid rgba(129,140,248,.28); border-bottom: 0; }
+        .tx-total .tx-num { font-weight: 800; }
+    
+
+        /* ---- Card colour picker ---- */
+        .cp-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(38px, 1fr)); gap: 10px; }
+        .cp-sw { position: relative; width: 38px; height: 38px; border-radius: 12px; border: 2px solid rgba(255,255,255,.14); cursor: pointer; transition: transform .15s ease, box-shadow .15s ease, border-color .15s; box-shadow: inset 0 1px 0 rgba(255,255,255,.18); }
+        .cp-sw:hover { transform: translateY(-2px); border-color: rgba(255,255,255,.4); }
+        .cp-sw.active { border-color: #fff; box-shadow: 0 0 0 3px rgba(129,140,248,.6), inset 0 1px 0 rgba(255,255,255,.2); }
+        .cp-sw.active::after { content: '✓'; position: absolute; inset: 0; display: grid; place-items: center; font-size: 15px; font-weight: 800; color: #fff; text-shadow: 0 1px 3px rgba(0,0,0,.6); pointer-events: none; }
+        .cp-custom { display: block; background: conic-gradient(from 0deg, #ef4444, #f59e0b, #eab308, #22c55e, #06b6d4, #3b82f6, #a855f7, #ef4444); overflow: hidden; }
+        .cp-custom input[type="color"] { position: absolute; inset: -8px; width: 60px; height: 60px; opacity: 0; cursor: pointer; }
+        .cp-custom-plus { position: absolute; inset: 0; display: grid; place-items: center; font-size: 20px; font-weight: 700; color: #fff; text-shadow: 0 1px 3px rgba(0,0,0,.6); pointer-events: none; }
+        .cp-prev { display: flex; align-items: center; gap: 12px; margin-top: 12px; padding: 12px 16px; border-radius: 14px; background: var(--cc-bg); border: 1px solid var(--cc-bd); box-shadow: 0 8px 24px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.08), 0 0 24px var(--cc-glow); }
+        .cp-prev-name { font-family: 'Plus Jakarta Sans', Inter, sans-serif; font-weight: 700; font-size: 13.5px; color: #fff; }
+    
+    
+
+        /* ---- Chip finishes + contact-pad patterns (each card colour gets its own combination) ---- */
+        .cc-chip.chip-f-gold      { background: linear-gradient(135deg, #fde68a 0%, #f5b942 45%, #b7791f 100%); --chip-line: rgba(90,55,5,.55); }
+        .cc-chip.chip-f-silver    { background: linear-gradient(135deg, #f1f5f9 0%, #a8b3c4 48%, #6b7789 100%); --chip-line: rgba(30,41,59,.5); }
+        .cc-chip.chip-f-rosegold  { background: linear-gradient(135deg, #fde2d6 0%, #e8a58f 48%, #a4604d 100%); --chip-line: rgba(100,50,35,.5); }
+        .cc-chip.chip-f-champagne { background: linear-gradient(135deg, #fff3d6 0%, #e7cfa0 48%, #a8895a 100%); --chip-line: rgba(100,70,30,.5); }
+        .cc-chip.chip-f-platinum  { background: linear-gradient(135deg, #ffffff 0%, #d6dbe6 45%, #9aa3b5 100%); --chip-line: rgba(40,50,70,.4); }
+        .cc-chip.chip-f-bronze    { background: linear-gradient(135deg, #f0c9a0 0%, #c0824a 48%, #7a4a22 100%); --chip-line: rgba(70,35,10,.55); }
+        .cc-chip.chip-f-graphite  { background: linear-gradient(135deg, #5b6474 0%, #2a303c 50%, #11151d 100%); --chip-line: rgba(255,255,255,.32); box-shadow: 0 2px 8px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.25), inset 0 -1px 0 rgba(0,0,0,.4); }
+        .cc-chip.chip-f-ice       { background: linear-gradient(135deg, #e6f3ff 0%, #9fc4e8 48%, #5b82b0 100%); --chip-line: rgba(20,50,90,.5); }
+        .cc-chip.chip-f-lilac     { background: linear-gradient(135deg, #f1e6ff 0%, #c2a4ee 48%, #7f5bb8 100%); --chip-line: rgba(50,25,90,.5); }
+        .cc-chip.chip-f-amber     { background: linear-gradient(135deg, #ffe7a3 0%, #ffb02e 48%, #c46a05 100%); --chip-line: rgba(100,45,0,.55); }
+
+        .cc-chip.chip-p-lines::after, .cc-chip.chip-p-grid::after { border-top: 1.5px solid var(--chip-line); border-bottom: 1.5px solid var(--chip-line); }
+        .cc-chip.chip-p-grid::before { content: ''; position: absolute; top: 5px; bottom: 5px; left: 50%; width: 0; border-left: 1.5px solid var(--chip-line); }
+        .cc-chip.chip-p-cross::after { height: 0; border-bottom: 0; border-top: 1.5px solid var(--chip-line); }
+        .cc-chip.chip-p-cross::before { content: ''; position: absolute; top: 5px; bottom: 5px; left: 50%; width: 0; border-left: 1.5px solid var(--chip-line); }
+        .cc-chip.chip-p-dots::after { top: 6px; bottom: 6px; left: 7px; right: 7px; height: auto; transform: none; border: 0;
+              background: radial-gradient(circle, var(--chip-line) 1.7px, transparent 2.1px) 0 0 / 8.5px 8px; }
+
+        .rec-mini-chip.chip-f-gold      { background: linear-gradient(135deg, #fde68a, #f5b942 50%, #b7791f); }
+        .rec-mini-chip.chip-f-silver    { background: linear-gradient(135deg, #f1f5f9, #a8b3c4 50%, #6b7789); }
+        .rec-mini-chip.chip-f-rosegold  { background: linear-gradient(135deg, #fde2d6, #e8a58f 50%, #a4604d); }
+        .rec-mini-chip.chip-f-champagne { background: linear-gradient(135deg, #fff3d6, #e7cfa0 50%, #a8895a); }
+        .rec-mini-chip.chip-f-platinum  { background: linear-gradient(135deg, #ffffff, #d6dbe6 50%, #9aa3b5); }
+        .rec-mini-chip.chip-f-bronze    { background: linear-gradient(135deg, #f0c9a0, #c0824a 50%, #7a4a22); }
+        .rec-mini-chip.chip-f-graphite  { background: linear-gradient(135deg, #5b6474, #2a303c 50%, #11151d); }
+        .rec-mini-chip.chip-f-ice       { background: linear-gradient(135deg, #e6f3ff, #9fc4e8 50%, #5b82b0); }
+        .rec-mini-chip.chip-f-lilac     { background: linear-gradient(135deg, #f1e6ff, #c2a4ee 50%, #7f5bb8); }
+        .rec-mini-chip.chip-f-amber     { background: linear-gradient(135deg, #ffe7a3, #ffb02e 50%, #c46a05); }
+
+        /* ---- Card tile: keep the header the same height whatever network logo is shown, so tiles in a row line up ---- */
+        .cc-head { min-height: 34px; }
+        .cc-net { align-items: center; line-height: 1; }
+    
+
+        /* ---- Card background icon (one per colour) ---- */
+        .cc > .cc-wm { position: absolute; right: 12px; top: 28px; width: 150px; height: 150px; opacity: .12; pointer-events: none; z-index: 0; }
+        .cc-wm svg { width: 100%; height: 100%; display: block; }
+        .cp-prev { position: relative; overflow: hidden; }
+        .cp-prev > .cc-wm { position: absolute; right: 8px; top: 50%; width: 70px; height: 70px; transform: translateY(-50%); opacity: .2; pointer-events: none; z-index: 0; }
+        .cp-prev > *:not(.cc-wm) { position: relative; z-index: 1; }
         </style>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
@@ -489,11 +562,13 @@
     </div>
 
     <!-- SIDEBAR -->
-    <aside class="hidden lg:flex fixed inset-y-0 left-0 w-72 flex-col bg-[#0b0d13] border-r border-[#171b28] z-40">
+    <aside id="app-sidebar" class="fixed inset-y-0 left-0 w-72 max-w-[calc(100vw-3rem)] flex flex-col bg-[#0b0d13] border-r border-[#171b28] z-40 transition-transform duration-300 ease-in-out">
         <div class="px-6 pt-6 pb-6 flex items-center gap-3">
+            <!--
             <div class="logo-glow w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-500 to-emerald-400 grid place-items-center text-[#0a0c12]"><svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg></div>
+            -->
             <div>
-                <p class="text-[15px] font-bold text-white leading-tight">Cashback</p>
+                <p class="text-[15px] font-bold text-white leading-tight">DueDates</p>
                 <p class="eyebrow">&amp; Spend Analyzer</p>
             </div>
         </div>
@@ -502,7 +577,7 @@
             <button onclick="openTxModal()" class="w-full flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-semibold py-2.5 rounded-xl transition shadow-lg shadow-indigo-900/40"><svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Log Transaction</button>
         </div>
         -->
-        <nav class="px-4 mt-8 overflow-y-auto  border-b border-[#1d2230]">
+        <nav id="sidebar-nav" class="px-4 mt-8 space-y-1 overflow-y-auto border-b border-[#1d2230]">
             <p class="eyebrow px-3 mb-2">Portfolio Hub</p>
             <a href="#top" class="flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] text-white bg-white/[0.06] transition"><svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg> Dashboard</a>
             <a href="#saved-cards-section" class="flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] text-slate-400 hover:text-white hover:bg-white/5 transition w-full text-left"><svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg> Cards</a>
@@ -510,13 +585,15 @@
             <a href="#history-section" class="flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] text-slate-400 hover:text-white hover:bg-white/5 transition w-full text-left"><svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg> Transactions</a>
             
             <p class="eyebrow px-3 mt-6 mb-2">Utilities</p>
+            <button onclick="openUtilityModal('recommender-modal')" class="flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] text-slate-400 hover:text-white hover:bg-white/5 transition w-full text-left"><svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3 1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8L12 3Z"/><path d="m19 16 .8 2.2L22 19l-2.2.8L19 22l-.8-2.2L16 19l2.2-.8L19 16Z"/></svg> Best Card Recommender</button>
+            <button onclick="openUtilityModal('import-modal')" class="flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] text-slate-400 hover:text-white hover:bg-white/5 transition w-full text-left"><svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 15.5A4.5 4.5 0 0 1 7.5 11a5.5 5.5 0 0 1 10.7 1.5A3.5 3.5 0 1 1 18 19H7a4 4 0 0 1-4-3.5Z"/><path d="M12 12v7M9 15l3-3 3 3"/></svg> Import Excel / CSV</button>
             <!--
             <a href="#import-section" class="flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] text-slate-400 hover:text-white hover:bg-white/5 transition w-full text-left"><svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg> Import / Export</a>
             <button onclick="repairMissingCardLinks()" class="flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] text-slate-400 hover:text-white hover:bg-white/5 transition w-full text-left"><svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg> Fix Card Links</button>
             <button onclick="clearAllData()" class="flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] text-red-400/90 hover:text-red-300 hover:bg-red-500/10 transition w-full text-left"><svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg> Reset Data</button>
             -->
             <button onclick="openCardModal()" class="flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] text-slate-400 hover:text-white hover:bg-white/5 transition w-full text-left"><svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg> Manage Cards</button>
-            <button onclick="showToast('Settings panel is not available yet.')" class="flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] text-slate-400 hover:text-white hover:bg-white/5 transition w-full text-left"><svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1-1.8 1.8-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.6v.2h-2.5V20a1.7 1.7 0 0 0-1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1-1.8-1.8.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.6-1H6v-2.5h.2a1.7 1.7 0 0 0 1.6-1 1.7 1.7 0 0 0-.3-1.9l-.1-.1 1.8-1.8.1.1a1.7 1.7 0 0 0 1.9.3 1.7 1.7 0 0 0 1-1.6V5h2.5v.2a1.7 1.7 0 0 0 1 1.6 1.7 1.7 0 0 0 1.9-.3l.1-.1 1.8 1.8-.1.1a1.7 1.7 0 0 0-.3 1.9 1.7 1.7 0 0 0 1.6 1h.2v2.5h-.2a1.7 1.7 0 0 0-1.6 1Z"/></svg> Manage Categories</button>            
+            <button id="manage-category-type-btn" onclick="openSettings()" class="flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] text-slate-400 hover:text-white hover:bg-white/5 transition w-full text-left"><svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1-1.8 1.8-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.6v.2h-2.5V20a1.7 1.7 0 0 0-1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1-1.8-1.8.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.6-1H6v-2.5h.2a1.7 1.7 0 0 0 1.6-1 1.7 1.7 0 0 0-.3-1.9l-.1-.1 1.8-1.8.1.1a1.7 1.7 0 0 0 1.9.3 1.7 1.7 0 0 0 1-1.6V5h2.5v.2a1.7 1.7 0 0 0 1 1.6 1.7 1.7 0 0 0 1.9-.3l.1-.1 1.8 1.8-.1.1a1.7 1.7 0 0 0-.3 1.9 1.7 1.7 0 0 0 1.6 1h.2v2.5h-.2a1.7 1.7 0 0 0-1.6 1Z"/></svg> Manage Category / Type</button>
           
         </nav>
 
@@ -541,41 +618,30 @@
             </div>
         </div>
     </aside>
+    <div id="sidebar-backdrop" class="fixed inset-0 z-30 hidden bg-black/60 backdrop-blur-sm lg:hidden" onclick="setSidebarOpen(false)" aria-hidden="true"></div>
 
-    <div class="lg:pl-72 min-h-screen">
+    <div id="app-shell" class="lg:pl-72 min-h-screen">
         <!-- TOP BAR -->
         <div id="top"></div>
         <header class="sticky top-0 z-30 bg-[#0a0c12]/85 backdrop-blur border-b border-[#171b28]">
-            <div class="flex items-center gap-4 px-4 sm:px-6 py-3">
-                <div class="lg:hidden flex items-center gap-2">
-                    <div class="logo-glow w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-emerald-400 grid place-items-center text-[#0a0c12]"><svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg></div>
-                    <!--
-                    <button onclick="openTxModal()" class="flex items-center gap-1 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold px-3 py-2 rounded-lg transition"><svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Log</button>
-                    -->
-                </div>
-
-                <div class="flex items-center gap-3">
-                    <div class="logo-glow w-10 h-10 rounded-xl bg-indigo-500/15 text-indigo-300 grid place-items-center"><svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg></div>
-                    <div>
-                        <h1 class="text-[17px] font-semibold text-white flex items-center gap-2">Portfolio Intelligence Deck 
-                            <!--
-                            <span id="sync-badge" class="mono text-[9px] tracking-widest font-semibold text-emerald-400 bg-emerald-500/10 border border-emerald-500/25 px-1.5 py-0.5 rounded">LIVE SYNC</span>
-                            -->
+            <div class="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-2 px-4 sm:px-6 py-3 lg:grid-cols-[minmax(0,1fr)_minmax(180px,0.85fr)_auto] lg:gap-4">
+                <div class="col-start-1 row-start-1 flex min-w-0 items-center gap-3 lg:col-start-1">
+                    <button id="sidebar-toggle" type="button" onclick="toggleSidebar()" aria-label="Open sidebar" aria-controls="app-sidebar" aria-expanded="false" class="logo-glow w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-500 to-emerald-400 grid place-items-center text-[#0a0c12] shrink-0"><svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg></button>
+                    <div class="min-w-0">
+                        <h1 class="flex min-w-0 items-center gap-2 truncate text-[17px] font-semibold text-white">DueDates 
+                        <!--
+                            <span id="sync-badge" class="mono hidden shrink-0 rounded border border-emerald-500/25 bg-emerald-500/10 px-1.5 py-0.5 text-[9px] font-semibold tracking-widest text-emerald-400 sm:inline-flex">LIVE SYNC</span>
+                        -->
                         </h1>
-                        <p id="deck-subtitle" class="text-xs text-slate-500 mt-0.5">Real-time yield optimization across your registered cards</p>
+                        <p id="deck-subtitle" class="hidden truncate text-xs text-slate-500 sm:block mt-0.5">Real-time yield optimization across your registered cards</p>
                     </div>
                 </div>
-                
-                <div class="relative flex-1 max-w-xl md:absolute md:left-1/2 md:-translate-x-1/2 md:w-[min(45vw,32rem)] md:max-w-none">
-                    <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500"><svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></span>
-                    <input id="top-search" type="text" oninput="onTopSearch(this.value)" placeholder="Search transactions by description…" class="w-full pl-9 pr-3 py-2 rounded-xl text-sm bg-[#0f121a] border border-[#1d2230] text-slate-200 placeholder-slate-500 outline-none focus:border-indigo-500/60">
-                </div>
-                <div class="ml-auto flex items-center gap-3">
-                    <div class="hidden md:flex items-stretch gap-6 rounded-xl border border-[#1d2230] bg-[#0f121a] px-4 py-1.5">
+                <div class="col-start-2 row-start-1 relative flex items-center justify-end lg:col-start-3">
+                    <div class="hidden md:flex items-stretch gap-3 xl:gap-6 rounded-xl border border-[#1d2230] bg-[#0f121a] px-3 xl:px-4 py-1.5">
                         <div><p class="eyebrow">Outstanding</p><p class="mono text-xs font-semibold text-indigo-300 mt-0.5">AED <span id="pill-outstanding">0.00</span></p></div>
                         <div><p class="eyebrow">Pending Cashback</p><p class="mono text-xs font-semibold text-emerald-400 mt-0.5">AED <span id="pill-pending">0.00</span></p></div>
                     </div>
-                    <div class="relative">
+                    <div class="relative ml-0 md:ml-3">
                         <button onclick="toggleHeaderMenu()" id="header-menu-btn" class="flex items-center gap-2.5 rounded-xl px-2 py-1.5 hover:bg-white/5 transition" aria-label="Account menu">
                             <span id="user-avatar" class="w-8 h-8 rounded-full bg-indigo-500/25 text-indigo-200 grid place-items-center text-xs font-bold">U</span>
                             <span class="hidden sm:block text-left leading-tight">
@@ -593,6 +659,15 @@
                         </div>
                     </div>
                 </div>
+                <!--
+                <div class="col-span-2 row-start-2 flex min-w-0 items-center gap-2 lg:col-span-1 lg:col-start-2 lg:row-start-1">
+                    <div class="relative min-w-0 flex-1">
+                        <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500"><svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></span>
+                        <input id="top-search" type="text" oninput="onTopSearch(this.value)" placeholder="Search transactions by description…" class="w-full pl-9 pr-3 py-2 rounded-xl text-sm bg-[#0f121a] border border-[#1d2230] text-slate-200 placeholder-slate-500 outline-none focus:border-indigo-500/60">
+                    </div>
+                    <button onclick="openTxModal()" aria-label="Log transaction" title="Log transaction" class="shrink-0 flex items-center gap-1 rounded-lg bg-indigo-600 px-2 py-2 text-xs font-semibold text-white transition hover:bg-indigo-500 sm:px-3 lg:hidden"><svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg><span class="hidden sm:inline">Log</span></button>
+                </div>
+                -->
             </div>
         </header>
 
@@ -604,11 +679,7 @@
               <div class="flex items-center gap-3">
                     <div class="logo-glow w-10 h-10 rounded-xl bg-indigo-500/15 text-indigo-300 grid place-items-center"><svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg></div>
                     <div>
-                        <h1 class="text-[17px] font-semibold text-white flex items-center gap-2">Portfolio Intelligence Deck 
-                            <!--
-                            <span id="sync-badge" class="mono text-[9px] tracking-widest font-semibold text-emerald-400 bg-emerald-500/10 border border-emerald-500/25 px-1.5 py-0.5 rounded">LIVE SYNC</span>
-                        -->
-                        </h1>
+                        <h1 class="text-[17px] font-semibold text-white flex items-center gap-2">Portfolio Intelligence Deck <span id="sync-badge" class="mono text-[9px] tracking-widest font-semibold text-emerald-400 bg-emerald-500/10 border border-emerald-500/25 px-1.5 py-0.5 rounded">LIVE SYNC</span></h1>
                         <p id="deck-subtitle" class="text-xs text-slate-500 mt-0.5">Real-time yield optimization across your registered cards</p>
                     </div>
                 </div>
@@ -662,41 +733,8 @@
                 </div>
             </div>
 
-            <!-- BEST CARD RECOMMENDER (moved from the sidebar) -->
-            <div class="grid grid-cols-1 xl:grid-cols-12 gap-6 items-stretch">
-            <section id="recommender-section" class="panel p-5 sm:p-6 scroll-mt-20 xl:col-span-8 min-w-0 flex flex-col">
-                <div class="flex flex-wrap items-start justify-between gap-4">
-                    <div class="flex items-center gap-4">
-                        <div class="rec-ico"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3 1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8L12 3Z"/><path d="m19 16 .8 2.2L22 19l-2.2.8L19 22l-.8-2.2L16 19l2.2-.8L19 16Z"/></svg></div>
-                        <div>
-                            <h2 class="rec-title">Best Card Recommender Engine</h2>
-                            <p class="rec-desc">Pick a spend category to route it to your highest-earning card before checkout</p>
-                        </div>
-                    </div>
-                    <!--
-                    <span class="rec-router"><i></i>Algorithmic Router</span>
-                    -->
-                </div>
-                <div id="rec-category-pills" class="flex flex-wrap gap-3 mt-5"></div>
-                <select id="rec-category" onchange="recommendBestCard()" class="hidden"></select>
-                <div id="recommendation-result" class="mt-auto pt-4"></div>
-            </section>
-                    <section id="import-section" class="panel p-5 scroll-mt-20 xl:col-span-4 min-w-0">
-                        <h2 class="flex items-center gap-2 text-[15px] font-semibold text-white"><span class="text-amber-400"><svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 15.5A4.5 4.5 0 0 1 7.5 11a5.5 5.5 0 0 1 10.7 1.5A3.5 3.5 0 1 1 18 19H7a4 4 0 0 1-4-3.5Z"/><path d="M12 12v7M9 15l3-3 3 3"/></svg></span> Import Excel / CSV Data</h2>
-                        <p class="text-xs text-slate-500 mt-1 mb-5">Upload your existing spreadsheet to automatically import history and card links.</p>
-                        <div id="excel-dropzone" class="rounded-xl bg-[#1a1e2a] px-4 py-7 text-center transition hover:bg-[#202535]" ondragover="event.preventDefault()" ondrop="handleExcelDrop(event)">
-                            <div class="mx-auto mb-3 grid h-11 w-11 place-items-center rounded-full bg-[#151925] text-slate-500"><svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 15.5A4.5 4.5 0 0 1 7.5 11a5.5 5.5 0 0 1 10.7 1.5A3.5 3.5 0 1 1 18 19H7a4 4 0 0 1-4-3.5Z"/><path d="M12 12v7M9 15l3-3 3 3"/></svg></div>
-                            <p class="text-sm font-semibold text-white">Drag &amp; drop spreadsheet here</p>
-                            <p class="mono mt-1 text-[11px] tracking-wider text-slate-500">Supports .CSV, .XLSX, .XLS formats</p>
-                            <label for="excel-file-input" class="mt-3 inline-flex cursor-pointer items-center gap-2 rounded-lg bg-[#272c3a] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#303649]"><svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M12 12v6M9.5 15.5 12 18l2.5-2.5"/></svg> Choose File</label>
-                            <input type="file" id="excel-file-input" accept=".xlsx, .xls, .csv" class="hidden"/>
-                        </div>
-                        <button onclick="openTxModal()" class="w-full flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-semibold py-2.5 rounded-xl transition shadow-lg shadow-indigo-900/40"><svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg> Add Transaction Manually</button>
-                    </section>
-            </div>
-
             <section id="saved-cards-section" class="panel p-5 scroll-mt-20">
-                <div class="flex items-start justify-between gap-3">
+                <div class="flex items-start justify-between gap-3  border-b border-[#1d2230]">
                     <div>
                         <h2 class="flex items-center gap-2 text-[15px] font-semibold text-white"><span class="text-emerald-400"><svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg></span> Saved Cards</h2>
                         <p class="text-xs text-slate-500 mt-1">Active limits, outstanding balance &amp; statement deadlines.</p>
@@ -715,7 +753,7 @@
                     <button onclick="openCardModal()" class="eyebrow !text-emerald-400 bg-emerald-500/10 hover:bg-emerald-500/20 px-2.5 py-1.5 rounded-md transition whitespace-nowrap">+ Manage</button>
                 </div>
                 -->
-                <div id="cards-list" class="grid grid-cols-1 md:grid-cols-4 gap-4"></div>
+                <div id="cards-list" class="grid grid-cols-1 md:grid-cols-3 gap-4"></div>
             </section>
 
             <!-- ACTIVE INSTALLMENTS (EMI) -->
@@ -727,10 +765,113 @@
                 <div id="emi-list" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 mt-4"></div>
             </section>
 
+            <!-- BEST CARD RECOMMENDER MODAL -->
+            <div id="recommender-modal" class="fixed inset-0 z-[60] hidden items-center justify-center bg-black/60 backdrop-blur-sm p-4" onclick="if(event.target===this) closeUtilityModal('recommender-modal')">
+            <section id="recommender-section" role="dialog" aria-modal="true" aria-labelledby="recommender-title" class="panel p-5 sm:p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto min-w-0 flex flex-col">
+                <div class="flex flex-wrap items-start justify-between gap-4">
+                    <div class="flex items-center gap-4">
+                        <div class="rec-ico">   
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3 1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8L12 3Z"/><path d="m19 16 .8 2.2L22 19l-2.2.8L19 22l-.8-2.2L16 19l2.2-.8L19 16Z"/></svg>
+                        </div>
+                            <div>    
+                                <h2 id="recommender-title" class="rec-title">Best Card Recommender</h2>
+                            <p class="rec-desc">Pick a spend category to route it to your highest-earning card before checkout</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <!--
+                        <span class="rec-router"><i></i>Algorithmic Router</span>
+                    -->
+                        <button type="button" onclick="closeUtilityModal('recommender-modal')" class="text-slate-400 hover:text-white text-xl leading-none" aria-label="Close recommender dialog">&times;</button>
+                    </div>
+                </div>
+                <div id="rec-category-pills" class="flex flex-wrap gap-3 mt-5"></div>
+                <select id="rec-category" onchange="recommendBestCard()" class="hidden"></select>
+                <div id="recommendation-result" class="mt-auto pt-4"></div>
+            </section>
+            </div>
+
+            <!-- EXCEL / CSV IMPORT MODAL -->
+            <div id="import-modal" class="fixed inset-0 z-[60] hidden items-center justify-center bg-black/60 backdrop-blur-sm p-4" onclick="if(event.target===this) closeUtilityModal('import-modal')">
+                    <section id="import-section" role="dialog" aria-modal="true" aria-labelledby="import-title" class="panel p-5 w-full max-w-xl max-h-[90vh] overflow-y-auto min-w-0">
+                        <div class="flex items-start justify-between gap-4">
+                            <div>
+                        <h2 class="flex items-center gap-2 text-[15px] font-semibold text-white"><span class="text-amber-400"><svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 15.5A4.5 4.5 0 0 1 7.5 11a5.5 5.5 0 0 1 10.7 1.5A3.5 3.5 0 1 1 18 19H7a4 4 0 0 1-4-3.5Z"/><path d="M12 12v7M9 15l3-3 3 3"/></svg></span> Import Excel / CSV Data</h2>
+                            </div>
+                            <button type="button" onclick="closeUtilityModal('import-modal')" class="text-slate-400 hover:text-white text-xl leading-none" aria-label="Close import dialog">&times;</button>
+                        </div>
+                        <p class="text-xs text-slate-500 mt-1 mb-5">Upload your existing spreadsheet to automatically import history and card links.</p>
+                        <div id="excel-dropzone" class="rounded-xl bg-[#1a1e2a] px-4 py-7 text-center transition hover:bg-[#202535]" ondragover="event.preventDefault()" ondrop="handleExcelDrop(event)">
+                            <div class="mx-auto mb-3 grid h-11 w-11 place-items-center rounded-full bg-[#151925] text-slate-500"><svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 15.5A4.5 4.5 0 0 1 7.5 11a5.5 5.5 0 0 1 10.7 1.5A3.5 3.5 0 1 1 18 19H7a4 4 0 0 1-4-3.5Z"/><path d="M12 12v7M9 15l3-3 3 3"/></svg></div>
+                            <p class="text-sm font-semibold text-white">Drag &amp; drop spreadsheet here</p>
+                            <p class="mono mt-1 text-[11px] tracking-wider text-slate-500">Supports .CSV, .XLSX, .XLS formats</p>
+                            <label for="excel-file-input" class="mt-3 inline-flex cursor-pointer items-center gap-2 rounded-lg bg-[#272c3a] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#303649]"><svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M12 12v6M9.5 15.5 12 18l2.5-2.5"/></svg> Choose File</label>
+                            <input type="file" id="excel-file-input" accept=".xlsx, .xls, .csv" class="hidden"/>
+                        </div>
+                        <button onclick="openTxModal()" class="mt-4 w-full flex items-center justify-center gap-2 rounded-lg bg-[#252a38] px-4 py-2.5 text-xs font-semibold text-emerald-300 transition hover:bg-[#2c3242] w-full flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-semibold py-2.5 rounded-xl transition shadow-lg shadow-indigo-900/40"><svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg> Add Transaction Manually</button>
+                    </section>
+            </div>
+
+            <script>
+                function openUtilityModal(modalId) {
+                    const modal = document.getElementById(modalId);
+                    if (!modal) return;
+                    modal.classList.remove('hidden');
+                    modal.classList.add('flex');
+                }
+
+                function closeUtilityModal(modalId) {
+                    const modal = document.getElementById(modalId);
+                    if (!modal) return;
+                    modal.classList.remove('flex');
+                    modal.classList.add('hidden');
+                }
+
+                function setSidebarOpen(isOpen) {
+                    const sidebar = document.getElementById('app-sidebar');
+                    const backdrop = document.getElementById('sidebar-backdrop');
+                    const appShell = document.getElementById('app-shell');
+                    const toggle = document.getElementById('sidebar-toggle');
+                    const isDesktop = window.matchMedia('(min-width: 1024px)').matches;
+
+                    sidebar.classList.toggle('is-open', isOpen);
+                    appShell.classList.toggle('sidebar-collapsed', isDesktop && !isOpen);
+                    backdrop.classList.toggle('hidden', isDesktop || !isOpen);
+                    toggle.setAttribute('aria-expanded', String(isOpen));
+                    toggle.setAttribute('aria-label', isOpen ? 'Close sidebar' : 'Open sidebar');
+                }
+
+                function toggleSidebar() {
+                    const isOpen = document.getElementById('sidebar-toggle').getAttribute('aria-expanded') === 'true';
+                    setSidebarOpen(!isOpen);
+                }
+
+                const sidebarDesktopQuery = window.matchMedia('(min-width: 1024px)');
+                document.addEventListener('DOMContentLoaded', () => setSidebarOpen(sidebarDesktopQuery.matches));
+                sidebarDesktopQuery.addEventListener('change', (event) => setSidebarOpen(event.matches));
+
+                document.getElementById('sidebar-nav').addEventListener('click', (event) => {
+                    if (event.target.closest('a, button')) setSidebarOpen(false);
+                });
+
+                document.addEventListener('keydown', (event) => {
+                    if (event.key === 'Escape') {
+                        closeUtilityModal('recommender-modal');
+                        closeUtilityModal('import-modal');
+                        setSidebarOpen(false);
+                    }
+                });
+            </script>
+
             <div class="grid grid-cols-1 xl:grid-cols-12 gap-6 items-start">
 
                 <!-- LEFT: recommender, filters, charts, tables -->
                 <div class="xl:col-span-12 space-y-6 min-w-0">
+
+                    <!-- Financial performance report -->
+                    <section id="analytics-section" class="panel p-6 sm:p-8 scroll-mt-20 space-y-7 shadow-[0_0_28px_rgba(99,102,241,0.14)]">
+                        <div id="financial-performance-report"></div>
+                    </section>
 
                     <!-- CARD, CATEGORY & MONTH FILTERS — its own section so it never competes with the charts for space -->
                 <section class="panel">
@@ -742,27 +883,24 @@
                 </div>
                 </section>
 
-                    <!-- Financial performance report -->
-                    <section id="analytics-section" class="panel p-6 sm:p-8 scroll-mt-20 space-y-7 shadow-[0_0_28px_rgba(99,102,241,0.14)]">
-                        <div id="financial-performance-report"></div>
-                    </section>
+                    
 
                     <!-- Aggregated Summary Table (Non-Monthly Breakdown) -->
                 <section class="panel">
                     <div class=" bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-600 shadow-sm overflow-hidden">
-                    <div class="px-6 py-4 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center">
-                        <h3 id="summary-table-title" class="font-semibold text-slate-900 dark:text-slate-100">Summary Table</h3>
-                        <span id="active-filter-label" class="text-xs font-semibold text-indigo-600 bg-indigo-50 dark:bg-indigo-950 px-2.5 py-1 rounded-md">Filter: All Cards</span>
+                    <div class="sm-head">
+                        <h3 id="summary-table-title" class="sm-title">Summary Table</h3>
+                        <span id="active-filter-label" class="sm-badge">Filter: All Cards</span>
                     </div>
                     <div class="overflow-x-auto">
-                        <table class="w-full text-left border-collapse text-xs">
+                        <table class="tx-table">
                             <thead>
-                                <tr id="summary-table-header" class="bg-slate-50 dark:bg-slate-900 text-slate-500 dark:text-slate-400 uppercase tracking-wider border-b border-slate-100 dark:border-slate-700"></tr>
+                                <tr id="summary-table-header"></tr>
                             </thead>
-                            <tbody id="monthly-table-body" class="divide-y divide-slate-100 dark:divide-slate-700"></tbody>
+                            <tbody id="monthly-table-body"></tbody>
                         </table>
                     </div>
-                    <p id="summary-cashback-note" class="hidden px-6 py-3 text-[11px] text-slate-500 dark:text-slate-400 border-t border-slate-100 dark:border-slate-700"></p>
+                    <p id="summary-cashback-note" class="sm-note hidden"></p>
                 </div>
                 </section>
 
@@ -858,7 +996,8 @@
                         </div>
                         <div>
                             <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase mb-2">Card Color</label>
-                            <div id="card-color-picker" class="flex flex-wrap gap-2"></div>
+                            <div id="card-color-picker" class="cp-grid"></div>
+                            <div id="card-color-preview"></div>
                             <input type="hidden" id="card-color-gradient" value="">
                         </div>
                         <div>
@@ -1055,7 +1194,7 @@
         <div class="w-full max-w-md overflow-hidden rounded-2xl border border-[#1d2230] bg-[#0f121a] shadow-2xl">
             <div class="flex items-center justify-between border-b border-[#1d2230] px-5 py-4">
                 <div>
-                    <h2 class="text-base font-semibold text-white">Settings</h2>
+                    <h2 class="text-base font-semibold text-white">Add Category / Type</h2>
                     <p class="mt-1 text-xs text-slate-500">Add options used by your transactions.</p>
                 </div>
                 <button type="button" onclick="closeSettings()" class="text-slate-400 hover:text-white text-lg" aria-label="Close settings">&times;</button>
@@ -1334,40 +1473,206 @@
         const TX_ONLY_CATEGORIES = ['Cashback', 'Monthly Payment', 'Annual Fee']; // bookkeeping labels, not spend rates
         const customCategories = [];
 
-        // ---- CARD COLOR GRADIENTS ----
-        // Deep, rich gradients for the dark dashboard. Keys are kept from the earlier light
-        // palette so cards that already saved a color keep working (they just render darker).
-        const CARD_GRADIENTS = {
-            none:     null,
-            ocean:    'linear-gradient(135deg, #0f1a4d 0%, #2b2a8f 55%, #1d3f9e 100%)',
-            sunrise:  'linear-gradient(135deg, #2a1204 0%, #7a3a0b 60%, #3d1a05 100%)',
-            mint:     'linear-gradient(135deg, #04231c 0%, #0b6b4f 60%, #063d2f 100%)',
-            lavender: 'linear-gradient(135deg, #22104f 0%, #5b2fb3 60%, #341a70 100%)',
-            peach:    'linear-gradient(135deg, #3a1608 0%, #9a4a1a 60%, #57260c 100%)',
-            sky:      'linear-gradient(135deg, #062a3d 0%, #0e6b8f 60%, #0a4560 100%)',
-            rose:     'linear-gradient(135deg, #3a0c1d 0%, #99173f 60%, #55102a 100%)',
-            carbon:   'linear-gradient(135deg, #050505 0%, #1c222c 70%, #0d1015 100%)'
+        // ---- CARD COLOR PALETTE ----
+        // Card-like colourways (metals, jewel tones, dark finishes). Old keys (none, carbon, ocean, sunrise,
+        // mint, lavender, peach, sky, rose) are kept so cards that already saved a colour still work.
+        // A colour is stored as a preset key, or as "custom:#rrggbb" when picked with the colour wheel.
+        const CARD_COLOR_PRESETS = [
+            { key: 'none',     label: 'Titanium',        h: 215, s: 10, l: 26, neutral: true },
+            { key: 'carbon',   label: 'Midnight Black',  h: 220, s: 8,  l: 13, neutral: true },
+            { key: 'silver',   label: 'Platinum Silver', h: 214, s: 14, l: 38, neutral: true },
+            { key: 'sunrise',  label: 'Royal Gold',      h: 41,  s: 78, l: 27 },
+            { key: 'rosegold', label: 'Rose Gold',       h: 14,  s: 46, l: 33 },
+            { key: 'peach',    label: 'Copper',          h: 24,  s: 72, l: 27 },
+            { key: 'ocean',    label: 'Sapphire Blue',   h: 222, s: 74, l: 31 },
+            { key: 'navy',     label: 'Navy',            h: 226, s: 66, l: 21 },
+            { key: 'sky',      label: 'Sky Cyan',        h: 196, s: 80, l: 26 },
+            { key: 'teal',     label: 'Teal',            h: 174, s: 68, l: 23 },
+            { key: 'mint',     label: 'Emerald',         h: 152, s: 70, l: 22 },
+            { key: 'forest',   label: 'Forest Green',    h: 142, s: 42, l: 20 },
+            { key: 'ruby',     label: 'Ruby Red',        h: 352, s: 72, l: 30 },
+            { key: 'rose',     label: 'Berry',           h: 330, s: 62, l: 28 },
+            { key: 'lavender', label: 'Amethyst',        h: 265, s: 62, l: 30 },
+            { key: 'orchid',   label: 'Orchid',          h: 292, s: 56, l: 28 }
+        ];
+
+        function hexToHsl(hex) {
+            const m = /^#([0-9a-f]{6})$/i.exec(String(hex || '').trim());
+            if (!m) return null;
+            const n = parseInt(m[1], 16);
+            const r = ((n >> 16) & 255) / 255, g = ((n >> 8) & 255) / 255, b = (n & 255) / 255;
+            const max = Math.max(r, g, b), min = Math.min(r, g, b), d = max - min;
+            let h = 0;
+            if (d) {
+                if (max === r) h = ((g - b) / d) % 6;
+                else if (max === g) h = (b - r) / d + 2;
+                else h = (r - g) / d + 4;
+                h = Math.round(h * 60); if (h < 0) h += 360;
+            }
+            const l = (max + min) / 2;
+            const s = d ? d / (1 - Math.abs(2 * l - 1)) : 0;
+            return { h, s: s * 100, l: l * 100 };
+        }
+
+        // Saved value -> palette entry. Custom colours derive a dark card tone from the chosen hue.
+        function resolveCardColor(value) {
+            const v = String(value || '');
+            if (v.startsWith('custom:')) {
+                const hsl = hexToHsl(v.slice(7));
+                if (hsl) {
+                    return { key: 'custom', label: 'Custom', hex: v.slice(7), h: hsl.h,
+                             s: Math.min(85, Math.max(18, hsl.s)), l: Math.min(34, Math.max(15, hsl.l * 0.55)), neutral: hsl.s < 12 };
+                }
+            }
+            return CARD_COLOR_PRESETS.find(p => p.key === (v || 'none')) || CARD_COLOR_PRESETS[0];
+        }
+
+        // CSS variables that theme a .cc tile (or the small recommender thumbnail) from a palette entry.
+        function cardThemeVars(theme) {
+            const { h, s, l, neutral } = theme;
+            const hsl = (hh, ss, ll, a = 1) => `hsla(${Math.round(((hh % 360) + 360) % 360)},${Math.round(ss)}%,${Math.round(ll)}%,${a})`;
+            const bg = `linear-gradient(145deg, ${hsl(h, s, l, .9)}, ${hsl(h, s, Math.max(8, l * .52), .94)} 58%, ${hsl(h, s * .9, Math.max(6, l * .32), .96)})`;
+            const v = {
+                '--cc-bg': bg,
+                '--cc-bd': neutral ? 'rgba(255,255,255,.15)' : hsl(h, s, 64, .4),
+                '--cc-glow': neutral ? 'rgba(148,163,184,.10)' : hsl(h, s, 52, .2),
+                '--cc-bar': neutral ? 'linear-gradient(90deg,#94a3b8,#e2e8f0)' : `linear-gradient(90deg, ${hsl(h, s, 52)}, ${hsl(h + 24, Math.min(90, s + 6), 70)})`,
+                '--cc-lim': neutral ? '#cbd5e1' : hsl(h, 78, 86),
+                '--cc-lbl': neutral ? '#8b93a7' : hsl(h, 26, 66),
+                '--cc-pill-bg': neutral ? 'rgba(255,255,255,.07)' : hsl(h, s, 55, .16),
+                '--cc-pill-bd': neutral ? 'rgba(255,255,255,.22)' : hsl(h, s, 68, .5),
+                '--cc-pill-c': neutral ? '#cbd5e1' : hsl(h, 84, 78)
+            };
+            return Object.entries(v).map(([k, val]) => `${k}:${val}`).join(';');
+        }
+        // Every colour gets its own chip: a metal finish AND a contact-pad pattern, so no two colours share the same chip.
+        const CARD_CHIP_BY_PRESET = {
+            none:     { f: 'silver',    p: 'dots'  },
+            carbon:   { f: 'gold',      p: 'grid'  },
+            silver:   { f: 'graphite',  p: 'lines' },
+            sunrise:  { f: 'silver',    p: 'lines' },
+            rosegold: { f: 'platinum',  p: 'grid'  },
+            peach:    { f: 'champagne', p: 'lines' },
+            ocean:    { f: 'gold',      p: 'lines' },
+            navy:     { f: 'ice',       p: 'grid'  },
+            sky:      { f: 'rosegold',  p: 'lines' },
+            teal:     { f: 'amber',     p: 'cross' },
+            mint:     { f: 'gold',      p: 'cross' },
+            forest:   { f: 'bronze',    p: 'grid'  },
+            ruby:     { f: 'champagne', p: 'dots'  },
+            rose:     { f: 'rosegold',  p: 'grid'  },
+            lavender: { f: 'lilac',     p: 'lines' },
+            orchid:   { f: 'platinum',  p: 'cross' }
         };
+        function cardChipSpec(theme) {
+            if (CARD_CHIP_BY_PRESET[theme.key]) return CARD_CHIP_BY_PRESET[theme.key];
+            // custom colours: finish from the hue, pattern from the hue band
+            const h = theme.h;
+            const p = ['lines', 'grid', 'cross', 'dots'][Math.floor(h / 45) % 4];
+            if (theme.neutral) return { f: 'silver', p };
+            if (h >= 10 && h < 70) return { f: 'silver', p };
+            if (h >= 70 && h < 200) return { f: 'champagne', p };
+            if (h >= 200 && h < 260) return { f: 'gold', p };
+            if (h >= 260 && h < 345) return { f: 'rosegold', p };
+            return { f: 'platinum', p };
+        }
+        function cardChipClass(theme) {
+            const c = cardChipSpec(theme);
+            return `chip-f-${c.f} chip-p-${c.p}`;
+        }
+        // ---- Card background icons: every colour has its own watermark (Royal Gold = shield, Midnight Black = moon, ...) ----
+        const CARD_WM_ICONS = {
+            shield: '<path d="M50 8 L87 22 V50 C87 74 69 90 50 96 C31 90 13 74 13 50 V22 Z"/>',
+            moon: '<path d="M62 10 C40 14 24 33 24 56 C24 79 42 94 64 94 C75 94 85 90 91 82 C69 82 54 66 54 45 C54 31 57 19 62 10 Z"/><path d="M80 20 l3.2 8.4 8.4 3.2 -8.4 3.2 -3.2 8.4 -3.2 -8.4 -8.4 -3.2 8.4 -3.2 z"/>',
+            star: '<path d="M50 8 L61.5 36.5 L92 39 L68.8 58.9 L76 88.5 L50 72.5 L24 88.5 L31.2 58.9 L8 39 L38.5 36.5 Z"/>',
+            hexagon: '<path d="M50 8 L86 29 V71 L50 92 L14 71 V29 Z"/><path d="M50 30 L68 40 V60 L50 70 L32 60 V40 Z" opacity=".6"/>',
+            flower: '<circle cx="50" cy="50" r="9"/><circle cx="50" cy="25" r="15"/><circle cx="73.8" cy="42.3" r="15"/><circle cx="64.7" cy="70.2" r="15"/><circle cx="35.3" cy="70.2" r="15"/><circle cx="26.2" cy="42.3" r="15"/>',
+            flame: '<path d="M50 6 C52 24 72 34 72 58 C72 76 62 92 50 92 C38 92 28 78 28 62 C28 50 34 44 40 38 C40 48 44 52 48 52 C46 38 44 22 50 6 Z"/><path d="M50 92 C43 92 40 84 40 78 C40 70 46 66 50 60 C54 66 60 70 60 78 C60 84 57 92 50 92 Z" opacity=".6"/>',
+            gem: '<path d="M26 14 H74 L94 38 L50 92 L6 38 Z"/><path d="M6 38 H94 M36 38 L50 92 L64 38 M36 38 L26 14 M64 38 L74 14 M36 38 L50 14 L64 38" />',
+            anchor: '<circle cx="50" cy="19" r="8"/><path d="M50 27 V88 M33 40 H67"/><path d="M14 62 C16 82 32 90 50 90 C68 90 84 82 86 62 M14 62 L8 72 M14 62 L24 70 M86 62 L92 72 M86 62 L76 70"/>',
+            cloud: '<path d="M28 78 C14 78 8 68 10 58 C12 49 20 44 28 45 C30 32 40 24 52 24 C65 24 74 33 75 46 C86 46 92 55 91 64 C90 73 83 78 74 78 Z"/><path d="M34 90 H66" opacity=".55"/>',
+            drop: '<path d="M50 8 C50 8 20 40 20 62 C20 80 33 92 50 92 C67 92 80 80 80 62 C80 40 50 8 50 8 Z"/><path d="M36 64 C36 74 42 80 50 80" opacity=".6"/>',
+            emeraldcut: '<path d="M30 10 H70 L92 30 V70 L70 90 H30 L8 70 V30 Z"/><path d="M34 26 H66 L78 38 V62 L66 74 H34 L22 62 V38 Z" opacity=".7"/><path d="M30 10 L34 26 M70 10 L66 26 M92 30 L78 38 M92 70 L78 62 M70 90 L66 74 M30 90 L34 74 M8 70 L22 62 M8 30 L22 38" opacity=".55"/>',
+            tree: '<path d="M50 6 L72 36 H60 L80 62 H64 L88 88 H12 L36 62 H20 L40 36 H28 Z"/><path d="M50 88 V96" />',
+            heart: '<path d="M50 90 C22 70 8 52 8 34 C8 20 19 10 32 10 C40 10 47 14 50 22 C53 14 60 10 68 10 C81 10 92 20 92 34 C92 52 78 70 50 90 Z"/><path d="M26 30 C26 24 30 21 35 21" opacity=".6"/>',
+            berries: '<circle cx="34" cy="62" r="17"/><circle cx="66" cy="62" r="17"/><circle cx="50" cy="36" r="17"/><path d="M50 19 C50 10 56 6 62 6 C62 14 58 18 50 19 Z"/>',
+            sparkle: '<path d="M44 8 C46 32 56 42 80 44 C56 46 46 56 44 80 C42 56 32 46 8 44 C32 42 42 32 44 8 Z"/><path d="M78 62 C79 74 84 79 94 80 C84 81 79 86 78 96 C77 86 72 81 62 80 C72 79 77 74 78 62 Z"/>',
+            butterfly: '<path d="M50 30 C40 10 14 12 12 34 C10 50 26 56 44 52 C28 58 22 80 36 88 C46 94 50 80 50 62 Z"/><path d="M50 30 C60 10 86 12 88 34 C90 50 74 56 56 52 C72 58 78 80 64 88 C54 94 50 80 50 62 Z"/><path d="M50 30 V62 M46 18 L40 8 M54 18 L60 8"/>'
+        };
+        const CARD_WM_BY_PRESET = {
+            none: 'hexagon', carbon: 'moon', silver: 'star', sunrise: 'shield', rosegold: 'flower', peach: 'flame',
+            ocean: 'gem', navy: 'anchor', sky: 'cloud', teal: 'drop', mint: 'emeraldcut', forest: 'tree',
+            ruby: 'heart', rose: 'berries', lavender: 'sparkle', orchid: 'butterfly'
+        };
+        function cardWatermarkName(theme) {
+            if (CARD_WM_BY_PRESET[theme.key]) return CARD_WM_BY_PRESET[theme.key];
+            const order = Object.keys(CARD_WM_ICONS);                      // custom colours: icon follows the hue
+            return order[Math.floor(theme.h / 22.5) % order.length];
+        }
+        // Set to true to bring the background icons back (the icon set above is kept for that).
+        const CARD_WATERMARKS_ENABLED = false;
+        function cardWatermarkHtml(theme) {
+            if (!CARD_WATERMARKS_ENABLED) return '';
+            const name = cardWatermarkName(theme);
+            return `<span class="cc-wm" aria-hidden="true" style="color:${cardAccentColor(theme)}"><svg viewBox="0 0 100 100" fill="none" stroke="currentColor" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round">${CARD_WM_ICONS[name]}</svg></span>`;
+        }
+
+        function cardAccentColor(theme) {
+            return theme.neutral ? '#e2e8f0' : `hsl(${Math.round(theme.h)},${Math.round(Math.min(90, theme.s + 12))}%,66%)`;
+        }
+        function cardSwatchBg(theme) {
+            const { h, s, l } = theme;
+            return `linear-gradient(135deg, hsl(${Math.round(h)},${Math.round(s)}%,${Math.round(l + 14)}%), hsl(${Math.round(h)},${Math.round(s)}%,${Math.round(Math.max(7, l * .45))}%))`;
+        }
 
         function renderColorPicker(selected = 'none') {
             const container = document.getElementById('card-color-picker');
             if (!container) return;
-            container.innerHTML = Object.keys(CARD_GRADIENTS).map(key => {
-                const isActive = key === selected;
-                const swatchStyle = key === 'none' ? '' : `style="background: ${CARD_GRADIENTS[key]};"`;
-                const noneClasses = key === 'none' ? 'bg-white dark:bg-slate-700' : '';
-                return `
-                    <button type="button" onclick="setCardColorGradient('${key}')" title="${key === 'none' ? 'Default (no color)' : key}"
-                        class="w-8 h-8 rounded-full border-2 transition ${noneClasses} ${isActive ? 'border-indigo-600 ring-2 ring-indigo-300 dark:ring-indigo-700' : 'border-slate-200 dark:border-slate-600'}"
-                        ${swatchStyle}>
-                        ${key === 'none' ? '<span class="text-slate-400 text-xs">∅</span>' : ''}
-                    </button>`;
-            }).join('');
+            const cur = resolveCardColor(selected === 'none' ? '' : selected);
+            const isCustom = cur.key === 'custom';
+            const swatches = CARD_COLOR_PRESETS.map(p => `
+                <button type="button" onclick="setCardColorGradient('${p.key}')" title="${p.label}" aria-label="${p.label}"
+                    class="cp-sw ${!isCustom && cur.key === p.key ? 'active' : ''}" style="background:${cardSwatchBg(p)}"></button>`).join('');
+            container.innerHTML = swatches + `
+                <label class="cp-sw cp-custom ${isCustom ? 'active' : ''}" title="Custom colour" ${isCustom ? `style="background:${cardSwatchBg(cur)}"` : ''}>
+                    <input type="color" id="card-custom-color" value="${isCustom ? cur.hex : '#3b82f6'}" oninput="setCustomCardColor(this.value)" aria-label="Pick a custom colour">
+                    <span class="cp-custom-plus">${isCustom ? '' : '+'}</span>
+                </label>`;
+            const preview = document.getElementById('card-color-preview');
+            if (preview) {
+                preview.innerHTML = `
+                    <div class="cp-prev" style="${cardThemeVars(cur)}">
+                        ${cardWatermarkHtml(cur)}
+                        <span class="cc-chip ${cardChipClass(cur)}" style="transform:scale(.8);transform-origin:left center"></span>
+                        <div class="min-w-0 flex-1">
+                            <p class="cp-prev-name">${escapeHtml(cur.label)}</p>
+                            <div class="cc-track" style="height:5px;margin-top:6px"><div class="cc-fill" style="width:38%"></div></div>
+                        </div>
+                    </div>
+                    <p class="text-[10px] text-slate-400 dark:text-slate-500 mt-1.5">Tip: pick the shade closest to your physical card, or use the round swatch with the + for any custom colour.</p>`;
+            }
         }
 
         function setCardColorGradient(key) {
-            document.getElementById('card-color-gradient').value = key === 'none' ? '' : key;
-            renderColorPicker(key);
+            document.getElementById('card-color-gradient').value = (key === 'none' || !key) ? '' : key;
+            renderColorPicker(key || 'none');
+        }
+        function setCustomCardColor(hex) {
+            // Re-render the previews without rebuilding the <input type="color"> the user is dragging in.
+            const value = `custom:${hex}`;
+            document.getElementById('card-color-gradient').value = value;
+            const cur = resolveCardColor(value);
+            const picker = document.getElementById('card-color-picker');
+            picker.querySelectorAll('.cp-sw').forEach(el => el.classList.remove('active'));
+            const custom = picker.querySelector('.cp-custom');
+            if (custom) { custom.classList.add('active'); custom.style.background = cardSwatchBg(cur); const plus = custom.querySelector('.cp-custom-plus'); if (plus) plus.textContent = ''; }
+            const prev = document.querySelector('#card-color-preview .cp-prev');
+            if (prev) {
+                prev.setAttribute('style', cardThemeVars(cur));
+                const n = prev.querySelector('.cp-prev-name'); if (n) n.textContent = 'Custom';
+                const wm = prev.querySelector('.cc-wm'); if (wm) wm.outerHTML = cardWatermarkHtml(cur);
+                const chip = prev.querySelector('.cc-chip'); if (chip) chip.className = `cc-chip ${cardChipClass(cur)}`;
+            }
         }
 
         // ---- OUTSTANDING BALANCE ----
@@ -1784,9 +2089,6 @@
             document.getElementById('settings-modal').classList.add('hidden');
         }
 
-        const settingsButton = Array.from(document.querySelectorAll('button')).find(button => button.textContent.trim() === 'Settings');
-        if (settingsButton) settingsButton.onclick = openSettings;
-
         function addCustomTransactionType() {
             const input = document.getElementById('new-transaction-type');
             const value = input.value.trim();
@@ -1933,10 +2235,12 @@
                 const name = (t.description || t.desc || t.category || 'Installment plan');
                 return `
                     <div class="emi-card">
+                        <!--
                         <div class="flex items-center justify-between gap-2">
                             <span class="emi-eyebrow">Active Installment (EMI)</span>
-                            <span class="emi-pill">${escapeHtml(planLabel(t))}</span>
+                            <span class="emi-pill">${escapeHtml(planLabel(t))}</span> 
                         </div>
+                        -->
                         <p class="emi-name">${escapeHtml(name)}</p>
                         <p class="emi-sub">AED ${formatAED(Number(t.emiMonthlyAmount) || 0)}/mo for ${total} months (${paid}/${total} completed)</p>
                         <div class="emi-track"><div class="emi-fill" style="width:${width}%"></div></div>
@@ -3337,14 +3641,14 @@
             else sub = `Highest of ${ranked.length} cards · next best ${escapeHtml(second.name)} at ${fmtRate(second.rate)}%`;
 
             const label = /^all other/i.test(cat) ? 'General Spend' : cat;
-            const theme = CARD_THEME_BY_GRADIENT[best.card.colorGradient || 'none'] || 'titanium';
+            const theme = resolveCardColor(best.card.colorGradient);
             const shortName = String(best.name).trim().split(/\s+/)[0].slice(0, 7).toUpperCase();
             const isDefault = getDefaultCardId() === String(best.card.id);
             const handIcon = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11V5a2 2 0 0 1 4 0v6"/><path d="M13 9.5a2 2 0 0 1 4 0V13a6 6 0 0 1-6 6h-1a6 6 0 0 1-5-2.7L3.6 13.6a1.8 1.8 0 0 1 3-2L9 14"/></svg>';
 
             resultDiv.innerHTML = `
                 <div class="rec-row">
-                    <span class="rec-mini cc-t-${theme}"><span class="rec-mini-chip"></span><span class="rec-mini-name">${escapeHtml(shortName)}</span></span>
+                    <span class="rec-mini" style="${cardThemeVars(theme)}"><span class="rec-mini-chip ${cardChipClass(theme)}"></span><span class="rec-mini-name">${escapeHtml(shortName)}</span></span>
                     <div class="min-w-0 flex-1">
                         <div class="flex flex-wrap items-center gap-x-3 gap-y-1.5">
                             <span class="rec-name">${escapeHtml(best.name)}</span>
@@ -3369,7 +3673,6 @@
 
         // ---- PREMIUM CARD TILE HELPERS ----
         // Map the colour a card was saved with (existing keys) to a tile theme.
-        const CARD_THEME_BY_GRADIENT = { none: 'titanium', carbon: 'titanium', ocean: 'blue', sky: 'cyan', sunrise: 'gold', peach: 'gold', mint: 'green', lavender: 'violet', rose: 'rose' };
         const CARD_NETWORKS = [
             { key: 'amex',       re: /\b(american\s+express|amex)\b/i },
             { key: 'visa',       re: /\bvisa\b/i },
@@ -3425,7 +3728,6 @@
             clock: '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>',
             check: '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8.2 12.4l2.6 2.6 5-5.4"/></svg>',
             alert: '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16.2v.01"/></svg>',
-            coins: '<svg class="cc-ico" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="12" cy="12" r="9.5"/><path d="M8.5 9.3h7M8 12h8M8.8 14.7h6.4"/></svg>'
         };
 
         // Footer row: "Stmt: 15th" on the left, due-date badge on the right.
@@ -3549,24 +3851,27 @@
                     </div>` : '';
 
                 // Premium tile: theme comes from the saved card colour, badge/logo from the card name.
-                const theme = CARD_THEME_BY_GRADIENT[c.colorGradient || 'none'] || 'titanium';
+                const theme = resolveCardColor(c.colorGradient);
                 const ident = parseCardIdentity(c.name, { network: c.network, netVariant: c.netVariant, tier: c.tier });
                 const footer = cardFooterHtml(c);
-                const chipClass = (theme === 'titanium') ? 'silver' : '';
+                const chipClass = cardChipClass(theme);
                 // spend bar keeps the theme colour; it only overrides when usage gets high
                 const barStyle = rawPercentageOfTotal >= 97 ? 'background: linear-gradient(90deg,#ef4444,#fb7185);'
                                : rawPercentageOfTotal >= 90 ? 'background: linear-gradient(90deg,#f59e0b,#fbbf24);' : '';
 
                 return `
-                    <div class="cc cc-t-${theme} ${footer.alert ? 'cc-alert' : ''} text-xs space-y-5">
-                        <div class="flex flex-wrap items-center gap-x-3 gap-y-2">
+                    <div class="cc ${footer.alert ? 'cc-alert' : ''} text-xs space-y-5" style="${cardThemeVars(theme)}">
+                        ${cardWatermarkHtml(theme)}
+                        <div class="cc-head flex flex-wrap items-center gap-x-3 gap-y-2">
                             <span class="cc-title">${escapeHtml(ident.title)}</span>
                             ${ident.tier ? `<span class="cc-pill">${escapeHtml(ident.tier)}</span>` : ''}
                             ${networkMarkHtml(ident)}
                         </div>
                         <div class="flex items-center gap-3">
                             <span class="cc-chip ${chipClass}"></span>
+                            <!--
                             ${CC_ICON.coins}
+                            -->
                             <div class="ml-auto flex items-center gap-1.5">
                                 <button type="button" onclick="toggleCardDetails('${c.id}', this)" aria-expanded="${openCardDetails.has(c.id)}" class="cc-btn">More</button>
                                 <button onclick="editCard('${c.id}')" class="cc-btn">Edit</button>
@@ -3886,12 +4191,10 @@
         window.addEventListener('scroll', closeTxMenu, true);
 
         // ---- Transaction table helpers ----
-        const TX_DOT_BY_THEME = { titanium: '#e2e8f0', blue: '#818cf8', cyan: '#22d3ee', gold: '#fbbf24', green: '#34d399', violet: '#a78bfa', rose: '#fb7185' };
         // Coloured dot on the card chip follows the card's saved colour.
         function txCardDotColor(t) {
             const c = cards.find(x => x.id === t.cardId) || cards.find(x => (x.name || '').trim() === (t.cardName || '').trim());
-            const theme = c ? (CARD_THEME_BY_GRADIENT[c.colorGradient || 'none'] || 'titanium') : 'titanium';
-            return TX_DOT_BY_THEME[theme] || '#e2e8f0';
+            return cardAccentColor(resolveCardColor(c ? c.colorGradient : ''));
         }
         function txTypeClass(type) {
             const v = String(type || '').toLowerCase();
@@ -3901,14 +4204,14 @@
             if (/fee|charge|interest/.test(v)) return 'red';
             return 'slate';
         }
-        // "2026-05-08" -> "MAY 08" (adds 'YY when it isn't the current year)
+        // Keep the full date visible in the transaction history table.
         function fmtTxDate(dateStr) {
             const d = new Date(`${dateStr}T00:00:00`);
             if (!dateStr || isNaN(d)) return escapeHtml(dateStr || '-');
-            const mon = d.toLocaleString('en-US', { month: 'short' }).toUpperCase();
+            const year = d.getFullYear();
+            const month = String(d.getMonth() + 1).padStart(2, '0');
             const day = String(d.getDate()).padStart(2, '0');
-            const yr = d.getFullYear() !== new Date().getFullYear() ? ` '${String(d.getFullYear()).slice(2)}` : '';
-            return `${mon} ${day}${yr}`;
+            return `${year}-${month}-${day}`;
         }
 
         function renderTransactionsAndMetrics() {
@@ -4192,7 +4495,7 @@
                         </div>
                         <div class="fp-tile">
                             <p class="fp-eyebrow">Net Rewards</p>
-                            <p class="fp-val" style="color:#c4b5fd">${netReward < 0 ? '−' : '+'}${cur}${formatValue(Math.abs(netReward))}</p>
+                            <p class="fp-val" style="color:#c4b5fd">${cur}${netReward < 0 ? '−' : '+'}${formatValue(Math.abs(netReward))}</p>
                             <p class="fp-note text-slate-400">Cashback − fees</p>
                         </div>
                     </div>
@@ -4201,7 +4504,7 @@
                 <div class="fp-divider"></div>
 
                 <div>
-                    <div class="mb-5 flex items-center justify-between  marg">
+                    <div class="mb-5 flex items-center justify-between marg">
                         <h3 class="fp-cat-title">Cashback by Category</h3>
                         <span class="fp-yield">Yield Ranked</span>
                     </div>
@@ -4280,6 +4583,57 @@
             }
         }
 
+        // ---- Summary table helpers (same template as the transaction history) ----
+        const SM_REMAINING_TIP = "Purchases + withdrawals − repayments − cashback already credited (cashback from earlier months). This month's cashback is credited next month.";
+        function smHeaderHtml(firstLabel) {
+            return `
+                <th class="tx-th">${firstLabel}</th>
+                <th class="tx-th right">Purchase</th>
+                <th class="tx-th right">Cash Withdrawal</th>
+                <th class="tx-th right">Repaid</th>
+                <th class="tx-th right">Service Charges</th>
+                <th class="tx-th right">Cashback</th>
+                <th class="tx-th right" title="${SM_REMAINING_TIP}">Remaining Pay</th>
+                <th class="tx-th right">Net Rewards</th>`;
+        }
+        function smCardLabel(name) {
+            return `<span class="tx-chip"><i class="tx-cdot" style="background:${txCardDotColor({ cardName: name })}"></i>${escapeHtml(name)}</span>`;
+        }
+        function smCatLabel(name) {
+            return `<span class="tx-cat">${escapeHtml(name)}</span>`;
+        }
+        // Thousands separators + 2 decimals; zero values fade out so real numbers stand out.
+        function smTd(value, cls) {
+            const zero = Math.abs(value) < 0.005;
+            return `<td class="tx-td right tx-num ${zero ? 'muted' : cls}">${formatAED(value)}</td>`;
+        }
+        function smRowHtml(labelHtml, d, remainingPay) {
+            return `
+                <tr class="tx-row">
+                    <td class="tx-td">${labelHtml}</td>
+                    ${smTd(d.purchase, 'plain')}
+                    ${smTd(d.withdrawal, 'warn')}
+                    ${smTd(d.repaid, 'pos')}
+                    ${smTd(d.fee, 'neg')}
+                    ${smTd(d.cashback, 'pos')}
+                    ${smTd(remainingPay, 'strong')}
+                    ${smTd(d.netReward, d.netReward < 0 ? 'neg' : 'pos')}
+                </tr>`;
+        }
+        function smTotalHtml(t) {
+            return `
+                <tr class="tx-total">
+                    <td class="tx-td">Total</td>
+                    ${smTd(t.purchase, 'strong')}
+                    ${smTd(t.withdrawal, 'warn')}
+                    ${smTd(t.repaid, 'pos')}
+                    ${smTd(t.fee, 'neg')}
+                    ${smTd(t.cashback, 'pos')}
+                    ${smTd(t.remaining, 'strong')}
+                    ${smTd(t.net, t.net < 0 ? 'neg' : 'pos')}
+                </tr>`;
+        }
+
         function renderSummaryTable() {
             const tbody = document.getElementById('monthly-table-body');
             const titleEl = document.getElementById('summary-table-title');
@@ -4290,32 +4644,14 @@
             updateSummaryNote(filteredTx, summaryCurrentMonth);
 
             if (filteredTx.length === 0) {
-                headerTr.innerHTML = `
-                    <th class="py-3 px-6">Summary</th>
-                    <th class="py-3 px-6 text-right">Purchase</th>
-                    <th class="py-3 px-6 text-right">Cash Withdrawal</th>
-                    <th class="py-3 px-6 text-right">Repaid</th>
-                    <th class="py-3 px-6 text-right">Service Charges</th>
-                    <th class="py-3 px-6 text-right">Cashback</th>
-                    <th class="py-3 px-6 text-right" title="Purchases + withdrawals − repayments − cashback already credited (cashback from earlier months). This month's cashback is credited next month.">Remaining Pay</th>
-                    <th class="py-3 px-6 text-right">Net Rewards</th>
-                `;
-                tbody.innerHTML = `<tr><td colspan="8" class="p-4 text-center text-xs text-slate-400 dark:text-slate-500">No data available for selected filter.</td></tr>`;
+                headerTr.innerHTML = smHeaderHtml('Summary');
+                tbody.innerHTML = `<tr><td colspan="8" class="tx-td center muted">No data available for selected filter.</td></tr>`;
                 return;
             }
 
             if (activeCardFilter === 'ALL') {
                 titleEl.textContent = 'Summary for All Cards';
-                headerTr.innerHTML = `
-                    <th class="py-3 px-6">Card Name</th>
-                    <th class="py-3 px-6 text-right">Purchase</th>
-                    <th class="py-3 px-6 text-right">Cash Withdrawal</th>
-                    <th class="py-3 px-6 text-right">Repaid</th>
-                    <th class="py-3 px-6 text-right">Service Charges</th>
-                    <th class="py-3 px-6 text-right">Cashback</th>
-                    <th class="py-3 px-6 text-right" title="Purchases + withdrawals − repayments − cashback already credited (cashback from earlier months). This month's cashback is credited next month.">Remaining Pay</th>
-                    <th class="py-3 px-6 text-right">Net Rewards</th>
-                `;
+                headerTr.innerHTML = smHeaderHtml('Card Name');
 
                 const cardAgg = {};
                 filteredTx.forEach(t => {
@@ -4357,49 +4693,16 @@
                     totalRemainingPay += remainingPay;
                     totalNetReward += d.netReward;
 
-                    const netClass = d.netReward < 0 ? 'text-red-600 font-bold' : 'text-emerald-600 font-bold';
-                    return `
-                        <tr class="hover:bg-slate-50 dark:bg-slate-900 transition">
-                            <td class="py-3 px-6 font-semibold text-slate-800 dark:text-slate-200">💳 ${cName}</td>
-                            <td class="py-3 px-6 text-right text-slate-700 dark:text-slate-300">${d.purchase.toFixed(2)}</td>
-                            <td class="py-3 px-6 text-right text-amber-600">${d.withdrawal.toFixed(2)}</td>
-                            <td class="py-3 px-6 text-right text-emerald-600 font-medium">${d.repaid.toFixed(2)}</td>
-                            <td class="py-3 px-6 text-right text-red-600">${d.fee.toFixed(2)}</td>
-                            <td class="py-3 px-6 text-right text-emerald-600 font-semibold">${d.cashback.toFixed(2)}</td>
-                            <td class="py-3 px-6 text-right font-semibold text-slate-900 dark:text-slate-100">${remainingPay.toFixed(2)}</td>
-                            <td class="py-3 px-6 text-right ${netClass}">${d.netReward.toFixed(2)}</td>
-                        </tr>
-                    `;
+                    return smRowHtml(smCardLabel(cName), d, remainingPay);
                 }).join('');
 
-                const totalNetClass = totalNetReward < 0 ? 'text-red-600 font-bold' : 'text-emerald-600 font-bold';
-                const totalRowHtml = `
-                    <tr class="bg-slate-100 dark:bg-slate-700 font-bold border-t-2 border-slate-200 dark:border-slate-600">
-                        <td class="py-3 px-6 text-slate-900 dark:text-slate-100">Total</td>
-                        <td class="py-3 px-6 text-right text-slate-900 dark:text-slate-100">${totalPurchase.toFixed(2)}</td>
-                        <td class="py-3 px-6 text-right text-amber-700">${totalWithdrawal.toFixed(2)}</td>
-                        <td class="py-3 px-6 text-right text-emerald-700">${totalRepaid.toFixed(2)}</td>
-                        <td class="py-3 px-6 text-right text-red-700">${totalFee.toFixed(2)}</td>
-                        <td class="py-3 px-6 text-right text-emerald-700">${totalCashback.toFixed(2)}</td>
-                        <td class="py-3 px-6 text-right text-slate-900 dark:text-slate-100">${totalRemainingPay.toFixed(2)}</td>
-                        <td class="py-3 px-6 text-right ${totalNetClass}">${totalNetReward.toFixed(2)}</td>
-                    </tr>
-                `;
+                const totalRowHtml = smTotalHtml({ purchase: totalPurchase, withdrawal: totalWithdrawal, repaid: totalRepaid, fee: totalFee, cashback: totalCashback, remaining: totalRemainingPay, net: totalNetReward });
 
                 tbody.innerHTML = rowsHtml + totalRowHtml;
 
             } else {
                 titleEl.textContent = `Summary for ${activeCardFilter}`;
-                headerTr.innerHTML = `
-                    <th class="py-3 px-6">Category</th>
-                    <th class="py-3 px-6 text-right">Purchase</th>
-                    <th class="py-3 px-6 text-right">Cash Withdrawal</th>
-                    <th class="py-3 px-6 text-right">Repaid</th>
-                    <th class="py-3 px-6 text-right">Service Charges</th>
-                    <th class="py-3 px-6 text-right">Cashback</th>
-                    <th class="py-3 px-6 text-right" title="Purchases + withdrawals − repayments − cashback already credited (cashback from earlier months). This month's cashback is credited next month.">Remaining Pay</th>
-                    <th class="py-3 px-6 text-right">Net Rewards</th>
-                `;
+                headerTr.innerHTML = smHeaderHtml('Category');
 
                 const catAgg = {};
                 filteredTx.forEach(t => {
@@ -4441,34 +4744,10 @@
                     totalRemainingPay += remainingPay;
                     totalNetReward += d.netReward;
 
-                    const netClass = d.netReward < 0 ? 'text-red-600 font-bold' : 'text-emerald-600 font-bold';
-                    return `
-                        <tr class="hover:bg-slate-50 dark:bg-slate-900 transition">
-                            <td class="py-3 px-6 font-semibold text-slate-800 dark:text-slate-200">🏷️ ${catName}</td>
-                            <td class="py-3 px-6 text-right text-slate-700 dark:text-slate-300">${d.purchase.toFixed(2)}</td>
-                            <td class="py-3 px-6 text-right text-amber-600">${d.withdrawal.toFixed(2)}</td>
-                            <td class="py-3 px-6 text-right text-emerald-600 font-medium">${d.repaid.toFixed(2)}</td>
-                            <td class="py-3 px-6 text-right text-red-600">${d.fee.toFixed(2)}</td>
-                            <td class="py-3 px-6 text-right text-emerald-600 font-semibold">${d.cashback.toFixed(2)}</td>
-                            <td class="py-3 px-6 text-right font-semibold text-slate-900 dark:text-slate-100">${remainingPay.toFixed(2)}</td>
-                            <td class="py-3 px-6 text-right ${netClass}">${d.netReward.toFixed(2)}</td>
-                        </tr>
-                    `;
+                    return smRowHtml(smCatLabel(catName), d, remainingPay);
                 }).join('');
 
-                const totalNetClass = totalNetReward < 0 ? 'text-red-600 font-bold' : 'text-emerald-600 font-bold';
-                const totalRowHtml = `
-                    <tr class="bg-slate-100 dark:bg-slate-700 font-bold border-t-2 border-slate-200 dark:border-slate-600">
-                        <td class="py-3 px-6 text-slate-900 dark:text-slate-100">Total</td>
-                        <td class="py-3 px-6 text-right text-slate-900 dark:text-slate-100">${totalPurchase.toFixed(2)}</td>
-                        <td class="py-3 px-6 text-right text-amber-700">${totalWithdrawal.toFixed(2)}</td>
-                        <td class="py-3 px-6 text-right text-emerald-700">${totalRepaid.toFixed(2)}</td>
-                        <td class="py-3 px-6 text-right text-red-700">${totalFee.toFixed(2)}</td>
-                        <td class="py-3 px-6 text-right text-emerald-700">${totalCashback.toFixed(2)}</td>
-                        <td class="py-3 px-6 text-right text-slate-900 dark:text-slate-100">${totalRemainingPay.toFixed(2)}</td>
-                        <td class="py-3 px-6 text-right ${totalNetClass}">${totalNetReward.toFixed(2)}</td>
-                    </tr>
-                `;
+                const totalRowHtml = smTotalHtml({ purchase: totalPurchase, withdrawal: totalWithdrawal, repaid: totalRepaid, fee: totalFee, cashback: totalCashback, remaining: totalRemainingPay, net: totalNetReward });
 
                 tbody.innerHTML = rowsHtml + totalRowHtml;
             }
