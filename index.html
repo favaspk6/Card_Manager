@@ -815,9 +815,18 @@
                                 <button type="button" onclick="downloadExcelTemplate()" class="inline-flex items-center gap-2 rounded-lg border border-[#3b4252] bg-[#151925] px-4 py-2 text-sm font-semibold text-emerald-300 transition hover:bg-[#202535]"><svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5M12 15V3"/></svg> Download Excel Template</button>
                             </div>
                             <p class="mt-2 text-[11px] text-slate-500">Required columns: Card and Amount. The workbook includes a field guide.</p>
+                            <div id="import-file-chip" class="mx-auto mt-4 hidden max-w-full items-center justify-between gap-3 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-left">
+                                <div class="flex min-w-0 items-center gap-2">
+                                    <svg class="h-4 w-4 shrink-0 text-emerald-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                                    <span id="import-file-name" class="truncate text-xs font-semibold text-emerald-100"></span>
+                                    <span id="import-file-size" class="mono shrink-0 text-[10px] text-emerald-300/70"></span>
+                                </div>
+                                <button type="button" onclick="clearPendingImportFile()" class="shrink-0 text-lg leading-none text-slate-400 hover:text-white" aria-label="Remove selected file" title="Remove file">&times;</button>
+                            </div>
                             <input type="file" id="excel-file-input" accept=".xlsx, .xls, .csv" class="hidden"/>
                         </div>
-                        <button onclick="openTxModal()" class="mt-4 w-full flex items-center justify-center gap-2 rounded-lg bg-[#252a38] px-4 py-2.5 text-xs font-semibold text-emerald-300 transition hover:bg-[#2c3242] w-full flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-semibold py-2.5 rounded-xl transition shadow-lg shadow-indigo-900/40"><svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg> Add Transaction Manually</button>
+                        <button id="import-manual-btn" onclick="openTxModal()" class="mt-4 w-full flex items-center justify-center gap-2 rounded-lg bg-[#252a38] px-4 py-2.5 text-xs font-semibold text-emerald-300 transition hover:bg-[#2c3242] w-full flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-semibold py-2.5 rounded-xl transition shadow-lg shadow-indigo-900/40"><svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg> Add Transaction Manually</button>
+                        <button id="import-upload-btn" type="button" onclick="startExcelImport()" class="mt-4 hidden w-full items-center justify-center gap-2 rounded-xl bg-indigo-600 py-2.5 text-sm font-semibold text-white shadow-lg shadow-indigo-900/40 transition hover:bg-indigo-500"><svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg> Upload</button>
                     </section>
             </div>
 
@@ -832,6 +841,7 @@
                 function closeUtilityModal(modalId) {
                     const modal = document.getElementById(modalId);
                     if (!modal) return;
+                    if (modalId === 'import-modal' && typeof clearPendingImportFile === 'function') clearPendingImportFile();
                     modal.classList.remove('flex');
                     modal.classList.add('hidden');
                 }
@@ -1182,7 +1192,27 @@
     </div>
 
     <!-- TOAST NOTIFICATIONS: transient success/undo messages, replacing alert() for non-blocking feedback -->
-    <div id="toast-container" class="fixed bottom-4 right-4 z-[90] flex flex-col-reverse gap-2 items-end pointer-events-none"></div>
+    <div id="toast-container" class="fixed right-4 z-[90] flex flex-col-reverse gap-2 items-end pointer-events-none" style="bottom: calc(5.5rem + env(safe-area-inset-bottom, 0px));"></div>
+
+    <!-- FLOATING ACTION BUTTON: quick "Log Transaction" (sits under every modal / the sidebar backdrop) -->
+    <style>
+        #log-fab { position: fixed; right: 16px; bottom: calc(16px + env(safe-area-inset-bottom, 0px)); z-index: 25;
+            display: inline-flex; align-items: center; justify-content: center; width: 56px; height: 56px; padding: 0;
+            border: 0; border-radius: 9999px; cursor: pointer; color: #fff; font-size: 14px; font-weight: 600; letter-spacing: .01em;
+            background: linear-gradient(135deg, #6366f1, #4f46e5);
+            box-shadow: 0 10px 28px rgba(79,70,229,.45), 0 0 0 1px rgba(165,180,252,.28), inset 0 1px 0 rgba(255,255,255,.22);
+            transition: transform .18s ease, box-shadow .18s ease, filter .18s ease; -webkit-tap-highlight-color: transparent; }
+        #log-fab:hover { transform: translateY(-2px); filter: brightness(1.08); box-shadow: 0 14px 34px rgba(79,70,229,.55), 0 0 0 1px rgba(165,180,252,.4), inset 0 1px 0 rgba(255,255,255,.28); }
+        #log-fab:active { transform: scale(.94); }
+        #log-fab:focus-visible { outline: 2px solid #c7d2fe; outline-offset: 3px; }
+        #log-fab svg { width: 22px; height: 22px; flex-shrink: 0; transition: transform .25s ease; }
+        #log-fab:hover svg { transform: rotate(90deg); }
+        @media (min-width: 640px) { #log-fab { right: 28px; bottom: calc(28px + env(safe-area-inset-bottom, 0px)); } #toast-container { right: 28px !important; bottom: calc(6.5rem + env(safe-area-inset-bottom, 0px)) !important; } }
+        @media (prefers-reduced-motion: reduce) { #log-fab, #log-fab svg { transition: none; } }
+    </style>
+    <button id="log-fab" type="button" onclick="openTxModal()" aria-label="Log transaction" title="Log transaction">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+    </button>
 
     <!-- CONFIRM MODAL: styled replacement for window.confirm(), used for destructive actions -->
     <div id="confirm-modal" class="fixed inset-0 z-[85] hidden flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4">
@@ -3019,9 +3049,9 @@
                 ['Column', 'Required', 'Details'],
                 ['Date', 'No', 'Transaction date; use YYYY-MM-DD.'],
                 ['Card', 'Yes', 'Card name. Required for every transaction.'],
-                ['Type', 'No', 'Purchase, Cash Withdrawal, Repaid, or Cashback. Defaults to Purchase.'],
+                ['Type', 'No', 'Purchase, Cash Withdrawal, Repaid, Cashback, or your own type. A new type is added to the app (and database) on import. Defaults to Purchase.'],
                 ['Description', 'No', 'Transaction description. The importer also accepts the header Desc.'],
-                ['Category', 'No', 'Use a category configured in the app; unknown categories are imported without a category.'],
+                ['Category', 'No', 'Use any category. A category the app does not have yet is added to the app (and database) on import.'],
                 ['Amount', 'Yes', 'Numeric transaction amount. Required for every transaction.'],
                 ['Service Charge', 'No', 'Numeric fee; the importer also accepts the header Service Fee.'],
                 ['Cashback', 'No', 'Numeric cashback amount. Defaults to zero when blank; Repaid rows always use zero.'],
@@ -3046,11 +3076,73 @@
             input.dispatchEvent(new Event('change', { bubbles: true }));
         }
 
-        document.getElementById('excel-file-input').addEventListener('change', async (e) => {
-            const file = e.target.files[0];
-            if (!file) return;
+        // Step 1: choosing (or dropping) a file only SELECTS it. The bottom button switches from
+        // "Add Transaction Manually" to "Upload"; nothing is imported until Upload is pressed.
+        let pendingImportFile = null;
+        let importInProgress = false;
 
+        function formatFileSize(bytes) {
+            if (bytes < 1024) return `${bytes} B`;
+            if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+            return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+        }
+
+        function refreshImportModalUI() {
+            const has = !!pendingImportFile;
+            const chip = document.getElementById('import-file-chip');
+            const uploadBtn = document.getElementById('import-upload-btn');
+            const manualBtn = document.getElementById('import-manual-btn');
+            if (!chip || !uploadBtn || !manualBtn) return;
+            chip.classList.toggle('hidden', !has);
+            chip.classList.toggle('flex', has);
+            uploadBtn.classList.toggle('hidden', !has);
+            uploadBtn.classList.toggle('flex', has);
+            manualBtn.classList.toggle('hidden', has);
+            if (has) {
+                document.getElementById('import-file-name').textContent = pendingImportFile.name;
+                document.getElementById('import-file-size').textContent = formatFileSize(pendingImportFile.size);
+            }
+        }
+
+        function setPendingImportFile(file) {
+            if (!/\.(xlsx|xls|csv)$/i.test(file.name)) {
+                showToast('Please choose an .xlsx, .xls or .csv file.', { tone: 'error' });
+                return;
+            }
+            pendingImportFile = file;
+            refreshImportModalUI();
+        }
+
+        function clearPendingImportFile() {
+            pendingImportFile = null;
+            const input = document.getElementById('excel-file-input');
+            if (input) input.value = '';
+            refreshImportModalUI();
+        }
+
+        document.getElementById('excel-file-input').addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) setPendingImportFile(file);
+        });
+
+        // Step 2: Upload — close the dialog, land on the dashboard, and import in the background.
+        function startExcelImport() {
+            if (!pendingImportFile || importInProgress) return;
+            const file = pendingImportFile;
+            clearPendingImportFile();
+            closeUtilityModal('import-modal');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            showToast(`Importing ${file.name}…`, { duration: 3000 });
+            runExcelImport(file);
+        }
+
+        function runExcelImport(file) {
+            importInProgress = true;
             const reader = new FileReader();
+            reader.onerror = () => {
+                importInProgress = false;
+                showToast('Could not read that file.', { tone: 'error' });
+            };
             reader.onload = async (evt) => {
                 const bstr = evt.target.result;
                 const workbook = XLSX.read(bstr, { type: 'binary' });
@@ -3058,17 +3150,22 @@
                 const worksheet = workbook.Sheets[firstSheetName];
                 const rawData = XLSX.utils.sheet_to_json(worksheet, { defval: '' });
 
-                const knownCategories = new Set([...RATE_CATEGORIES, ...TX_ONLY_CATEGORIES]);
-                let imported = 0, skipped = 0, unknownCategoryRows = 0, dbFailed = 0;
+                // Case-insensitive lookups so "dining" / "DINING" reuse the existing "Dining".
+                const categoryLookup = new Map([...RATE_CATEGORIES, ...TX_ONLY_CATEGORIES].map(c => [c.toLowerCase(), c]));
+                const typeLookup = new Map(TYPE_FILTER_OPTIONS.map(t => [t.toLowerCase(), t]));
+                const newCategories = [], newTypes = []; // brand-new names found in this file
+                let imported = 0, skipped = 0, dbFailed = 0;
 
                 for (let i = 0; i < rawData.length; i++) {
                     const row = rawData[i];
                     try {
                         const date = formatExcelDate(row['Date']);
                         const cardName = String(row['Card'] || '').trim();
-                        const type = row['Type'] || 'Purchase';
+                        const typeRaw = String(row['Type'] || '').trim().replace(/\s+/g, ' ') || 'Purchase';
+                        let type = typeLookup.get(typeRaw.toLowerCase()) || typeRaw;
                         const desc = row['Description'] || row['Desc'] || '';
-                        let category = String(row['Category'] || '').trim();
+                        let category = String(row['Category'] || '').trim().replace(/\s+/g, ' ');
+                        category = categoryLookup.get(category.toLowerCase()) || category;
                         const amount = parseFloat(row['Amount']);
                         const serviceCharge = parseFloat(row['Service Charge']) || parseFloat(row['Service Fee']) || 0;
                         const cashbackRaw = row['Cashback'];
@@ -3082,9 +3179,15 @@
                             continue;
                         }
 
-                        if (category && !knownCategories.has(category)) {
-                            unknownCategoryRows++;
-                            category = ''; // falls back to "All Other Spend" rate at calculation time
+                        // Only now that the row is known to be valid: remember any new type / category
+                        // so it is created in the app and in the shared_options table.
+                        if (!typeLookup.has(type.toLowerCase())) {
+                            typeLookup.set(type.toLowerCase(), type);
+                            newTypes.push(type);
+                        }
+                        if (category && !categoryLookup.has(category.toLowerCase())) {
+                            categoryLookup.set(category.toLowerCase(), category);
+                            newCategories.push(category);
                         }
 
                         let rowFailed = false;
@@ -3115,16 +3218,27 @@
                     }
                 }
 
+                // Create the new categories / types: in-memory lists + dropdowns + Supabase shared_options.
+                let optionsFailed = 0;
+                if (newCategories.length || newTypes.length) {
+                    applyCustomSettings(newTypes, newCategories);
+                    for (const name of newCategories) if ((await saveSharedOption('category', name)) === false) optionsFailed++;
+                    for (const name of newTypes) if ((await saveSharedOption('transaction_type', name)) === false) optionsFailed++;
+                    refreshOptionUI();
+                }
+
                 let summary = `Imported ${imported} of ${rawData.length} rows.`;
+                if (newCategories.length) summary += `\nAdded ${newCategories.length} new categor${newCategories.length === 1 ? 'y' : 'ies'}: ${newCategories.join(', ')}.`;
+                if (newTypes.length) summary += `\nAdded ${newTypes.length} new type${newTypes.length === 1 ? '' : 's'}: ${newTypes.join(', ')}.`;
+                if (optionsFailed > 0) summary += `\n${optionsFailed} new categor${optionsFailed === 1 ? 'y/type was' : 'ies/types were'} saved on this device only (shared_options table missing or blocked in Supabase).`;
                 if (dbFailed > 0) summary += `\n${dbFailed} row(s) parsed fine but failed to save to Supabase — see the error above.`;
                 if (skipped > 0) summary += `\n${skipped} row(s) skipped — missing a Card name or a valid Amount.`;
-                if (unknownCategoryRows > 0) summary += `\n${unknownCategoryRows} row(s) had a Category not in the app's list — filed as "All Other Spend".`;
-                showToast(summary, { tone: dbFailed > 0 ? 'error' : 'success', duration: dbFailed > 0 ? 10000 : 6000 });
-                e.target.value = '';
+                showToast(summary, { tone: (dbFailed > 0 || optionsFailed > 0) ? 'error' : 'success', duration: (dbFailed > 0 || optionsFailed > 0) ? 10000 : 6000 });
+                importInProgress = false;
                 render();
             };
             reader.readAsBinaryString(file);
-        });
+        }
 
         document.getElementById('card-form').addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -3657,11 +3771,31 @@
                         await saveCardToDB(c);
                     }
                 }
+                // Any category / type in the backup that this account doesn't have yet gets created
+                // (in-memory, dropdowns and the shared_options table), matched case-insensitively.
+                const bCatLookup = new Map([...RATE_CATEGORIES, ...TX_ONLY_CATEGORIES].map(c => [c.toLowerCase(), c]));
+                const bTypeLookup = new Map(TYPE_FILTER_OPTIONS.map(t => [t.toLowerCase(), t]));
+                const bNewCats = [], bNewTypes = [];
                 for (const t of parsed.transactions) {
-                    if (!transactions.some(existing => existing.id === t.id)) {
-                        transactions.push(t);
-                        await saveTransactionToDB(t);
+                    if (transactions.some(existing => existing.id === t.id)) continue;
+                    const cat = String(t.category || '').trim();
+                    if (cat) {
+                        t.category = bCatLookup.get(cat.toLowerCase()) || cat;
+                        if (!bCatLookup.has(cat.toLowerCase())) { bCatLookup.set(cat.toLowerCase(), cat); bNewCats.push(cat); }
                     }
+                    const typ = String(t.type || '').trim();
+                    if (typ) {
+                        t.type = bTypeLookup.get(typ.toLowerCase()) || typ;
+                        if (!bTypeLookup.has(typ.toLowerCase())) { bTypeLookup.set(typ.toLowerCase(), typ); bNewTypes.push(typ); }
+                    }
+                    transactions.push(t);
+                    await saveTransactionToDB(t);
+                }
+                if (bNewCats.length || bNewTypes.length) {
+                    applyCustomSettings(bNewTypes, bNewCats);
+                    for (const name of bNewCats) await saveSharedOption('category', name);
+                    for (const name of bNewTypes) await saveSharedOption('transaction_type', name);
+                    refreshOptionUI();
                 }
 
                 showToast('Backup imported.', { tone: 'success' });
