@@ -1954,7 +1954,7 @@
 
         function renderRateInputs(existingRates = {}) {
             const container = document.getElementById('rate-inputs-container');
-            container.innerHTML = RATE_CATEGORIES.map(cat => {
+            const inputs = RATE_CATEGORIES.map(cat => {
                 const isLast = cat === 'All Other Spend';
                 const val = existingRates[cat] ?? '';
                 return `
@@ -1966,6 +1966,12 @@
                             class="w-full px-3 py-1.5 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none mt-1 bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 border-slate-200 dark:border-slate-600 placeholder-slate-400 dark:placeholder-slate-500">
                     </div>`;
             }).join('');
+            container.innerHTML = `${inputs}
+                <button type="button" onclick="openCardCategorySettings()"
+                    class="col-span-2 flex items-center justify-center gap-2 rounded-lg border border-dashed border-slate-300 dark:border-slate-600 px-3 py-2 text-xs font-semibold text-indigo-600 dark:text-indigo-300 transition hover:border-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-950/40">
+                    <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+                    Add category
+                </button>`;
         }
 
         function getCardRatesFromForm() {
@@ -2093,6 +2099,16 @@
         }
 
         let transactionSettingsReturn = null;
+        let cardRateSettingsReturn = null;
+
+        async function openCardCategorySettings() {
+            cardRateSettingsReturn = Object.fromEntries(
+                [...document.querySelectorAll('#rate-inputs-container [data-rate-category]')]
+                    .map(input => [input.dataset.rateCategory, input.value])
+            );
+            await openSettings();
+            document.getElementById('new-category').focus();
+        }
 
         async function openTransactionSettings(kind) {
             const select = document.getElementById(kind === 'type' ? 'exp-type' : 'exp-category');
@@ -2117,6 +2133,7 @@
 
         function closeSettings() {
             document.getElementById('settings-modal').classList.add('hidden');
+            cardRateSettingsReturn = null;
             if (transactionSettingsReturn) {
                 const { kind, previousValue } = transactionSettingsReturn;
                 document.getElementById('tx-modal').classList.remove('hidden');
@@ -2157,7 +2174,15 @@
             customCategories.push(value);
             saveSharedOption('category', value);
             populateCategorySelects();
-            renderRateInputs({});
+            if (cardRateSettingsReturn) {
+                const rates = { ...cardRateSettingsReturn };
+                cardRateSettingsReturn = null;
+                renderRateInputs(rates);
+                document.getElementById('settings-modal').classList.add('hidden');
+                document.getElementById(`rate-${categorySlug(value)}`).focus();
+            } else {
+                renderRateInputs({});
+            }
             input.value = '';
             showToast(`Added category: ${value}`, { tone: 'success' });
             returnToTransactionSettingsSelection('category', value);
