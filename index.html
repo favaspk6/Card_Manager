@@ -152,6 +152,10 @@
         @media (max-width: 1023px) { :root { --glass-blur: 14px; } #ambient-mesh .orb { filter: blur(60px); } }
         @media (prefers-reduced-motion: reduce) { #ambient-mesh .orb { animation: none; } }
 
+        /* Scale rem-based text and controls for tablet and mobile screens. */
+        @media (max-width: 1023px) { html { font-size: 15px; } }
+        @media (max-width: 640px) { html { font-size: 14px; } }
+
         /* ---- Glass fix: Filters, Summary Table, Transaction History ----
            These sections use `bg-white dark:bg-slate-800 rounded-xl`, which the dashboard palette
            remaps to an opaque colour with !important, so they need their own (higher-specificity) rule. */
@@ -2092,7 +2096,8 @@
 
         async function openTransactionSettings(kind) {
             const select = document.getElementById(kind === 'type' ? 'exp-type' : 'exp-category');
-            transactionSettingsReturn = { kind, previousValue: select.value };
+            const defaultValue = kind === 'type' ? 'Purchase' : '';
+            transactionSettingsReturn = { kind, previousValue: select.dataset.previousValue || defaultValue };
             document.getElementById('tx-modal').classList.add('hidden');
             await openSettings();
             document.getElementById(kind === 'type' ? 'new-transaction-type' : 'new-category').focus();
@@ -2104,6 +2109,7 @@
             document.getElementById('tx-modal').classList.remove('hidden');
             const select = document.getElementById(kind === 'type' ? 'exp-type' : 'exp-category');
             select.value = value;
+            select.dataset.previousValue = value;
             if (kind === 'type') syncCategoryState(value);
             calculateDynamicCashback();
             transactionSettingsReturn = null;
@@ -2114,7 +2120,9 @@
             if (transactionSettingsReturn) {
                 const { kind, previousValue } = transactionSettingsReturn;
                 document.getElementById('tx-modal').classList.remove('hidden');
-                document.getElementById(kind === 'type' ? 'exp-type' : 'exp-category').value = previousValue;
+                const select = document.getElementById(kind === 'type' ? 'exp-type' : 'exp-category');
+                select.value = previousValue;
+                select.dataset.previousValue = previousValue;
                 transactionSettingsReturn = null;
             }
         }
@@ -2715,9 +2723,18 @@
         });
         document.getElementById('exp-type').addEventListener('change', event => {
             if (event.target.value === '__add_new_type__') openTransactionSettings('type');
+            else event.target.dataset.previousValue = event.target.value;
         });
         document.getElementById('exp-category').addEventListener('change', event => {
             if (event.target.value === '__add_new_category__') openTransactionSettings('category');
+            else event.target.dataset.previousValue = event.target.value;
+        });
+        ['exp-type', 'exp-category'].forEach(id => {
+            document.getElementById(id).addEventListener('focus', event => {
+                if (!event.target.value.startsWith('__add_new_')) {
+                    event.target.dataset.previousValue = event.target.value;
+                }
+            });
         });
 
         function openTxModal(prefillLast = true) {
@@ -4396,7 +4413,7 @@
             document.getElementById('metric-missed').textContent = `${totalMissed.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
             document.getElementById('metric-net-rewards').textContent = `${(totalCashback - totalFees).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
-            currentReportTransactions = filteredTransactions;
+            currentReportTransactions = visibleTransactions;
             renderFinancialPerformance(monthlyData, categoryMap, totalSpend);
             renderSummaryTable();
             renderCardsList();
