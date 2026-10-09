@@ -237,6 +237,14 @@
         .cc-btn { font-size: 11px; line-height: 1; padding: 6px 9px; border-radius: 8px; color: rgba(255,255,255,.7); background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.08); transition: background .2s, color .2s; }
         .cc-btn:hover { background: rgba(255,255,255,.16); color: #fff; }
         .cc-btn.danger:hover { background: rgba(239,68,68,.28); color: #fecaca; }
+        .cc-btn.disable:hover { background: rgba(245,158,11,.26); color: #fde68a; }
+        .cc-btn.enable { background: rgba(16,185,129,.20); border-color: rgba(16,185,129,.35); color: #6ee7b7; }
+        .cc-btn.enable:hover { background: rgba(16,185,129,.34); color: #d1fae5; }
+        /* Disabled card: greyed out but still readable; the Enable button stays bright */
+        .cc.cc-disabled { filter: grayscale(.9) brightness(.82); border-style: dashed; }
+        .cc.cc-disabled .cc-btn.enable { filter: none; }
+        .cc-off-pill { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 10px; font-weight: 700; letter-spacing: .09em; text-transform: uppercase; padding: 3px 8px; border-radius: 6px; color: #fcd34d; background: rgba(245,158,11,.16); border: 1px solid rgba(245,158,11,.35); }
+        .dc-chip-off { opacity: .75; border: 1px dashed rgba(148,163,184,.5) !important; }
 
         .cc-lbl { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 10.5px; letter-spacing: .13em; text-transform: uppercase; color: var(--cc-lbl); }
         .cc-amt { font-family: 'JetBrains Mono', ui-monospace, monospace; font-weight: 700; font-size: 25px; line-height: 1.1; letter-spacing: -.02em; }
@@ -758,6 +766,7 @@
                     <button onclick="openCardModal()" class="eyebrow !text-emerald-400 bg-emerald-500/10 hover:bg-emerald-500/20 px-2.5 py-1.5 rounded-md transition whitespace-nowrap">+ Manage</button>
                 </div>
                 -->
+                <div id="disabled-toggle-row" class="flex justify-end pt-3 pb-1"></div>
                 <div id="cards-list" class="grid grid-cols-1 md:grid-cols-3 gap-4"></div>
             </section>
 
@@ -1297,6 +1306,54 @@
         const _supabase = (SUPABASE_URL !== 'YOUR_SUPABASE_URL') ? supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
 
         let cards = [];
+
+        // ---- DISABLED CARDS ----
+        // A disabled card is hidden from the saved-cards list, the card filters, the recommender and the
+        // "new transaction" dropdown, but NOTHING is deleted: every transaction stays in the history,
+        // charts and totals. Enable it again at any time.
+        let showDisabledCards = (() => { try { return localStorage.getItem('cb_show_disabled') === '1'; } catch (e) { return false; } })();
+        const activeCards = () => cards.filter(c => !c.disabled);
+        const disabledCardNames = () => new Set(cards.filter(c => c.disabled).map(c => (c.name || '').trim()));
+        // Backup for databases that don't have the is_disabled column yet (this device only).
+        function readLocalDisabledIds() {
+            try { return new Set(JSON.parse(localStorage.getItem('cb_disabled_cards') || '[]').map(String)); } catch (e) { return new Set(); }
+        }
+        function writeLocalDisabledIds() {
+            try { localStorage.setItem('cb_disabled_cards', JSON.stringify(cards.filter(c => c.disabled).map(c => String(c.id)))); } catch (e) { /* private mode */ }
+        }
+        // Card names that should appear in the card filters (chips + history dropdown).
+        function filterableCardNames() {
+            const off = disabledCardNames();
+            let names = Array.from(new Set(transactions.map(t => (t.cardName || '').trim()))).filter(Boolean);
+            if (!showDisabledCards) names = names.filter(n => !off.has(n) || n === activeCardFilter);
+            return names;
+        }
+        function setShowDisabledCards(value) {
+            showDisabledCards = !!value;
+            try { localStorage.setItem('cb_show_disabled', showDisabledCards ? '1' : '0'); } catch (e) { /* private mode */ }
+            render();
+        }
+        async function toggleCardDisabled(id) {
+            const card = cards.find(c => c.id === String(id));
+            if (!card) return;
+            const disabling = !card.disabled;
+            if (disabling) {
+                const ok = await showConfirm(
+                    'Disable this card?',
+                    `"${card.name}" will be hidden from the card list, filters and recommender, and can't be picked for new transactions. All of its transactions are kept. You can enable it again any time.`,
+                    { confirmLabel: 'Disable' }
+                );
+                if (!ok) return;
+            }
+            card.disabled = disabling;
+            writeLocalDisabledIds();
+            const saved = await saveCardToDB(card);
+            if (saved === false) { card.disabled = !disabling; writeLocalDisabledIds(); render(); return; }
+            showToast(disabling
+                ? `${card.name} disabled. Its transactions are kept.`
+                : `${card.name} enabled.`, { tone: 'success', duration: 3000 });
+            render();
+        }
         let transactions = [];
         let categoryDonutInstance = null;
         let cardDonutInstance = null;
@@ -1441,11 +1498,11 @@
         function renderHistoryCardFilter() {
             const el = document.getElementById('history-card-container');
             if (!el) return;
-            const names = Array.from(new Set(transactions.map(t => (t.cardName || '').trim()))).filter(Boolean)
-                .sort((a, b) => a.localeCompare(b));
+            const names = filterableCardNames().sort((a, b) => a.localeCompare(b));
             if (activeCardFilter !== 'ALL' && !names.includes(activeCardFilter)) names.push(activeCardFilter);
+            const offNames = disabledCardNames();
             thDd.card = {
-                options: [{ value: 'ALL', label: 'Filter: All Cards' }, ...names.map(n => ({ value: n, label: n }))],
+                options: [{ value: 'ALL', label: 'Filter: All Cards' }, ...names.map(n => ({ value: n, label: offNames.has(n) ? `${n} (disabled)` : n }))],
                 selected: activeCardFilter,
                 onSelect: v => setCardFilter(v)
             };
@@ -2259,8 +2316,9 @@
             return Number(r) || 0;
         }
         function bestRateForCategory(cat) {
-            if (!cards.length) return null;
-            return Math.max(...cards.map(c => cardRateFor(c, cat)));
+            const pool = activeCards();
+            if (!pool.length) return null;
+            return Math.max(...pool.map(c => cardRateFor(c, cat)));
         }
         const fmtRate = r => String(Number(Number(r).toFixed(2)));
 
@@ -2356,7 +2414,8 @@
             const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
             set('pill-outstanding', formatAED(outstanding));
             set('pill-pending', formatAED(pending));
-            set('deck-subtitle', `Real-time yield optimization across ${cards.length} registered card${cards.length === 1 ? '' : 's'}`);
+            const activeCount = activeCards().length, offCount = cards.length - activeCount;
+            set('deck-subtitle', `Real-time yield optimization across ${activeCount} registered card${activeCount === 1 ? '' : 's'}${offCount ? ` (${offCount} disabled)` : ''}`);
             set('sync-badge', _supabase ? 'LIVE SYNC' : 'LOCAL MODE');
             const now = new Date();
             const year = String(now.getFullYear());
@@ -2489,6 +2548,7 @@
                 const { data: dbTx, error: txError } = await _supabase.from('transactions').select('*');
                 
                 if (!cardError && dbCards) {
+                    const localDisabled = readLocalDisabledIds();
                     cards = dbCards.map(c => ({
                         id: String(c.id),
                         name: c.name,
@@ -2500,7 +2560,9 @@
                         network: c.card_network ?? '',            // '', 'none' or visa / mastercard / amex / rupay / diners
                         netVariant: c.card_network_variant ?? '',
                         tier: c.card_tier ?? '',
-                        last4: c.card_last4 ?? ''                 // last 4 digits only, never the full number
+                        last4: c.card_last4 ?? '',                // last 4 digits only, never the full number
+                        // DB column is the source of truth once it exists; before that, fall back to this device's copy
+                        disabled: ('is_disabled' in c && c.is_disabled !== null) ? !!c.is_disabled : localDisabled.has(String(c.id))
                     }));
                 } else {
                     cards = []; // new account, or the cards table couldn't be reached — start empty, not with demo cards
@@ -2554,6 +2616,7 @@
         let warnedMissingDayColumns = false;
         let warnedMissingColorColumn = false;
         let warnedMissingIdentityColumns = false;
+        let warnedMissingDisabledColumn = false;
         async function _saveCardToDBImpl(c) {
             if (_supabase) {
                 const base = {
@@ -2576,13 +2639,14 @@
                     card_network: c.network || null,
                     card_network_variant: c.netVariant || null,
                     card_tier: c.tier || null,
-                    card_last4: c.last4 || null
+                    card_last4: c.last4 || null,
+                    is_disabled: !!c.disabled
                 };
 
                 // Try the full payload first; if a column doesn't exist yet (migration not run),
                 // drop just that group and retry rather than failing the whole save.
                 let succeeded = false;
-                for (let attempt = 0; attempt < 4; attempt++) {
+                for (let attempt = 0; attempt < 5; attempt++) {
                     const { error } = await _supabase.from('cards').upsert(payload, { onConflict: 'id' });
                     if (!error) { succeeded = true; break; }
 
@@ -2595,6 +2659,15 @@
                             alert('Card saved, but the statement/payment day could not be stored in Supabase yet.\n\nRun this once in the Supabase SQL editor, then save the card again:\n\n' +
                                   'alter table cards add column if not exists statement_day int check (statement_day between 1 and 31);\n' +
                                   'alter table cards add column if not exists payment_day int check (payment_day between 1 and 31);');
+                        }
+                        continue;
+                    }
+                    if (/is_disabled/.test(msg) && 'is_disabled' in payload) {
+                        delete payload.is_disabled;
+                        if (!warnedMissingDisabledColumn && c.disabled) {
+                            warnedMissingDisabledColumn = true;
+                            alert('Card disabled on this device, but Supabase has no column to store it yet, so it will not sync to other devices.\n\nRun this once in the Supabase SQL editor, then disable the card again:\n\n' +
+                                  'alter table cards add column if not exists is_disabled boolean not null default false;');
                         }
                         continue;
                     }
@@ -3515,6 +3588,7 @@
 
             const cardMatch = resolveCardForTransaction(tx);
             if (cardMatch) {
+                ensureCardOption(cardMatch);
                 document.getElementById('exp-card').value = cardMatch.id;
             }
 
@@ -3570,7 +3644,8 @@
             document.getElementById('exp-service').value = tx.serviceCharge || '';
 
             const cardMatch = resolveCardForTransaction(tx);
-            if (cardMatch) {
+            // a disabled card can't take NEW transactions, so a duplicate falls back to the default card
+            if (cardMatch && [...document.getElementById('exp-card').options].some(o => o.value === String(cardMatch.id))) {
                 document.getElementById('exp-card').value = cardMatch.id;
             }
 
@@ -3674,7 +3749,7 @@
             const linkedCount = card ? transactions.filter(t => (t.cardId ? t.cardId === card.id : t.cardName.trim().toLowerCase() === card.name.trim().toLowerCase())).length : 0;
 
             const message = linkedCount > 0
-                ? `This card has ${linkedCount} transaction(s) logged against it. Deleting it won't delete those transactions, but they'll show "${card.name}" as an orphaned card name with no rates to calculate against. Delete anyway?`
+                ? `This card has ${linkedCount} transaction(s) logged against it. Deleting it won't delete those transactions, but they'll show "${card.name}" as an orphaned card name with no rates to calculate against. Tip: use Disable instead to keep the card and its history intact. Delete anyway?`
                 : 'Are you sure you want to delete this card?';
 
             const ok = await showConfirm('Delete this card?', message, { confirmLabel: 'Delete' });
@@ -3856,9 +3931,10 @@
         }
 
         function bestRateForCategory(category) {
-            if (cards.length === 0) return 0;
+            const pool = activeCards();
+            if (pool.length === 0) return 0;
             const cat = category || 'All Other Spend';
-            return Math.max(...cards.map(c => {
+            return Math.max(...pool.map(c => {
                 if (!c.rates) return 0;
                 return c.rates[cat] !== undefined ? c.rates[cat] : (c.rates['All Other Spend'] || 0);
             }));
@@ -3874,7 +3950,12 @@
                 return;
             }
 
-            const ranked = cards
+            if (activeCards().length === 0) {
+                resultDiv.innerHTML = `<div class="rec-row"><span class="text-slate-400">All your cards are disabled. Enable a card to get recommendations.</span></div>`;
+                return;
+            }
+
+            const ranked = activeCards()
                 .map(card => ({ card, name: card.name, rate: cardRateFor(card, cat) }))
                 .sort((a, b) => b.rate - a.rate);
             const best = ranked[0];
@@ -3909,11 +3990,21 @@
 
         function updateCardDropdowns() {
             const select = document.getElementById('exp-card');
-            if (cards.length === 0) {
-                select.innerHTML = `<option value="">No cards available</option>`;
+            const pool = activeCards();
+            if (pool.length === 0) {
+                select.innerHTML = `<option value="">${cards.length === 0 ? 'No cards available' : 'No active cards (all disabled)'}</option>`;
                 return;
             }
-            select.innerHTML = cards.map(c => `<option value="${c.id}">${escapeHtml(c.name)}</option>`).join('');
+            select.innerHTML = pool.map(c => `<option value="${c.id}">${escapeHtml(c.name)}</option>`).join('');
+        }
+        // Editing an old transaction that belongs to a disabled card: keep that card selectable for this edit only.
+        function ensureCardOption(card) {
+            const select = document.getElementById('exp-card');
+            if (!card || !select || [...select.options].some(o => o.value === String(card.id))) return;
+            const opt = document.createElement('option');
+            opt.value = card.id;
+            opt.textContent = `${card.name} (disabled)`;
+            select.appendChild(opt);
         }
 
         // ---- PREMIUM CARD TILE HELPERS ----
@@ -4001,6 +4092,19 @@
             const totalEl = document.getElementById('total-outstanding');
             const totalLimitEl = document.getElementById('total-limit');
             const banner = document.getElementById('no-cards-banner');
+            const toggleRow = document.getElementById('disabled-toggle-row');
+            const disabledCount = cards.length - activeCards().length;
+            const visibleCards = showDisabledCards ? cards : activeCards();
+            if (toggleRow) {
+                toggleRow.innerHTML = cards.length === 0 ? '' : `
+                    <button type="button" role="switch" aria-checked="${showDisabledCards}" onclick="setShowDisabledCards(!showDisabledCards)"
+                        class="flex items-center gap-2 text-xs text-slate-400 hover:text-slate-200 transition select-none">
+                        <span style="position:relative;display:inline-block;width:32px;height:18px;border-radius:999px;transition:background .2s;background:${showDisabledCards ? '#6366f1' : '#334155'}">
+                            <span style="position:absolute;top:2px;left:2px;width:14px;height:14px;border-radius:999px;background:#fff;transition:transform .2s;transform:translateX(${showDisabledCards ? '14px' : '0'})"></span>
+                        </span>
+                        Show disabled cards <span class="mono text-slate-500">(${disabledCount})</span>
+                    </button>`;
+            }
             if (cards.length === 0) {
                 if (banner) banner.classList.remove('hidden');
                 container.innerHTML = `
@@ -4016,6 +4120,19 @@
             }
             if (banner) banner.classList.add('hidden');
 
+            if (visibleCards.length === 0) {
+                container.innerHTML = `
+                    <div class="col-span-full text-center py-6 px-4 border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-xl">
+                        <p class="text-2xl mb-1">⏸️</p>
+                        <p class="text-sm font-semibold text-slate-600 dark:text-slate-400">All your cards are disabled</p>
+                        <p class="text-xs text-slate-400 dark:text-slate-500 mt-1">Turn on "Show disabled cards" to see them and enable one again. Your transactions are untouched.</p>
+                    </div>`;
+                totalEl.innerHTML = '';
+                totalLimitEl.innerHTML = '';
+                updateShellWidgets(0, 0);
+                return;
+            }
+
             const todayKey = localDateKey();
             const currentMonthKey = todayKey.substring(0, 7);
             const currentMonthLabel = monthLabel(currentMonthKey);
@@ -4030,7 +4147,7 @@
                     <span class="font-medium ${cls}">${sign} ${formatAED(value)}</span>
                 </div>`;
 
-            container.innerHTML = cards.map(c => {
+            container.innerHTML = visibleCards.map(c => {
                 const totalLimit = Number(c.availableLimit) || 0;
                 const targetLimit = totalLimit * 0.97;
 
@@ -4105,12 +4222,13 @@
                                : rawPercentageOfTotal >= 90 ? 'background: linear-gradient(90deg,#f59e0b,#fbbf24);' : '';
 
                 return `
-                    <div class="cc ${footer.alert ? 'cc-alert' : ''} text-xs space-y-5" style="${cardThemeVars(theme)}">
+                    <div class="cc ${footer.alert && !c.disabled ? 'cc-alert' : ''} ${c.disabled ? 'cc-disabled' : ''} text-xs space-y-5" style="${cardThemeVars(theme)}">
                         ${cardWatermarkHtml(theme)}
                         <div class="cc-head flex flex-wrap items-center gap-x-3 gap-y-2">
                             <span class="cc-title">${escapeHtml(ident.title)}</span>
                             ${ident.tier ? `<span class="cc-pill">${escapeHtml(ident.tier)}</span>` : ''}
                             ${networkMarkHtml(ident)}
+                            ${c.disabled ? '<span class="cc-off-pill">Disabled</span>' : ''}
                         </div>
                         <div class="flex items-center gap-3">
                             <span class="cc-chip ${chipClass}"></span>
@@ -4120,6 +4238,9 @@
                             <div class="ml-auto flex items-center gap-1.5">
                                 <button type="button" onclick="toggleCardDetails('${c.id}', this)" aria-expanded="${openCardDetails.has(c.id)}" class="cc-btn">More</button>
                                 <button onclick="editCard('${c.id}')" class="cc-btn">Edit</button>
+                                ${c.disabled
+                                    ? `<button onclick="toggleCardDisabled('${c.id}')" class="cc-btn enable" title="Enable this card again">Enable</button>`
+                                    : `<button onclick="toggleCardDisabled('${c.id}')" class="cc-btn disable" title="Hide this card but keep all its transactions">Disable</button>`}
                                 <button onclick="deleteCard('${c.id}')" class="cc-btn danger" aria-label="Delete card">✕</button>
                             </div>
                         </div>
@@ -4167,10 +4288,12 @@
                 `;
             }).join('');
 
-            const grandLimit = cards.reduce((sum, c) => sum + (Number(c.availableLimit) || 0), 0);
+            const grandLimit = visibleCards.reduce((sum, c) => sum + (Number(c.availableLimit) || 0), 0);
+            const hiddenOffCount = showDisabledCards ? 0 : disabledCount;
             totalLimitEl.innerHTML = `
                 <p class="text-[10px] font-semibold uppercase text-slate-500 dark:text-slate-400">Total Card Limit</p>
                 <p class="text-xl font-bold text-slate-900 dark:text-slate-100">AED ${formatAED(grandLimit)}</p>
+                ${hiddenOffCount > 0 ? `<p class="text-[10px] text-amber-400/80">${hiddenOffCount} disabled card${hiddenOffCount === 1 ? '' : 's'} excluded</p>` : ''}
             `;
 
             const totalClass = grandOutstanding < 0 ? 'text-emerald-600' : 'text-slate-900 dark:text-slate-100';
@@ -4186,7 +4309,8 @@
             const container = document.getElementById('card-filter-container');
             const categoryWrapper = document.getElementById('category-filter-wrapper');
             const monthWrapper = document.getElementById('month-filter-container');
-            const uniqueCardNames = Array.from(new Set(transactions.map(t => t.cardName.trim()))).filter(Boolean);
+            const uniqueCardNames = filterableCardNames();
+            const offNames = disabledCardNames();
 
             let html = `
                 <button onclick="setCardFilter('ALL')" class="px-3 py-1.5 text-xs font-semibold rounded-lg transition whitespace-nowrap ${activeCardFilter === 'ALL' ? 'bg-indigo-600 text-white shadow-sm' : 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-600'}">
@@ -4198,10 +4322,19 @@
                 const isActive = activeCardFilter === cardName;
                 html += `
                     <button onclick="setCardFilter('${cardName.replace(/'/g, "\\'")}')" class="px-3 py-1.5 text-xs font-semibold rounded-lg transition whitespace-nowrap ${isActive ? 'bg-indigo-600 text-white shadow-sm' : 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-600'}">
-                        💳 ${escapeHtml(cardName)}
+                        💳 ${escapeHtml(cardName)}${offNames.has(cardName) ? ' <span class="opacity-70">· disabled</span>' : ''}
                     </button>
                 `;
             });
+
+            // Same switch as the Saved Cards header, kept next to the filters for convenience.
+            if (offNames.size > 0) {
+                html += `
+                    <button onclick="setShowDisabledCards(!showDisabledCards)" title="Include cards you have disabled in the filter list"
+                        class="px-3 py-1.5 text-xs font-semibold rounded-lg transition whitespace-nowrap border border-dashed ${showDisabledCards ? 'border-indigo-400 text-indigo-300 bg-indigo-500/10' : 'border-slate-500/60 text-slate-400 hover:text-slate-200'}">
+                        ${showDisabledCards ? '✓ ' : ''}Show disabled (${offNames.size})
+                    </button>`;
+            }
 
             container.innerHTML = html;
             renderHistoryCardFilter();
