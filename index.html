@@ -4295,7 +4295,7 @@
             document.getElementById('dd-modal')?.remove();
             const d = document.createElement('div'); d.id = 'dd-modal';
             d.style.cssText = 'position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;padding:16px';
-            d.innerHTML = `<div class="bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 rounded-2xl shadow-2xl w-full max-w-2xl max-h-[88vh] overflow-y-auto p-5"><div class="flex justify-between items-center mb-3"><h3 class="font-bold text-lg">${title}</h3><button onclick="document.getElementById('dd-modal').remove()" class="text-xl px-2">✕</button></div>${html}</div>`;
+            d.innerHTML = `<div class="bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 rounded-2xl shadow-2xl w-full max-w-5xl max-h-[90vh] overflow-y-auto p-5 sm:p-7"><div class="flex justify-between items-center mb-5"><h3 class="font-bold text-lg">${title}</h3><button type="button" onclick="document.getElementById('dd-modal').remove()" aria-label="Close insights" class="grid h-9 w-9 place-items-center rounded-xl text-slate-400 transition hover:bg-white/10 hover:text-white">✕</button></div>${html}</div>`;
             document.body.appendChild(d);
         }
         function ddRule(c) { return ddLoad('dd-card-rules')[c.id] || {}; }
@@ -4330,29 +4330,73 @@
             const act = activeCards().filter(c => c.cardType !== 'debit'), now = new Date(), ym = localDateKey().slice(0, 7);
             const prev = new Date(now.getFullYear(), now.getMonth() - 1, 1), pym = `${prev.getFullYear()}-${String(prev.getMonth() + 1).padStart(2, '0')}`;
             const recon = ddLoad('dd-recon'), dim = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate(), d = now.getDate();
-            let tl = 0, to = 0, pay = '', fc = '', rc = '', yr = '';
+            let tl = 0, to = 0, projectedSpendTotal = 0, projectedCashbackTotal = 0, pay = '', fc = '', rc = '';
             act.forEach(c => {
                 const lim = ddNum(c.availableLimit), out = Math.max(0, calculateOutstanding(cardTxList(c)).outstanding), txs = cardTxList(c), r = ddRule(c);
                 tl += lim; to += out;
                 const need = Math.max(0, out - lim * target / 100);
-                pay += `<tr><td>${escapeHtml(c.name)}</td><td>${lim ? (out / lim * 100).toFixed(0) : 0}%</td><td>${need > 0 ? 'Pay AED ' + formatAED(need) : '✓'}</td></tr>`;
+                const utilization = lim ? Math.min(100, out / lim * 100) : 0;
+                pay += `<tr class="border-t border-white/5"><td class="py-3 pr-4 font-medium text-slate-200">${escapeHtml(c.name)}</td><td class="w-2/5 py-3 pr-4"><div class="flex items-center gap-3"><div class="h-1.5 flex-1 overflow-hidden rounded-full bg-white/10"><div class="h-full rounded-full ${utilization >= 70 ? 'bg-rose-400' : utilization >= 30 ? 'bg-amber-300' : 'bg-emerald-400'}" style="width:${utilization}%"></div></div><span class="mono w-10 text-right text-[11px] text-slate-400">${utilization.toFixed(0)}%</span></div></td><td class="py-3 text-right mono text-xs ${need > 0 ? 'text-indigo-200' : 'text-emerald-300'}">${need > 0 ? 'AED ' + formatAED(need) : 'On target'}</td></tr>`;
                 const m = txs.filter(t => (t.date || '').startsWith(ym)), sp = ddSum(m.filter(t => t.type === 'Purchase' || t.type === 'Cash Withdrawal'), t => t.amount), cb = ddSum(m, t => t.cashback);
                 const pj = sp / d * dim, pc = cb / d * dim, ms = ddNum(r.minSpend);
-                fc += `<tr><td>${escapeHtml(c.name)}</td><td>${formatAED(pj)}</td><td>${formatAED(pc)}</td><td>${ms ? (pj >= ms ? '✓ on track' : '⚠ short ' + formatAED(ms - pj)) : ''}${lim && pj / lim > .97 ? ' ⚠ near limit' : ''}</td></tr>`;
+                projectedSpendTotal += pj;
+                projectedCashbackTotal += pc;
+                const projectedUtilization = lim ? Math.min(100, pj / lim * 100) : 0;
+                const forecastStatus = ms
+                    ? (pj >= ms ? '<span class="text-emerald-300">On track for minimum spend</span>' : `<span class="text-amber-300">AED ${formatAED(ms - pj)} below minimum spend</span>`)
+                    : '<span class="text-slate-500">No spend target set</span>';
+                fc += `<article class="rounded-xl border border-white/[.07] bg-white/[.025] p-4">
+                    <div class="flex flex-wrap items-start justify-between gap-3">
+                        <div class="min-w-0"><h5 class="truncate text-sm font-semibold text-slate-100">${escapeHtml(c.name)}</h5><p class="mt-1 text-[11px] text-slate-500">${forecastStatus}</p></div>
+                        <div class="text-right"><p class="mono text-sm font-semibold text-indigo-200">AED ${formatAED(pj)}</p><p class="mt-0.5 text-[10px] text-slate-500">Projected spend</p></div>
+                    </div>
+                    <div class="mt-4 grid grid-cols-2 gap-3">
+                        <div class="rounded-lg bg-black/15 px-3 py-2"><p class="text-[10px] uppercase tracking-wider text-slate-500">Projected cashback</p><p class="mono mt-1 text-xs font-semibold text-emerald-300">AED ${formatAED(pc)}</p></div>
+                        <div class="rounded-lg bg-black/15 px-3 py-2"><p class="text-[10px] uppercase tracking-wider text-slate-500">Spend vs. limit</p><p class="mono mt-1 text-xs font-semibold ${projectedUtilization >= 97 ? 'text-rose-300' : 'text-slate-200'}">${lim ? projectedUtilization.toFixed(0) + '%' : 'No limit set'}${lim && pj / lim > .97 ? ' · Near limit' : ''}</p></div>
+                    </div>
+                    ${lim ? `<div class="mt-3 h-1 overflow-hidden rounded-full bg-white/10"><div class="h-full rounded-full ${projectedUtilization >= 97 ? 'bg-rose-400' : 'bg-indigo-400'}" style="width:${projectedUtilization}%"></div></div>` : ''}
+                </article>`;
                 const exp = ddSum(txs.filter(t => (t.date || '').startsWith(pym)), t => t.cashback), got = (recon[c.id] || {})[pym];
                 const diff = got === undefined || got === '' ? null : ddNum(got) - exp;
-                rc += `<tr><td>${escapeHtml(c.name)}</td><td>${formatAED(exp)}</td><td><input value="${got ?? ''}" onchange="ddSaveRecon('${c.id}','${pym}',this.value)" class="w-20 border border-slate-500/40 bg-transparent rounded px-1"></td><td class="${diff !== null && Math.abs(diff) > .01 ? 'text-red-400 font-semibold' : ''}">${diff === null ? '—' : (diff > 0 ? '+' : '') + formatAED(diff)}</td></tr>`;
+                rc += `<tr class="border-t border-white/5"><td class="py-3 pr-3 font-medium text-slate-200">${escapeHtml(c.name)}</td><td class="py-3 pr-3 mono text-xs text-slate-300">AED ${formatAED(exp)}</td><td class="py-3 pr-3"><label class="sr-only" for="recon-${escapeHtml(c.id)}">Cashback received for ${escapeHtml(c.name)}</label><input id="recon-${escapeHtml(c.id)}" type="number" step="0.01" min="0" value="${got ?? ''}" onchange="ddSaveRecon('${c.id}','${pym}',this.value)" placeholder="Enter amount" class="w-28 rounded-lg border border-white/10 bg-black/20 px-2 py-1.5 text-xs text-slate-100 placeholder:text-slate-600"></td><td class="py-3 text-right mono text-xs ${diff !== null && Math.abs(diff) > .01 ? 'text-rose-300' : 'text-emerald-300'}">${diff === null ? '—' : (diff > 0 ? '+' : '') + formatAED(diff)}</td></tr>`;
                 const yt = txs.filter(t => (t.date || '').startsWith(String(now.getFullYear())));
-                c._yr = ddSum(yt, t => t.cashback); c._ys = ddSum(yt.filter(t => t.type === 'Purchase'), t => t.amount);
+                c._yr = ddSum(yt, t => t.cashback);
+                c._ys = ddSum(yt.filter(t => t.type === 'Purchase'), t => t.amount);
             });
             const ranked = [...act].sort((a, b) => b._yr - a._yr);
             const cats = {}; transactions.filter(t => t.type === 'Purchase' && (t.date || '').startsWith(String(now.getFullYear()))).forEach(t => { const k = t.category || 'Uncategorised'; cats[k] = (cats[k] || 0) + ddNum(t.amount); });
-            yr = `<p class="text-sm">Total cashback: <b>AED ${formatAED(ddSum(act, c => c._yr))}</b> on AED ${formatAED(ddSum(act, c => c._ys))} spend.<br>Best: <b>${escapeHtml(ranked[0]?.name || '-')}</b> (AED ${formatAED(ranked[0]?._yr || 0)}) · Worst: <b>${escapeHtml(ranked.at(-1)?.name || '-')}</b> (AED ${formatAED(ranked.at(-1)?._yr || 0)})<br>Top categories: ${Object.entries(cats).sort((a, b) => b[1] - a[1]).slice(0, 5).map(([k, v]) => escapeHtml(k) + ' ' + formatAED(v)).join(' · ') || '-'}</p>`;
-            const T = (h, rows) => `<table class="w-full text-xs mb-4"><thead><tr class="text-left opacity-60">${h.map(x => '<th>' + x + '</th>').join('')}</tr></thead><tbody>${rows}</tbody></table>`;
-            ddModal('Insights', `<h4 class="font-semibold mb-1">Utilization &amp; payoff (overall ${tl ? (to / tl * 100).toFixed(0) : 0}%)</h4>Target % <input id="dd-target" value="${target}" class="w-14 border border-slate-500/40 bg-transparent rounded px-1 text-sm"> <button onclick="ddInsights(document.getElementById('dd-target').value)" class="text-xs underline">Recalculate</button>` + T(['Card', 'Util', 'To reach target'], pay) +
-                `<h4 class="font-semibold mb-1">Month-end forecast</h4>` + T(['Card', 'Spend', 'Cashback', 'Status'], fc) +
-                `<h4 class="font-semibold mb-1">Cashback reconciliation (${pym})</h4>` + T(['Card', 'Expected', 'Received', 'Diff'], rc) +
-                `<h4 class="font-semibold mb-1">Year in review (${now.getFullYear()})</h4>${yr}`);
+            const totalCashback = ddSum(act, c => c._yr), totalYearSpend = ddSum(act, c => c._ys);
+            const topCategories = Object.entries(cats).sort((a, b) => b[1] - a[1]).slice(0, 5);
+            const section = (eyebrow, title, description, content) => `<section class="mt-6 rounded-2xl border border-white/[.07] bg-white/[.02] p-4 sm:p-5">
+                <div class="mb-4"><p class="text-[10px] font-semibold uppercase tracking-[.18em] text-indigo-300/80">${eyebrow}</p><h4 class="mt-1 text-base font-semibold text-slate-100">${title}</h4>${description ? `<p class="mt-1 text-xs text-slate-500">${description}</p>` : ''}</div>${content}</section>`;
+            const table = (headers, rows) => act.length
+                ? `<div class="overflow-x-auto"><table class="w-full min-w-[440px] text-left text-xs"><thead><tr class="text-[10px] uppercase tracking-wider text-slate-500">${headers.map((header, index) => `<th class="pb-2 font-medium ${index === headers.length - 1 ? 'text-right' : ''}">${header}</th>`).join('')}</tr></thead><tbody>${rows}</tbody></table></div>`
+                : `<p class="rounded-xl border border-dashed border-white/10 px-4 py-6 text-center text-xs text-slate-500">No card data to show yet.</p>`;
+            const overallUtilization = tl ? to / tl * 100 : 0;
+            const availableCredit = Math.max(0, tl - to);
+            const yearSummary = `<div class="grid gap-3 sm:grid-cols-2">
+                    <div class="rounded-xl border border-white/[.07] bg-white/[.025] p-4"><p class="text-[10px] uppercase tracking-wider text-slate-500">Cashback earned · ${now.getFullYear()}</p><p class="mono mt-2 text-lg font-semibold text-emerald-300">AED ${formatAED(totalCashback)}</p></div>
+                    <div class="rounded-xl border border-white/[.07] bg-white/[.025] p-4"><p class="text-[10px] uppercase tracking-wider text-slate-500">Purchase spend · ${now.getFullYear()}</p><p class="mono mt-2 text-lg font-semibold text-slate-100">AED ${formatAED(totalYearSpend)}</p></div>
+                </div>
+                <div class="mt-3 grid gap-3 sm:grid-cols-2">
+                    <div class="rounded-xl border border-white/[.07] bg-white/[.025] p-4"><p class="text-[10px] uppercase tracking-wider text-slate-500">Top cashback card</p><p class="mt-2 truncate text-sm font-semibold text-slate-100">${escapeHtml(ranked[0]?.name || 'No card activity')}</p><p class="mono mt-1 text-xs text-emerald-300">AED ${formatAED(ranked[0]?._yr || 0)}</p></div>
+                    <div class="rounded-xl border border-white/[.07] bg-white/[.025] p-4"><p class="text-[10px] uppercase tracking-wider text-slate-500">Categories by spend</p><div class="mt-2 flex flex-wrap gap-2">${topCategories.length ? topCategories.map(([name, amount], index) => `<span class="rounded-full border border-white/[.08] bg-white/[.04] px-2.5 py-1 text-[10px] text-slate-300">${index + 1}. ${escapeHtml(name)} · AED ${formatAED(amount)}</span>`).join('') : '<span class="text-xs text-slate-500">No purchase data yet.</span>'}</div></div>
+                </div>`;
+            const content = `<div class="mb-5 flex flex-wrap items-end justify-between gap-3">
+                    <div><p class="text-[10px] font-semibold uppercase tracking-[.2em] text-indigo-300">Portfolio overview</p><h4 class="mt-1 text-xl font-bold text-white">Insights &amp; forecast</h4><p class="mt-1 text-xs text-slate-500">A snapshot of card utilization, projected month-end rewards, and cashback performance.</p></div>
+                    <span class="rounded-full border border-white/[.08] bg-white/[.04] px-3 py-1.5 text-[10px] font-medium text-slate-400">${act.length} active card${act.length === 1 ? '' : 's'} · ${monthLabel(ym)}</span>
+                </div>
+                <div class="grid grid-cols-2 gap-3 xl:grid-cols-4">
+                    <div class="rounded-xl border border-indigo-400/15 bg-indigo-400/[.06] p-4"><p class="text-[10px] uppercase tracking-wider text-slate-400">Portfolio utilization</p><p class="mono mt-2 text-xl font-semibold text-indigo-200">${overallUtilization.toFixed(0)}%</p><p class="mt-1 text-[10px] text-slate-500">Across active cards</p></div>
+                    <div class="rounded-xl border border-white/[.07] bg-white/[.025] p-4"><p class="text-[10px] uppercase tracking-wider text-slate-400">Outstanding</p><p class="mono mt-2 text-lg font-semibold text-slate-100">AED ${formatAED(to)}</p><p class="mt-1 text-[10px] text-slate-500">Current card balances</p></div>
+                    <div class="rounded-xl border border-emerald-400/15 bg-emerald-400/[.05] p-4"><p class="text-[10px] uppercase tracking-wider text-slate-400">Available credit</p><p class="mono mt-2 text-lg font-semibold text-emerald-200">AED ${formatAED(availableCredit)}</p><p class="mt-1 text-[10px] text-slate-500">Of AED ${formatAED(tl)} total limit</p></div>
+                    <div class="rounded-xl border border-white/[.07] bg-white/[.025] p-4"><p class="text-[10px] uppercase tracking-wider text-slate-400">Month-end cashback</p><p class="mono mt-2 text-lg font-semibold text-emerald-300">AED ${formatAED(projectedCashbackTotal)}</p><p class="mt-1 text-[10px] text-slate-500">Projected from month-to-date</p></div>
+                </div>
+                ${section('Credit health', 'Utilization & payoff', 'Estimate the payment needed to bring each card down to your target utilization.', `<div class="mb-4 flex flex-wrap items-center gap-2 rounded-xl border border-white/[.06] bg-black/10 p-3"><label for="dd-target" class="text-xs text-slate-400">Target utilization</label><div class="flex items-center gap-2"><input id="dd-target" type="number" min="1" max="100" step="1" value="${target}" class="w-20 rounded-lg border border-white/10 bg-black/20 px-2 py-1.5 text-sm text-slate-100"><span class="text-xs text-slate-500">%</span><button type="button" onclick="ddInsights(document.getElementById('dd-target').value)" class="rounded-lg bg-indigo-500/15 px-3 py-1.5 text-xs font-semibold text-indigo-200 transition hover:bg-indigo-500/25">Update</button></div><span class="ml-auto text-[10px] text-slate-500">Portfolio average: ${overallUtilization.toFixed(0)}%</span></div>${table(['Card', 'Current utilization', 'Payment to target'], pay)}`)}
+                ${section('Month-end projection', 'Spend & cashback forecast', 'Estimates month-end totals by extending current daily spend and cashback through the remaining days.', fc ? `<div class="mb-3 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-indigo-400/10 bg-indigo-400/[.04] px-4 py-3"><span class="text-xs text-slate-400">Projected portfolio spend</span><span class="mono text-sm font-semibold text-indigo-200">AED ${formatAED(projectedSpendTotal)}</span></div><div class="grid gap-3 md:grid-cols-2">${fc}</div>` : '<p class="rounded-xl border border-dashed border-white/10 px-4 py-6 text-center text-xs text-slate-500">Add an active card to see a month-end forecast.</p>')}
+                ${section('Cashback tracking', `Reconciliation · ${pym}`, 'Compare last month’s expected cashback with the amount received from your bank.', table(['Card', 'Expected', 'Received', 'Difference'], rc))}
+                ${section('Year in review', String(now.getFullYear()), 'Your cashback and spending highlights for this year.', yearSummary)}`;
+            ddModal('Insights & Forecast', content);
         }
         function ddSaveRecon(id, ym, v) { const r = ddLoad('dd-recon'); (r[id] = r[id] || {})[ym] = v; ddSave('dd-recon', r); ddPushRecon(id, ym, v); ddInsights(document.getElementById('dd-target')?.value); }
         // ---- Sync rules + reconciliation with Supabase (localStorage stays as an offline cache) ----
