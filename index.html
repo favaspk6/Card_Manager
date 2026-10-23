@@ -111,6 +111,16 @@
             backdrop-filter: blur(24px) saturate(160%);
             box-shadow: 0 6px 30px rgba(0,0,0,.28), inset 0 -1px 0 rgba(255,255,255,.03) !important;
         }
+        html.dark #header-menu-dropdown {
+            background-color: rgba(14, 17, 27, .84) !important;
+            background-image:
+                radial-gradient(320px circle at var(--px, 50%) var(--py, -20%), rgba(129,140,248,.12), transparent 45%),
+                linear-gradient(145deg, var(--glass-highlight), rgba(255,255,255,0) 42%) !important;
+            border-color: var(--glass-border) !important;
+            -webkit-backdrop-filter: blur(24px) saturate(160%);
+            backdrop-filter: blur(24px) saturate(160%);
+            box-shadow: 0 12px 36px rgba(0,0,0,.5), inset 0 1px 0 rgba(255,255,255,.08) !important;
+        }
 
         /* --- Inputs & selects: frosted --- */
         html.dark input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
@@ -649,11 +659,17 @@
                         <p id="deck-subtitle" class="hidden truncate text-xs text-slate-500 sm:block mt-0.5">Real-time yield optimization across your registered cards</p>
                     </div>
                 </div>
-                <div class="col-start-2 row-start-1 relative flex items-center justify-end lg:col-start-3">
+                <div class="col-start-2 row-start-1 relative flex items-center justify-end gap-2 sm:gap-3 lg:col-start-3">
                     <div class="hidden md:flex items-stretch gap-3 xl:gap-6 rounded-xl border border-[#1d2230] bg-[#0f121a] px-3 xl:px-4 py-1.5">
                         <div><p class="eyebrow">Outstanding</p><p class="mono text-xs font-semibold text-indigo-300 mt-0.5">AED <span id="pill-outstanding">0.00</span></p></div>
                         <div><p class="eyebrow">Pending Cashback</p><p class="mono text-xs font-semibold text-emerald-400 mt-0.5">AED <span id="pill-pending">0.00</span></p></div>
                     </div>
+                    <button id="privacy-mode-toggle" type="button" role="switch" aria-checked="false" aria-label="Privacy Mode" title="Toggle Privacy Mode" onclick="togglePrivacy()" class="flex shrink-0 items-center gap-2 rounded-xl border border-[#1d2230] bg-[#0f121a] px-2.5 py-2 text-xs font-medium text-slate-300 transition hover:bg-white/5">
+                        <span>Privacy</span>
+                        <span id="privacy-mode-track" class="relative inline-flex h-[18px] w-8 items-center rounded-full bg-slate-600 transition-colors">
+                            <span id="privacy-mode-thumb" class="absolute left-0.5 top-0.5 h-3.5 w-3.5 rounded-full bg-white shadow transition-transform"></span>
+                        </span>
+                    </button>
                     <div class="relative ml-0 md:ml-3">
                         <button onclick="toggleHeaderMenu()" id="header-menu-btn" class="flex items-center gap-2.5 rounded-xl px-2 py-1.5 hover:bg-white/5 transition" aria-label="Account menu">
                             <span id="user-avatar" class="w-8 h-8 rounded-full bg-indigo-500/25 text-indigo-200 grid place-items-center text-xs font-bold">U</span>
@@ -662,13 +678,12 @@
                                 <span id="user-sub-label" class="block eyebrow">Local mode</span>
                             </span>
                         </button>
-                        <div id="header-menu-dropdown" class="hidden absolute right-0 mt-2 w-56 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 rounded-xl shadow-2xl border border-slate-100 dark:border-slate-700 py-2 z-50">
+                        <div id="header-menu-dropdown" class="hidden absolute right-0 mt-2 w-56 bg-white dark:bg-[#0f121a] text-slate-800 dark:text-slate-200 rounded-xl shadow-2xl border border-slate-100 dark:border-slate-700 py-2 z-50">
                             <p id="user-email-label" class="hidden px-4 py-1.5 text-xs text-slate-400 dark:text-slate-500 truncate"></p>
                             <button onclick="exportBackup()" class="w-full text-left px-4 py-2 text-sm hover:bg-white/5 transition">⬇ Export Backup</button>
                             <button onclick="exportDueDatesIcs()" class="w-full text-left px-4 py-2 text-sm hover:bg-white/5 transition">📅 Export Due Dates (.ics)</button>
                             <button onclick="enableDueReminders()" class="w-full text-left px-4 py-2 text-sm hover:bg-white/5 transition">🔔 Enable Due Reminders</button>
                             <button onclick="ddInsights()" class="w-full text-left px-4 py-2 text-sm hover:bg-white/5 transition">📊 Insights (forecast, payoff, reconciliation)</button>
-                            <button onclick="togglePrivacy()" class="w-full text-left px-4 py-2 text-sm hover:bg-white/5 transition">🙈 Toggle Privacy Mode</button>
                             <label for="backup-file-input" class="block w-full text-left px-4 py-2 text-sm hover:bg-white/5 transition cursor-pointer">⬆ Import Backup</label>
                             <button onclick="repairMissingCardLinks()" class="w-full text-left px-4 py-2 text-sm hover:bg-white/5 transition">🔗 Fix Card Links</button> 
                             <button onclick="clearAllData()" class="flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] text-red-400/90 hover:text-red-300 hover:bg-red-500/10 transition w-full text-left"><svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg> Reset Data</button>
@@ -4366,8 +4381,35 @@
                 ddSave('dd-card-rules', rules); ddSave('dd-recon', recon); render();
             } catch (e) { ddDbFail(e); }
         }
-        function togglePrivacy() { const on = document.body.classList.toggle('dd-private'); ddSave('dd-privacy', { on }); }
-        (function () { const st = document.createElement('style'); st.textContent = '.dd-private .mono{filter:blur(7px);transition:filter .15s}.dd-private .mono:hover{filter:none}'; document.head.appendChild(st); if (ddLoad('dd-privacy').on) document.addEventListener('DOMContentLoaded', () => document.body.classList.add('dd-private')); })();
+        function updatePrivacyToggle(on) {
+            const toggle = document.getElementById('privacy-mode-toggle');
+            const track = document.getElementById('privacy-mode-track');
+            const thumb = document.getElementById('privacy-mode-thumb');
+            if (toggle) toggle.setAttribute('aria-checked', String(on));
+            if (track) {
+                track.classList.toggle('bg-indigo-500', on);
+                track.classList.toggle('bg-slate-600', !on);
+            }
+            if (thumb) {
+                thumb.classList.toggle('translate-x-3.5', on);
+                thumb.classList.toggle('translate-x-0', !on);
+            }
+        }
+        function togglePrivacy() {
+            const on = document.body.classList.toggle('dd-private');
+            ddSave('dd-privacy', { on });
+            updatePrivacyToggle(on);
+        }
+        (function () {
+            const st = document.createElement('style');
+            st.textContent = '.dd-private .mono{filter:blur(7px);transition:filter .15s}.dd-private .mono:hover{filter:none}';
+            document.head.appendChild(st);
+            document.addEventListener('DOMContentLoaded', () => {
+                const on = !!ddLoad('dd-privacy').on;
+                document.body.classList.toggle('dd-private', on);
+                updatePrivacyToggle(on);
+            });
+        })();
 
         const DD_RULE_FIELDS = ['fee', 'renewal', 'waiver', 'minSpend', 'caps'];
         function ddFillRulesForm(card) {
