@@ -4300,11 +4300,11 @@
                 const used = ddSum(mTx.filter(t => k === 'All' || t.category === k), t => t.cashback), left = caps[k] - used;
                 L.push(`<span class="${left <= 0 ? 'text-red-400' : ''}">${left <= 0 ? '⛔ ' + k + ' cap reached' : 'AED ' + formatAED(left) + ' cap left on ' + escapeHtml(k)}</span>`);
             });
-            if (ddNum(r.minSpend)) { const sp = ddSum(mTx.filter(t => t.type === 'Purchase'), t => t.amount); L.push(`Min spend: AED ${formatAED(sp)} / ${formatAED(ddNum(r.minSpend))}${sp >= ddNum(r.minSpend) ? ' ✓' : ''}`); }
+            if (ddNum(r.minSpend)) { const sp = ddSum(mTx.filter(t => t.type === 'Purchase' || t.type === 'Cash Withdrawal'), t => t.amount); L.push(`Min spend: AED ${formatAED(sp)} / ${formatAED(ddNum(r.minSpend))}${sp >= ddNum(r.minSpend) ? ' ✓' : ''}`); }
             const ws = ddYearWindow(r);
             if (ddNum(r.fee)) {
                 const yt = txs.filter(t => t.date >= (ws || '0000'));
-                const sp = ddSum(yt.filter(t => t.type === 'Purchase'), t => t.amount), cb = ddSum(yt, t => t.cashback);
+                const sp = ddSum(yt.filter(t => t.type === 'Purchase' || t.type === 'Cash Withdrawal'), t => t.amount), cb = ddSum(yt, t => t.cashback);
                 if (ddNum(r.waiver)) L.push(`Fee waiver: AED ${formatAED(sp)} / ${formatAED(ddNum(r.waiver))} (${Math.min(100, sp / ddNum(r.waiver) * 100).toFixed(0)}%)${sp >= ddNum(r.waiver) ? ' ✓ waived' : ''}`);
                 if (cb < ddNum(r.fee) && !(ddNum(r.waiver) && sp >= ddNum(r.waiver))) L.push(`<span class="text-amber-400">⚠ Fee AED ${formatAED(ddNum(r.fee))} exceeds cashback AED ${formatAED(cb)} this year</span>`);
             }
@@ -4321,7 +4321,7 @@
                 tl += lim; to += out;
                 const need = Math.max(0, out - lim * target / 100);
                 pay += `<tr><td>${escapeHtml(c.name)}</td><td>${lim ? (out / lim * 100).toFixed(0) : 0}%</td><td>${need > 0 ? 'Pay AED ' + formatAED(need) : '✓'}</td></tr>`;
-                const m = txs.filter(t => (t.date || '').startsWith(ym)), sp = ddSum(m.filter(t => t.type === 'Purchase'), t => t.amount), cb = ddSum(m, t => t.cashback);
+                const m = txs.filter(t => (t.date || '').startsWith(ym)), sp = ddSum(m.filter(t => t.type === 'Purchase' || t.type === 'Cash Withdrawal'), t => t.amount), cb = ddSum(m, t => t.cashback);
                 const pj = sp / d * dim, pc = cb / d * dim, ms = ddNum(r.minSpend);
                 fc += `<tr><td>${escapeHtml(c.name)}</td><td>${formatAED(pj)}</td><td>${formatAED(pc)}</td><td>${ms ? (pj >= ms ? '✓ on track' : '⚠ short ' + formatAED(ms - pj)) : ''}${lim && pj / lim > .97 ? ' ⚠ near limit' : ''}</td></tr>`;
                 const exp = ddSum(txs.filter(t => (t.date || '').startsWith(pym)), t => t.cashback), got = (recon[c.id] || {})[pym];
