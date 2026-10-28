@@ -217,7 +217,10 @@
         #app-sidebar { transform: translateX(-100%); visibility: hidden; pointer-events: none; }
         #app-sidebar.is-open { transform: translateX(0); visibility: visible; pointer-events: auto; }
         #app-shell { transition: padding-left .3s ease; }
-        @media (min-width: 1024px) { #app-shell.sidebar-collapsed { padding-left: 0; } }
+        @media (min-width: 1024px) {
+            #app-sidebar, #app-sidebar:not(.is-open) { transform: translateX(0); visibility: visible; pointer-events: auto; }
+            #app-shell.sidebar-collapsed { padding-left: 18rem; }
+        }
     
 
         /* ================================================================
@@ -356,7 +359,7 @@
         .fp-eyebrow { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 11.5px; letter-spacing: .14em; text-transform: uppercase; color: #7d869b; display: inline-flex; align-items: center; gap: 9px; }
         .fp-dot { width: 8px; height: 8px; border-radius: 50%; background: #6366f1; box-shadow: 0 0 10px #6366f1; display: inline-block; }
         .fp-outflow { font-family: 'JetBrains Mono', ui-monospace, monospace; font-weight: 700; font-size: 14.5px; color: #fff; }
-        .fp-track { display: flex; gap: 3px; height: 16px; padding: 3px; border-radius: 999px; background: rgba(0,0,0,.4); border: 1px solid rgba(255,255,255,.08); box-shadow: inset 0 1px 3px rgba(0,0,0,.5); }
+        .fp-track { display: flex; gap: 3px; height: 16px; padding: 3px; border-radius: 999px; background: rgba(184, 183, 183, 0.4); border: 1px solid rgba(128, 126, 126, 0.676); box-shadow: inset 0 1px 3px rgba(136, 136, 136, 0.5); }
         .fp-seg-fill { height: 100%; border-radius: 999px; min-width: 4px; }
         .fp-purchase { background: linear-gradient(90deg, #5b5bf0, #7c83fb); box-shadow: 0 0 12px rgba(99,102,241,.45); }
         .fp-withdraw { background: linear-gradient(90deg, #f59e0b, #fbbf24); }
@@ -626,6 +629,13 @@
         html:not(.dark) #header-menu-dropdown label { color: #334155 !important; }
         html:not(.dark) #header-menu-dropdown button:hover,
         html:not(.dark) #header-menu-dropdown label:hover { background-color: #f1f5f9 !important; }
+        html:not(.dark) #header-menu-dropdown button[onclick="clearAllData()"],
+        html:not(.dark) #header-menu-dropdown #sign-out-btn { color: #b91c1c !important; }
+        html:not(.dark) #header-menu-dropdown button[onclick="clearAllData()"]:hover,
+        html:not(.dark) #header-menu-dropdown #sign-out-btn:hover {
+            color: #991b1b !important;
+            background-color: rgba(239,68,68,.1) !important;
+        }
         html:not(.dark) .text-white { color: #1e293b !important; }
         html:not(.dark) button.text-white { color: #fff !important; }
         html:not(.dark) .cc,
@@ -792,6 +802,268 @@
         html:not(.dark) .sm-head { background: rgba(255,255,255,.32); }
         html:not(.dark) .fp-well { background: rgba(226,232,240,.42); border-color: rgba(255,255,255,.82); -webkit-backdrop-filter: blur(18px) saturate(150%); backdrop-filter: blur(18px) saturate(150%); }
         html:not(.dark) .fp-tile { background: linear-gradient(145deg, rgba(255,255,255,.76), rgba(255,255,255,.48)); border-color: rgba(255,255,255,.88); box-shadow: 0 8px 24px rgba(30,41,59,.09), inset 0 1px 0 rgba(255,255,255,.92); }
+        html:not(.dark) #app-shell main #recommender-section,
+        html:not(.dark) #app-shell main #import-section {
+            color: #334155;
+            background: linear-gradient(145deg, rgba(255,255,255,.98), rgba(248,250,252,.96)) !important;
+            border-color: rgba(203,213,225,.9) !important;
+            box-shadow: 0 24px 70px rgba(15,23,42,.22), inset 0 1px 0 rgba(255,255,255,.95) !important;
+        }
+        html:not(.dark) #recommender-section .rec-ico {
+            color: #4f46e5;
+            background: linear-gradient(145deg, #e0e7ff, #ede9fe);
+            box-shadow: inset 0 0 0 1px rgba(99,102,241,.12);
+        }
+        html:not(.dark) #recommender-title,
+        html:not(.dark) #recommender-section .rec-title { color: #0f172a; }
+        html:not(.dark) #recommender-section .rec-desc,
+        html:not(.dark) #recommender-section .rec-sub { color: #64748b; }
+        html:not(.dark) #recommender-section .rec-pill {
+            color: #475569;
+            background: linear-gradient(145deg, #fff, #f8fafc);
+            border-color: #cbd5e1;
+            box-shadow: 0 2px 6px rgba(15,23,42,.04);
+        }
+        html:not(.dark) #recommender-section .rec-pill:hover {
+            color: #312e81;
+            background: #eef2ff;
+            border-color: #a5b4fc;
+        }
+        html:not(.dark) #recommender-section .rec-pill.active {
+            color: #312e81;
+            background: linear-gradient(135deg, #e0e7ff, #c7d2fe);
+            border-color: #818cf8;
+            box-shadow: 0 4px 14px rgba(79,70,229,.16), inset 0 1px 0 rgba(255,255,255,.8);
+        }
+        html:not(.dark) #recommender-section .rec-row {
+            color: #334155;
+            background: linear-gradient(145deg, #fff, #f8fafc);
+            border-color: #dbe3ee;
+            box-shadow: 0 8px 22px rgba(15,23,42,.07), inset 0 1px 0 #fff;
+        }
+        html:not(.dark) #recommender-section .rec-badge {
+            color: #047857;
+            background: #ecfdf5;
+            border-color: #a7f3d0;
+        }
+        html:not(.dark) #recommender-section .rec-btn.is-default,
+        html:not(.dark) #recommender-section .rec-btn:disabled {
+            color: #047857;
+            background: #ecfdf5;
+            border-color: #a7f3d0;
+        }
+        html:not(.dark) #import-section > div:first-child {
+            color: #0f172a;
+        }
+        html:not(.dark) #import-section > div:first-child h2 { color: #0f172a !important; }
+        html:not(.dark) #import-section > div:first-child button {
+            color: #64748b !important;
+        }
+        html:not(.dark) #import-section > p { color: #64748b; }
+        html:not(.dark) #excel-dropzone {
+            background: linear-gradient(145deg, #f8fafc, #eef2ff) !important;
+            border: 1px dashed #a5b4fc;
+            box-shadow: inset 0 1px 0 #fff;
+        }
+        html:not(.dark) #excel-dropzone:hover { background: linear-gradient(145deg, #eef2ff, #e0e7ff) !important; }
+        html:not(.dark) #excel-dropzone > div:first-child {
+            color: #4f46e5 !important;
+            background: #e0e7ff !important;
+        }
+        html:not(.dark) #excel-dropzone > p:first-of-type { color: #1e293b !important; }
+        html:not(.dark) #excel-dropzone .mono,
+        html:not(.dark) #excel-dropzone > p:last-of-type { color: #64748b !important; }
+        html:not(.dark) #excel-dropzone label[for="excel-file-input"] {
+            color: #fff !important;
+            background: linear-gradient(135deg, #4f46e5, #6366f1) !important;
+            box-shadow: 0 4px 12px rgba(79,70,229,.18);
+        }
+        html:not(.dark) #excel-dropzone button[onclick="downloadExcelTemplate()"] {
+            color: #047857 !important;
+            background: #fff !important;
+            border-color: #a7f3d0 !important;
+        }
+        html:not(.dark) #excel-dropzone button[onclick="downloadExcelTemplate()"]:hover { background: #ecfdf5 !important; }
+        html:not(.dark) #import-file-chip { background: #ecfdf5 !important; border-color: #a7f3d0 !important; }
+        html:not(.dark) #import-file-name { color: #065f46 !important; }
+        html:not(.dark) #import-file-size { color: #047857 !important; }
+        html:not(.dark) #import-file-chip button { color: #64748b !important; }
+        html:not(.dark) #import-manual-btn {
+            color: #fff !important;
+            background: linear-gradient(135deg, #4f46e5, #6366f1) !important;
+            box-shadow: 0 6px 18px rgba(79,70,229,.2);
+        }
+        html:not(.dark) #import-upload-btn { color: #fff !important; }
+        #settings-modal > div {
+            border: 1px solid rgba(165,180,252,.28);
+            background: linear-gradient(155deg, #fff, #f8fafc) !important;
+            box-shadow: 0 28px 90px rgba(2,6,23,.32), 0 0 0 1px rgba(255,255,255,.32);
+        }
+        #settings-modal > div > div:first-child {
+            border-color: #e2e8f0;
+            background: linear-gradient(115deg, #eef2ff, #fff 58%, #ecfdf5);
+        }
+        #settings-modal h2 { color: #172033 !important; font-size: 1.05rem; font-weight: 750; letter-spacing: -.02em; }
+        #settings-modal h2::before {
+            content: "+";
+            display: inline-grid;
+            width: 2rem;
+            height: 2rem;
+            margin-right: .55rem;
+            place-items: center;
+            border-radius: .75rem;
+            color: #fff;
+            background: linear-gradient(135deg, #4f46e5, #7c3aed);
+            box-shadow: 0 5px 14px rgba(79,70,229,.24);
+            vertical-align: middle;
+        }
+        #settings-modal label { color: #475569 !important; letter-spacing: .06em; }
+        #settings-modal input {
+            min-height: 46px;
+            border-color: #dbe3ee !important;
+            background: #fff !important;
+            color: #172033 !important;
+            transition: border-color .18s ease, box-shadow .18s ease;
+        }
+        #settings-modal input::placeholder { color: #94a3b8 !important; }
+        #settings-modal input:focus {
+            border-color: #818cf8 !important;
+            box-shadow: 0 0 0 4px rgba(99,102,241,.12);
+        }
+        #settings-modal button[onclick="addCustomTransactionType()"],
+        #settings-modal button[onclick="addCustomCategory()"] {
+            min-height: 46px;
+            padding-left: 1rem;
+            padding-right: 1rem;
+            border-radius: .8rem;
+            font-size: .82rem;
+            box-shadow: 0 5px 14px rgba(15,23,42,.12), inset 0 1px 0 rgba(255,255,255,.2);
+            transition: transform .18s ease, filter .18s ease, box-shadow .18s ease;
+        }
+        #settings-modal button[onclick="addCustomTransactionType()"] {
+            background: linear-gradient(135deg, #4f46e5, #6366f1) !important;
+        }
+        #settings-modal button[onclick="addCustomCategory()"] {
+            background: linear-gradient(135deg, #059669, #10b981) !important;
+        }
+        #settings-modal button[onclick="addCustomTransactionType()"]:hover,
+        #settings-modal button[onclick="addCustomCategory()"]:hover {
+            filter: brightness(1.05);
+            transform: translateY(-1px);
+            box-shadow: 0 8px 18px rgba(15,23,42,.16);
+        }
+        html.dark #settings-modal > div {
+            border-color: #334155;
+            background: linear-gradient(155deg, #111827, #0f172a) !important;
+        }
+        html.dark #settings-modal > div > div:first-child {
+            border-color: #334155;
+            background: linear-gradient(115deg, #1e1b4b, #111827 58%, #052e2b);
+        }
+        html.dark #settings-modal h2 { color: #f8fafc !important; }
+        html.dark #settings-modal label { color: #cbd5e1 !important; }
+        html.dark #settings-modal input {
+            border-color: #334155 !important;
+            background: #0b1220 !important;
+            color: #f8fafc !important;
+        }
+        html.dark #settings-modal input::placeholder { color: #64748b !important; }
+        @media (max-width: 480px) {
+            #settings-modal > div > div:last-child > div > div { flex-direction: column; }
+            #settings-modal button[onclick="addCustomTransactionType()"],
+            #settings-modal button[onclick="addCustomCategory()"] { width: 100%; }
+        }
+        #tx-modal { background: rgba(8,12,24,.66); }
+        #tx-modal > div {
+            max-height: min(92vh, 900px);
+            overflow-y: auto;
+            border: 1px solid rgba(165,180,252,.22);
+            border-radius: 1.5rem;
+            background: linear-gradient(155deg, rgba(255,255,255,.98), rgba(248,250,252,.96));
+            box-shadow: 0 28px 90px rgba(2,6,23,.4), 0 0 0 1px rgba(255,255,255,.25);
+        }
+        html.dark #tx-modal > div {
+            background: linear-gradient(155deg, #172033, #0f172a 72%);
+            border-color: rgba(129,140,248,.24);
+        }
+        #tx-modal > div > div:first-child {
+            position: sticky;
+            top: 0;
+            z-index: 2;
+            padding: 1.1rem 1.5rem;
+            background: linear-gradient(110deg, rgba(238,242,255,.96), rgba(255,255,255,.95) 55%, rgba(245,243,255,.96));
+            border-color: rgba(148,163,184,.18);
+        }
+        html.dark #tx-modal > div > div:first-child {
+            background: linear-gradient(110deg, rgba(30,41,59,.98), rgba(23,32,51,.98) 55%, rgba(49,36,82,.94));
+            border-color: rgba(148,163,184,.12);
+        }
+        #exp-form-title { min-width: 0; font-size: 1.05rem; letter-spacing: -.025em; }
+        #tx-form-subtitle { margin: .2rem 0 0; font-size: .75rem; color: #64748b; }
+        html.dark #tx-form-subtitle { color: #94a3b8; }
+        #expense-form { display: grid; gap: 1rem; }
+        #expense-form > div:not(#exp-emi-wrapper) {
+            min-width: 0;
+        }
+        #expense-form label:not(.flex) {
+            display: block;
+            margin-bottom: .4rem;
+            font-size: .68rem;
+            letter-spacing: .055em;
+        }
+        #expense-form input:not([type="checkbox"]):not([type="radio"]),
+        #expense-form select {
+            min-height: 2.75rem;
+            border-radius: .8rem;
+            box-shadow: 0 1px 2px rgba(15,23,42,.035);
+            transition: border-color .18s ease, box-shadow .18s ease, background-color .18s ease;
+        }
+        #expense-form input:not([type="checkbox"]):not([type="radio"]):focus,
+        #expense-form select:focus {
+            border-color: #818cf8;
+            box-shadow: 0 0 0 4px rgba(99,102,241,.13);
+        }
+        #exp-emi-details {
+            border: 1px solid rgba(129,140,248,.22);
+            border-radius: 1rem;
+            background: linear-gradient(145deg, rgba(238,242,255,.9), rgba(245,243,255,.75));
+        }
+        html.dark #exp-emi-details {
+            border-color: rgba(129,140,248,.2);
+            background: linear-gradient(145deg, rgba(49,46,129,.22), rgba(30,41,59,.72));
+        }
+        #exp-emi-preview:empty { display: none; }
+        #expense-form > div:last-child {
+            position: sticky;
+            bottom: -1.5rem;
+            z-index: 1;
+            margin: .25rem -1.5rem -1.5rem;
+            padding: .9rem 1.5rem calc(.9rem + env(safe-area-inset-bottom, 0px));
+            border-top: 1px solid rgba(148,163,184,.18);
+            background: rgba(255,255,255,.94);
+            backdrop-filter: blur(16px);
+        }
+        html.dark #expense-form > div:last-child { background: rgba(15,23,42,.94); }
+        #tx-submit-btn {
+            min-height: 2.85rem;
+            border-radius: .85rem;
+            background-image: linear-gradient(110deg, #059669, #10b981 55%, #0d9488);
+            box-shadow: 0 7px 16px rgba(5,150,105,.2);
+            transition: transform .18s ease, box-shadow .18s ease, filter .18s ease;
+        }
+        #tx-submit-btn:hover:not(:disabled) { transform: translateY(-1px); filter: brightness(1.05); box-shadow: 0 10px 20px rgba(5,150,105,.26); }
+        #expense-form > div:last-child button[type="button"] { border-radius: .85rem; }
+        @media (max-width: 480px) {
+            #tx-modal { align-items: flex-end; padding: .5rem; }
+            #tx-modal > div { max-height: 94dvh; border-radius: 1.35rem 1.35rem .9rem .9rem; }
+            #tx-modal > div > div:first-child { padding: .9rem 1rem; }
+            #expense-form { gap: .8rem; }
+            #expense-form.grid, #expense-form .grid.grid-cols-2 { grid-template-columns: minmax(0,1fr); }
+            #expense-form > div:last-child { margin-left: -1rem; margin-right: -1rem; margin-bottom: -1.5rem; padding-left: 1rem; padding-right: 1rem; }
+        }
+        @media (prefers-reduced-motion: reduce) {
+            #expense-form input, #expense-form select, #tx-submit-btn { transition: none; }
+        }
         #card-modal > div { background-image: linear-gradient(160deg, rgba(99,102,241,.055), transparent 35%); }
         #card-form > .card-field {
             padding: .8rem;
@@ -863,9 +1135,24 @@
     <!-- SIDEBAR -->
     <aside id="app-sidebar" class="fixed inset-y-0 left-0 w-72 max-w-[calc(100vw-3rem)] flex flex-col bg-[#0b0d13] border-r border-[#171b28] z-40 transition-transform duration-300 ease-in-out">
         <div class="px-6 pt-6 pb-6 flex items-center gap-3">
-            <!--
-            <div class="logo-glow w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-500 to-emerald-400 grid place-items-center text-[#0a0c12]"><svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg></div>
-            -->
+            <div class="grid h-12 w-12 shrink-0 place-items-center" aria-hidden="true">
+                <svg class="h-full w-full drop-shadow-lg" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <rect x="8" y="12" width="43" height="40" rx="5" fill="#F1EEF0"/>
+                    <path d="M8 17a5 5 0 0 1 5-5h33a5 5 0 0 1 5 5v8H8v-8Z" fill="#FF7D86"/>
+                    <path d="M46 12h1a5 5 0 0 1 5 5v31a5 5 0 0 1-5 5h-1V12Z" fill="#DAD7DB" fill-opacity=".72"/>
+                    <path d="M18 9v8M29 9v8M40 9v8" stroke="#5B5360" stroke-width="2.5" stroke-linecap="round"/>
+                    <circle cx="17.5" cy="31" r="2.5" fill="#A39DA5"/>
+                    <circle cx="27" cy="31" r="2.5" fill="#A39DA5"/>
+                    <circle cx="36.5" cy="31" r="2.5" fill="#A39DA5"/>
+                    <circle cx="17.5" cy="40" r="2.5" fill="#A39DA5"/>
+                    <circle cx="27" cy="40" r="2.5" fill="#A39DA5"/>
+                    <path d="m34.5 38 5 5m0-5-5 5" stroke="#FF7D86" stroke-width="2.2" stroke-linecap="round"/>
+                    <circle cx="43" cy="43" r="12" fill="#FFDA72"/>
+                    <path d="M43 31a12 12 0 0 1 0 24" fill="#FFC94F"/>
+                    <path d="M43 37v8" stroke="#FF7D86" stroke-width="2.7" stroke-linecap="round"/>
+                    <circle cx="43" cy="49" r="1.5" fill="#FF7D86"/>
+                </svg>
+            </div>
             <div>
                 <p class="text-[15px] font-bold text-white leading-tight">DueDates</p>
                 <p class="eyebrow">&amp; Spend Analyzer</p>
@@ -925,15 +1212,38 @@
         <div id="top"></div>
         <header class="sticky top-0 z-30 bg-[#0a0c12]/85 backdrop-blur border-b border-[#171b28]">
             <div class="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-2 px-4 sm:px-6 py-3 lg:grid-cols-[minmax(0,1fr)_minmax(180px,0.85fr)_auto] lg:gap-4">
-                <div class="col-start-1 row-start-1 flex min-w-0 items-center gap-3 lg:col-start-1">
-                    <button id="sidebar-toggle" type="button" onclick="toggleSidebar()" aria-label="Open sidebar" aria-controls="app-sidebar" aria-expanded="false" class="logo-glow w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-500 to-emerald-400 grid place-items-center text-[#0a0c12] shrink-0"><svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg></button>
+                <div class="col-start-1 row-start-1 flex min-w-0 items-center gap-3 lg:col-start-1 lg:hidden">
+                    <button id="sidebar-toggle" type="button" onclick="toggleSidebar()" aria-label="Open sidebar" aria-controls="app-sidebar" aria-expanded="false" class="grid h-10 w-10 shrink-0 place-items-center rounded-xl transition hover:bg-white/5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-indigo-400 lg:hidden">
+                        <svg class="h-9 w-9 drop-shadow-md" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                            <rect x="8" y="12" width="43" height="40" rx="5" fill="#F1EEF0"/>
+                            <path d="M8 17a5 5 0 0 1 5-5h33a5 5 0 0 1 5 5v8H8v-8Z" fill="#FF7D86"/>
+                            <path d="M46 12h1a5 5 0 0 1 5 5v31a5 5 0 0 1-5 5h-1V12Z" fill="#DAD7DB" fill-opacity=".72"/>
+                            <path d="M18 9v8M29 9v8M40 9v8" stroke="#5B5360" stroke-width="2.5" stroke-linecap="round"/>
+                            <circle cx="17.5" cy="31" r="2.5" fill="#A39DA5"/>
+                            <circle cx="27" cy="31" r="2.5" fill="#A39DA5"/>
+                            <circle cx="36.5" cy="31" r="2.5" fill="#A39DA5"/>
+                            <circle cx="17.5" cy="40" r="2.5" fill="#A39DA5"/>
+                            <circle cx="27" cy="40" r="2.5" fill="#A39DA5"/>
+                            <path d="m34.5 38 5 5m0-5-5 5" stroke="#FF7D86" stroke-width="2.2" stroke-linecap="round"/>
+                            <circle cx="43" cy="43" r="12" fill="#FFDA72"/>
+                            <path d="M43 31a12 12 0 0 1 0 24" fill="#FFC94F"/>
+                            <path d="M43 37v8" stroke="#FF7D86" stroke-width="2.7" stroke-linecap="round"/>
+                            <circle cx="43" cy="49" r="1.5" fill="#FF7D86"/>
+                        </svg>
+                    </button>
                     <div class="min-w-0">
-                        <h1 class="flex min-w-0 items-center gap-2 truncate text-[17px] font-semibold text-white">DueDates 
                         <!--
+                        <h1 class="flex min-w-0 items-center gap-2 truncate text-[17px] font-semibold text-white">DueDates 
+
                             <span id="sync-badge" class="mono hidden shrink-0 rounded border border-emerald-500/25 bg-emerald-500/10 px-1.5 py-0.5 text-[9px] font-semibold tracking-widest text-emerald-400 sm:inline-flex">LIVE SYNC</span>
-                        -->
+                        
                         </h1>
                         <p id="deck-subtitle" class="hidden truncate text-xs text-slate-500 sm:block mt-0.5">Real-time yield optimization across your registered cards</p>
+                        -->
+                        <div>
+                            <p class="text-[15px] font-bold text-white leading-tight">DueDates</p>
+                            <p class="eyebrow">&amp; Spend Analyzer</p>
+                        </div>
                     </div>
                 </div>
                 <div class="col-start-2 row-start-1 relative flex items-center justify-end gap-2 sm:gap-3 lg:col-start-3">
@@ -965,14 +1275,15 @@
                         </button>
                         <div id="header-menu-dropdown" class="hidden absolute right-0 mt-2 w-56 bg-white dark:bg-[#0f121a] text-slate-800 dark:text-slate-200 rounded-xl shadow-2xl border border-slate-100 dark:border-slate-700 py-2 z-50">
                             <p id="user-email-label" class="hidden px-4 py-1.5 text-xs text-slate-400 dark:text-slate-500 truncate"></p>
-                            <button onclick="exportBackup()" class="w-full text-left px-4 py-2 text-sm hover:bg-white/5 transition">⬇ Export Backup</button>
-                            <button onclick="exportDueDatesIcs()" class="w-full text-left px-4 py-2 text-sm hover:bg-white/5 transition">📅 Export Due Dates (.ics)</button>
-                            <button onclick="enableDueReminders()" class="w-full text-left px-4 py-2 text-sm hover:bg-white/5 transition">🔔 Enable Due Reminders</button>
-                            <button onclick="ddInsights()" class="w-full text-left px-4 py-2 text-sm hover:bg-white/5 transition">📊 Insights (forecast, payoff, reconciliation)</button>
-                            <label for="backup-file-input" class="block w-full text-left px-4 py-2 text-sm hover:bg-white/5 transition cursor-pointer">⬆ Import Backup</label>
-                            <button onclick="repairMissingCardLinks()" class="w-full text-left px-4 py-2 text-sm hover:bg-white/5 transition">🔗 Fix Card Links</button> 
+                            <button onclick="exportBackup()" class="w-full text-left px-4 py-2 text-sm rounded-lg hover:bg-white/5 transition">📤 Export Backup</button>
+                            <button onclick="exportDueDatesIcs()" class="w-full text-left px-4 py-2 text-sm rounded-lg hover:bg-white/5 transition">📅 Export Due Dates</button>
+                            <button onclick="enableDueReminders()" class="w-full text-left px-4 py-2 text-sm rounded-lg hover:bg-white/5 transition">🔔 Enable Due Reminders</button>
+                            <button onclick="ddInsights()" class="w-full text-left px-4 py-2 text-sm rounded-lg hover:bg-white/5 transition">📊 Insights</button>
+                            <button onclick="document.getElementById('header-menu-dropdown').classList.add('hidden'); ddOpenWithdrawalPlanner()" class="w-full rounded-lg text-left px-4 py-2 text-sm hover:bg-white/5 transition">💸 Withdrawal Planner</button>
+                            <label for="backup-file-input" class="block w-full text-left px-4 py-2 rounded-lg text-sm hover:bg-white/5 transition cursor-pointer">📥 Import Backup</label>
+                            <button onclick="repairMissingCardLinks()" class="w-full text-left px-4 py-2 rounded-lg text-sm hover:bg-white/5 transition">🔗 Fix Card Links</button> 
                             <button onclick="clearAllData()" class="flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] text-red-400/90 hover:text-red-300 hover:bg-red-500/10 transition w-full text-left"><svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg> Reset Data</button>
-                            <button id="sign-out-btn" onclick="signOut()" class="hidden w-full text-left px-4 py-2 text-sm text-red-400 hover:bg-red-500/10 transition border-t border-slate-100 dark:border-slate-700 mt-1 pt-2">Sign Out</button>
+                            <button id="sign-out-btn" onclick="signOut()" style="text-align:center;" class="hidden w-full text-left px-4 py-2 text-sm hover:text-white hover:bg-red-500/90 bg-red-500/10 text-red-400/90 transition border-t border-slate-100 dark:border-slate-700 mt-1 pt-2">Sign Out</button>
                         </div>
                     </div>
                 </div>
@@ -1078,7 +1389,7 @@
                 </div>
                 -->
                 <div id="disabled-toggle-row" class="flex justify-end pt-3 pb-1"></div>
-                <div id="cards-list" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 max-[1499px]:col-span-1 min-[1500px]:grid-cols-4 gap-4"></div>
+                <div id="cards-list" class="grid grid-cols-1 sm:grid-cols-2  max-[1499px]:col-span-1 min-[1500px]:grid-cols-4 gap-4"></div>
             </section>
 
             <!-- ACTIVE INSTALLMENTS (EMI) -->
@@ -1121,7 +1432,7 @@
                     <section id="import-section" role="dialog" aria-modal="true" aria-labelledby="import-title" class="panel p-5 w-full max-w-xl max-h-[90vh] overflow-y-auto min-w-0">
                         <div class="flex items-start justify-between gap-4">
                             <div>
-                        <h2 class="flex items-center gap-2 text-[15px] font-semibold text-white"><span class="text-amber-400"><svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 15.5A4.5 4.5 0 0 1 7.5 11a5.5 5.5 0 0 1 10.7 1.5A3.5 3.5 0 1 1 18 19H7a4 4 0 0 1-4-3.5Z"/><path d="M12 12v7M9 15l3-3 3 3"/></svg></span> Import Excel / CSV Data</h2>
+                        <h2 id="import-title" class="flex items-center gap-2 text-[15px] font-semibold text-white"><span class="text-amber-400"><svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 15.5A4.5 4.5 0 0 1 7.5 11a5.5 5.5 0 0 1 10.7 1.5A3.5 3.5 0 1 1 18 19H7a4 4 0 0 1-4-3.5Z"/><path d="M12 12v7M9 15l3-3 3 3"/></svg></span> Import Excel / CSV Data</h2>
                             </div>
                             <button type="button" onclick="closeUtilityModal('import-modal')" class="text-slate-400 hover:text-white text-xl leading-none" aria-label="Close import dialog">&times;</button>
                         </div>
@@ -1173,14 +1484,16 @@
                     const toggle = document.getElementById('sidebar-toggle');
                     const isDesktop = window.matchMedia('(min-width: 1024px)').matches;
 
-                    sidebar.classList.toggle('is-open', isOpen);
-                    appShell.classList.toggle('sidebar-collapsed', isDesktop && !isOpen);
-                    backdrop.classList.toggle('hidden', isDesktop || !isOpen);
-                    toggle.setAttribute('aria-expanded', String(isOpen));
-                    toggle.setAttribute('aria-label', isOpen ? 'Close sidebar' : 'Open sidebar');
+                    const shouldBeOpen = isDesktop || isOpen;
+                    sidebar.classList.toggle('is-open', shouldBeOpen);
+                    appShell.classList.toggle('sidebar-collapsed', false);
+                    backdrop.classList.toggle('hidden', isDesktop || !shouldBeOpen);
+                    toggle.setAttribute('aria-expanded', String(shouldBeOpen));
+                    toggle.setAttribute('aria-label', shouldBeOpen ? 'Close sidebar' : 'Open sidebar');
                 }
 
                 function toggleSidebar() {
+                    if (sidebarDesktopQuery.matches) return;
                     const isOpen = document.getElementById('sidebar-toggle').getAttribute('aria-expanded') === 'true';
                     setSidebarOpen(!isOpen);
                 }
@@ -1190,7 +1503,7 @@
                 sidebarDesktopQuery.addEventListener('change', (event) => setSidebarOpen(event.matches));
 
                 document.getElementById('sidebar-nav').addEventListener('click', (event) => {
-                    if (event.target.closest('a, button')) setSidebarOpen(false);
+                    if (!sidebarDesktopQuery.matches && event.target.closest('a, button')) setSidebarOpen(false);
                 });
 
                 document.addEventListener('keydown', (event) => {
@@ -1429,12 +1742,18 @@
 
     <!-- TRANSACTION MODAL POPUP -->
     <div id="tx-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4">
-        <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-xl border border-slate-100 dark:border-slate-700 w-full max-w-lg overflow-hidden transform transition-all">
-            <div class="px-6 py-4 bg-slate-50 dark:bg-slate-900 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center">
-                <h2 id="exp-form-title" class="text-base font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
-                    <span>➕</span> Log New Transaction
-                </h2>
-                <button onclick="closeTxModal()" class="text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:text-slate-400 font-bold text-lg leading-none">&times;</button>
+        <div class="w-full max-w-xl overflow-hidden transform transition-all">
+            <div class="flex items-center justify-between border-b border-slate-100 px-6 py-4 dark:border-slate-700">
+                <div class="flex min-w-0 items-center gap-3">
+                    <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600 text-lg text-white shadow-lg shadow-indigo-500/20">↗</span>
+                    <div class="min-w-0">
+                        <h2 id="exp-form-title" class="flex items-center gap-2 text-base font-bold text-slate-900 dark:text-slate-100">
+                            Log New Transaction
+                        </h2>
+                        <p id="tx-form-subtitle">Record a purchase, payment, or reward</p>
+                    </div>
+                </div>
+                <button type="button" onclick="closeTxModal()" aria-label="Close transaction form" class="ml-3 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-slate-500 transition hover:bg-white hover:text-slate-800 dark:text-slate-400 dark:hover:bg-slate-700 dark:hover:text-white">&times;</button>
             </div>
             
             <form id="expense-form" class="p-6 space-y-4">
@@ -1593,27 +1912,27 @@
 
     <!-- SETTINGS MODAL -->
     <div id="settings-modal" class="fixed inset-0 z-[85] hidden flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
-        <div class="w-full max-w-md overflow-hidden rounded-2xl border border-[#1d2230] bg-[#0f121a] shadow-2xl">
-            <div class="flex items-center justify-between border-b border-[#1d2230] px-5 py-4">
+        <div class="w-full max-w-xl overflow-hidden rounded-3xl border border-[#1d2230] bg-[#0f121a] shadow-2xl">
+            <div class="flex items-center justify-between border-b border-[#1d2230] px-5 py-5 sm:px-7">
                 <div>
                     <h2 class="text-base font-semibold text-white">Add Category / Type</h2>
-                    <p class="mt-1 text-xs text-slate-500">Add options used by your transactions.</p>
+                    <p class="mt-1 text-sm text-slate-500">Add options used by your transactions.</p>
                 </div>
-                <button type="button" onclick="closeSettings()" class="text-slate-400 hover:text-white text-lg" aria-label="Close settings">&times;</button>
+                <button type="button" onclick="closeSettings()" class="ml-3 grid h-10 w-10 shrink-0 place-items-center rounded-xl text-slate-500 transition hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-700 dark:hover:text-white" aria-label="Close settings">&times;</button>
             </div>
-            <div class="space-y-5 p-5">
+            <div class="space-y-6 p-5 sm:p-7">
                 <div>
                     <label for="new-transaction-type" class="mb-2 block text-xs font-semibold uppercase text-slate-400">New Transaction Type</label>
-                    <div class="flex gap-2">
-                        <input id="new-transaction-type" type="text" placeholder="e.g. Refund" class="min-w-0 flex-1 rounded-lg border border-[#1d2230] bg-[#0b0d13] px-3 py-2 text-sm text-white outline-none focus:border-indigo-500">
-                        <button type="button" onclick="addCustomTransactionType()" class="rounded-lg bg-indigo-600 px-3 py-2 text-xs font-semibold text-white hover:bg-indigo-500">Add Type</button>
+                    <div class="flex gap-2.5">
+                        <input id="new-transaction-type" type="text" placeholder="e.g. Refund" class="min-w-0 flex-1 rounded-xl border border-[#1d2230] bg-[#0b0d13] px-4 py-2.5 text-sm text-white outline-none focus:border-indigo-500">
+                        <button type="button" onclick="addCustomTransactionType()" class="rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-indigo-500">Add Type</button>
                     </div>
                 </div>
                 <div>
                     <label for="new-category" class="mb-2 block text-xs font-semibold uppercase text-slate-400">New Category</label>
-                    <div class="flex gap-2">
-                        <input id="new-category" type="text" placeholder="e.g. Pharmacy" class="min-w-0 flex-1 rounded-lg border border-[#1d2230] bg-[#0b0d13] px-3 py-2 text-sm text-white outline-none focus:border-indigo-500">
-                        <button type="button" onclick="addCustomCategory()" class="rounded-lg bg-emerald-600 px-3 py-2 text-xs font-semibold text-white hover:bg-emerald-500">Add Category</button>
+                    <div class="flex gap-2.5">
+                        <input id="new-category" type="text" placeholder="e.g. Pharmacy" class="min-w-0 flex-1 rounded-xl border border-[#1d2230] bg-[#0b0d13] px-4 py-2.5 text-sm text-white outline-none focus:border-indigo-500">
+                        <button type="button" onclick="addCustomCategory()" class="rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-emerald-500">Add Category</button>
                     </div>
                 </div>
             </div>
@@ -1928,6 +2247,47 @@
         const RATE_CATEGORIES = ['Dining', 'Grocery', 'Travel', 'Gas/Fuel', 'Online Shopping', 'Govt', 'All Other Spend'];
         const TX_ONLY_CATEGORIES = ['Cashback', 'Monthly Payment', 'Annual Fee']; // bookkeeping labels, not spend rates
         const customCategories = [];
+        const WITHDRAWAL_CHARGE_PERCENTAGES = {
+            Dining: 3,
+            Grocery: 2.25,
+            Travel: 3,
+            'Gas/Fuel': 3,
+            'Online Shopping': 3,
+            Govt: 3,
+            'All Other Spend': 3,
+            Education: 3,
+            Others: 3,
+            'Service Fee': 3,
+            Pharmacy: 3,
+            'Wala Points': 3,
+            'Share Points': 3,
+            Entertainment: 3
+        };
+        let withdrawalChargePercentagesLoaded = false;
+
+        function loadWithdrawalChargePercentages() {
+            if (withdrawalChargePercentagesLoaded) return;
+            withdrawalChargePercentagesLoaded = true;
+            try {
+                const saved = JSON.parse(localStorage.getItem('dd-withdrawal-charge-percentages') || '{}');
+                Object.entries(saved).forEach(([category, percentage]) => {
+                    const value = Number(percentage);
+                    if (Number.isFinite(value) && value >= 0 && value < 100) {
+                        WITHDRAWAL_CHARGE_PERCENTAGES[category] = value;
+                    }
+                });
+            } catch (error) {
+                console.warn('Could not load saved withdrawal charge percentages:', error);
+            }
+        }
+
+        function ensureWithdrawalChargePercentages(categories) {
+            categories.forEach(category => {
+                if (!Object.prototype.hasOwnProperty.call(WITHDRAWAL_CHARGE_PERCENTAGES, category)) {
+                    WITHDRAWAL_CHARGE_PERCENTAGES[category] = 3;
+                }
+            });
+        }
 
         // ---- CARD COLOR PALETTE ----
         // Card-like colourways (metals, jewel tones, dark finishes). Old keys (none, carbon, ocean, sunrise,
@@ -2533,6 +2893,7 @@
                     RATE_CATEGORIES.push(category);
                 }
             });
+            ensureWithdrawalChargePercentages(RATE_CATEGORIES);
         }
 
         // Categories / transaction types are SHARED by every user of the app and live in the
@@ -2687,6 +3048,7 @@
             }
             RATE_CATEGORIES.push(value);
             customCategories.push(value);
+            ensureWithdrawalChargePercentages([value]);
             saveSharedOption('category', value);
             populateCategorySelects();
             if (cardRateSettingsReturn) {
@@ -3326,6 +3688,7 @@
 
         function openTxModal(prefillLast = true) {
             document.getElementById('tx-modal').classList.remove('hidden');
+            if (prefillLast) document.getElementById('tx-form-subtitle').textContent = 'Record a purchase, payment, or reward';
             const dateField = document.getElementById('exp-date');
             if (!dateField.value) {
                 dateField.value = new Date().toISOString().slice(0, 10);
@@ -3365,6 +3728,7 @@
             document.getElementById('editing-tx-id').value = "";
             document.getElementById('expense-form').reset();
             document.getElementById('exp-form-title').innerHTML = `<span>➕</span> Log New Transaction`;
+            document.getElementById('tx-form-subtitle').textContent = 'Record a purchase, payment, or reward';
             document.getElementById('tx-submit-btn').textContent = "Log Entry";
             document.getElementById('exp-emi-details').classList.add('hidden');
             document.getElementById('exp-emi-custom-wrapper').classList.add('hidden');
@@ -4088,6 +4452,7 @@
             toggleEmiDetails();
 
             document.getElementById('exp-form-title').innerHTML = `<span>✏️</span> Edit Transaction`;
+            document.getElementById('tx-form-subtitle').textContent = 'Update the details for this transaction';
             document.getElementById('tx-submit-btn').textContent = "Update Transaction";
             
             openTxModal(false);
@@ -4123,6 +4488,7 @@
             document.getElementById('exp-emi-charge-input-wrapper').classList.add('hidden');
 
             document.getElementById('exp-form-title').innerHTML = `<span>↻</span> Repeat Transaction`;
+            document.getElementById('tx-form-subtitle').textContent = 'Review the copied details before logging';
             document.getElementById('tx-submit-btn').textContent = "Log Transaction";
 
             openTxModal(false);
@@ -4697,7 +5063,7 @@
             document.getElementById('dd-modal')?.remove();
             const d = document.createElement('div'); d.id = 'dd-modal';
             d.style.cssText = 'position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;padding:16px';
-            d.innerHTML = `<div class="bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 rounded-2xl shadow-2xl w-full max-w-5xl max-h-[90vh] overflow-y-auto p-5 sm:p-7"><div class="flex justify-between items-center mb-5"><h3 class="font-bold text-lg">${title}</h3><button type="button" onclick="document.getElementById('dd-modal').remove()" aria-label="Close insights" class="grid h-9 w-9 place-items-center rounded-xl text-slate-400 transition hover:bg-white/10 hover:text-white">✕</button></div>${html}</div>`;
+            d.innerHTML = `<div class="bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 rounded-2xl shadow-2xl w-full max-w-5xl max-h-[90vh] overflow-y-auto p-5 sm:p-7"><div class="flex justify-between items-center mb-5"><h3 class="font-bold text-lg">${title}</h3><button type="button" onclick="document.getElementById('dd-modal').remove()" aria-label="Close dialog" class="grid h-9 w-9 place-items-center rounded-xl text-slate-400 transition hover:bg-white/10 hover:text-white">✕</button></div>${html}</div>`;
             document.body.appendChild(d);
         }
         function ddRule(c) { return ddLoad('dd-card-rules')[c.id] || {}; }
@@ -4726,6 +5092,137 @@
                 if (cb < ddNum(r.fee) && !(ddNum(r.waiver) && sp >= ddNum(r.waiver))) L.push(`<span class="text-amber-400">⚠ Fee AED ${formatAED(ddNum(r.fee))} exceeds cashback AED ${formatAED(cb)} this year</span>`);
             }
             return L.length ? `<div class="mt-2 text-[10px] leading-4 opacity-90">${L.join('<br>')}</div>` : '';
+        }
+        let ddWithdrawalCardId = '';
+        let ddWithdrawalCategory = 'Travel';
+        let warnedWithdrawalChargeStorage = false;
+        function saveWithdrawalChargePercentages() {
+            try {
+                localStorage.setItem('dd-withdrawal-charge-percentages', JSON.stringify(WITHDRAWAL_CHARGE_PERCENTAGES));
+            } catch (error) {
+                console.warn('Could not save withdrawal charge percentages:', error);
+                if (!warnedWithdrawalChargeStorage) {
+                    warnedWithdrawalChargeStorage = true;
+                    showToast('Could not save charge percentages on this device.', { tone: 'error' });
+                }
+            }
+        }
+        function ddWithdrawalPlannerHtml(act) {
+            if (!act.length) return '<p class="rounded-xl border border-dashed border-slate-300 px-4 py-6 text-center text-xs text-slate-500 dark:border-white/10">Add an active credit card to estimate a withdrawal.</p>';
+            const selectedCard = act.find(c => String(c.id) === String(ddWithdrawalCardId))
+                || act.find(c => String(c.id) === getDefaultCardId())
+                || act.reduce((best, card) => cardRateFor(card, 'Travel') > cardRateFor(best, 'Travel') ? card : best, act[0]);
+            ddWithdrawalCardId = String(selectedCard.id);
+            const categories = [...new Set([...RATE_CATEGORIES, ...customCategories, ...act.flatMap(c => Object.keys(c.rates || {}))])];
+            loadWithdrawalChargePercentages();
+            ensureWithdrawalChargePercentages(categories);
+            const selectedCategory = categories.includes(ddWithdrawalCategory) ? ddWithdrawalCategory : (categories.includes('Travel') ? 'Travel' : categories[0]);
+            ddWithdrawalCategory = selectedCategory;
+            const cardOptions = act.map(c => `<option value="${escapeHtml(c.id)}" ${String(c.id) === ddWithdrawalCardId ? 'selected' : ''}>${escapeHtml(c.name)}</option>`).join('');
+            const categoryOptions = categories.map(category => `<option value="${escapeHtml(category)}" ${category === selectedCategory ? 'selected' : ''}>${escapeHtml(category)} · ${fmtRate(cardRateFor(selectedCard, category))}%</option>`).join('');
+            const result = (id, label, color = 'text-slate-900 dark:text-slate-100') => `<div class="rounded-xl border border-slate-200 bg-white p-3 dark:border-white/[.07] dark:bg-black/15"><p class="text-[10px] uppercase tracking-wider text-slate-500">${label}</p><p id="${id}" class="mono mt-1 text-sm font-semibold ${color}">AED 0.00</p></div>`;
+            return `<div class="grid gap-3 sm:grid-cols-2">
+                    <label class="block text-xs font-medium text-slate-600 dark:text-slate-400">Card
+                        <select id="dd-withdrawal-card" onchange="ddUpdateWithdrawalPlanner(this)" class="mt-1.5 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 dark:border-white/10 dark:bg-slate-900 dark:text-slate-100">${cardOptions}</select>
+                    </label>
+                    <div class="grid grid-cols-[minmax(0,1fr)_112px] items-end gap-2">
+                        <label class="block min-w-0 text-xs font-medium text-slate-600 dark:text-slate-400">Cashback category
+                            <select id="dd-withdrawal-category" onchange="ddUpdateWithdrawalPlanner(this)" class="mt-1.5 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 dark:border-white/10 dark:bg-slate-900 dark:text-slate-100">${categoryOptions}</select>
+                        </label>
+                        <label class="block text-xs font-medium text-slate-600 dark:text-slate-400">Charge %
+                            <input id="dd-withdrawal-charge-percent" type="number" min="0" max="99.99" step="0.01" value="${WITHDRAWAL_CHARGE_PERCENTAGES[selectedCategory]}" oninput="ddUpdateWithdrawalPlanner(this)" aria-label="Withdrawal charge percentage" class="mt-1.5 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 dark:border-white/10 dark:bg-slate-900 dark:text-slate-100">
+                        </label>
+                    </div>
+                </div>
+                <p id="dd-withdrawal-charge-error" class="mt-2 hidden text-xs text-rose-600 dark:text-rose-300" role="alert">Enter a charge percentage from 0% up to (but not including) 100%.</p>
+                <div class="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                    ${result('dd-withdrawal-limit', 'Total credit card limit')}
+                    ${result('dd-withdrawal-spend', 'Current month spend')}
+                    ${result('dd-withdrawal-available', 'Available to withdraw', 'text-indigo-700 dark:text-indigo-200')}
+                    ${result('dd-withdrawal-amount', 'Estimated withdrawal amount', 'text-indigo-700 dark:text-indigo-200')}
+                    ${result('dd-withdrawal-deducted', 'Amount charged to card')}
+                    ${result('dd-withdrawal-rate', 'Cashback rate')}
+                    ${result('dd-withdrawal-cashback', 'Estimated total cashback', 'text-emerald-700 dark:text-emerald-300')}
+                    ${result('dd-withdrawal-charge', 'Withdrawal charge estimate', 'text-amber-700 dark:text-amber-300')}
+                    ${result('dd-withdrawal-net', 'Estimated cashback received', 'text-emerald-700 dark:text-emerald-300')}
+                </div>
+                <p class="mt-3 text-[10px] leading-5 text-slate-500">Available to withdraw is estimated as card limit minus current-month spend. Set the charge percentage for the selected category (for example, 3% for Dining or Travel and 2.25% for Grocery). The amount charged is calculated as withdrawal amount ÷ (1 − charge percentage ÷ 100). This does not account for prior-cycle balances or issuer holds; confirm actual fees and cashback with your card issuer.</p>`;
+        }
+        function ddUpdateWithdrawalPlanner(source) {
+            const cardSelect = document.getElementById('dd-withdrawal-card');
+            const categorySelect = document.getElementById('dd-withdrawal-category');
+            if (!cardSelect || !categorySelect) return;
+            const card = activeCards().find(c => String(c.id) === cardSelect.value && c.cardType !== 'debit');
+            if (!card) return;
+            ddWithdrawalCardId = String(card.id);
+            Array.from(categorySelect.options).forEach(option => {
+                option.textContent = `${option.value} · ${fmtRate(cardRateFor(card, option.value))}%`;
+            });
+            ddWithdrawalCategory = categorySelect.value;
+            const ym = localDateKey().slice(0, 7);
+            const monthSpend = ddSum(cardTxList(card).filter(t =>
+                (t.date || '').startsWith(ym) && (t.type === 'Purchase' || t.type === 'Cash Withdrawal')
+            ), t => t.amount);
+            const limit = Math.max(0, ddNum(card.availableLimit));
+            const availableToWithdraw = Math.max(0, limit - monthSpend);
+            const withdrawalAmount = Math.floor((availableToWithdraw * 0.97) / 10) * 10;
+            const chargeInput = document.getElementById('dd-withdrawal-charge-percent');
+            const chargeError = document.getElementById('dd-withdrawal-charge-error');
+            if (!chargeInput) return;
+            if (source && source.id === 'dd-withdrawal-charge-percent') {
+                const enteredPercentage = Number(chargeInput.value);
+                const validPercentage = chargeInput.value !== '' && Number.isFinite(enteredPercentage) && enteredPercentage >= 0 && enteredPercentage < 100;
+                chargeInput.setCustomValidity(validPercentage ? '' : 'Enter a charge percentage from 0% up to (but not including) 100%.');
+                chargeInput.setAttribute('aria-invalid', String(!validPercentage));
+                chargeError.classList.toggle('hidden', validPercentage);
+                if (!validPercentage) {
+                    ['dd-withdrawal-deducted', 'dd-withdrawal-charge', 'dd-withdrawal-cashback', 'dd-withdrawal-net'].forEach(id => {
+                        const element = document.getElementById(id);
+                        if (element) element.textContent = '—';
+                    });
+                    return;
+                }
+                WITHDRAWAL_CHARGE_PERCENTAGES[ddWithdrawalCategory] = enteredPercentage;
+                saveWithdrawalChargePercentages();
+            } else {
+                chargeInput.value = String(WITHDRAWAL_CHARGE_PERCENTAGES[ddWithdrawalCategory]);
+                chargeInput.setCustomValidity('');
+                chargeInput.setAttribute('aria-invalid', 'false');
+                chargeError.classList.add('hidden');
+            }
+            const chargePercentage = WITHDRAWAL_CHARGE_PERCENTAGES[ddWithdrawalCategory];
+            const chargeFactor = 1 - chargePercentage / 100;
+            const amountCharged = withdrawalAmount / chargeFactor;
+            const rate = cardRateFor(card, ddWithdrawalCategory);
+            const cashback = amountCharged * rate / 100;
+            const withdrawalCharge = amountCharged - withdrawalAmount;
+            const netCashback = cashback - withdrawalCharge;
+            const values = {
+                'dd-withdrawal-limit': `AED ${formatAED(limit)}`,
+                'dd-withdrawal-spend': `AED ${formatAED(monthSpend)}`,
+                'dd-withdrawal-available': `AED ${formatAED(availableToWithdraw)}`,
+                'dd-withdrawal-amount': `AED ${formatAED(withdrawalAmount)}`,
+                'dd-withdrawal-deducted': `AED ${formatAED(amountCharged)}`,
+                'dd-withdrawal-rate': `${fmtRate(rate)}%`,
+                'dd-withdrawal-cashback': `AED ${formatAED(cashback)}`,
+                'dd-withdrawal-charge': `AED ${formatAED(withdrawalCharge)}`,
+                'dd-withdrawal-net': `AED ${formatAED(netCashback)}`
+            };
+            Object.entries(values).forEach(([id, value]) => {
+                const element = document.getElementById(id);
+                if (element) element.textContent = value;
+            });
+        }
+        function ddOpenWithdrawalPlanner() {
+            const act = activeCards().filter(c => c.cardType !== 'debit');
+            const content = `<div class="mb-5">
+                    <p class="text-[10px] font-semibold uppercase tracking-[.2em] text-indigo-500 dark:text-indigo-300">Withdrawal estimate</p>
+                    <h4 class="mt-1 text-xl font-bold text-slate-900 dark:text-white">Cash withdrawal &amp; cashback</h4>
+                    <p class="mt-1 text-xs text-slate-500">Choose a card and cashback category, then enter its withdrawal charge percentage to see the estimate.</p>
+                </div>
+                ${ddWithdrawalPlannerHtml(act)}`;
+            ddModal('Withdrawal Planner', content);
+            ddUpdateWithdrawalPlanner();
         }
         function ddInsights(target) {
             target = ddNum(target) || 30;
@@ -5697,8 +6194,8 @@
                     </div>
                     <div class="fp-seg">
                         <button type="button" onclick="setFinancialPeriod('month')" class="${activeButton('month')}">${monthLabel(currentMonth)}</button>
-                        <button type="button" onclick="setFinancialPeriod('last-month')" class="${activeButton('last-month')}">Last month</button>
-                        <button type="button" onclick="setFinancialPeriod('90d')" class="${activeButton('90d')}">Last 90d</button>
+                        <button type="button" onclick="setFinancialPeriod('last-month')" class="${activeButton('last-month')}">Last Month</button>
+                        <button type="button" onclick="setFinancialPeriod('90d')" class="${activeButton('90d')}">Last 3 Months</button>
                         <button type="button" onclick="setFinancialPeriod('ytd')" class="${activeButton('ytd')}">YTD</button>
                         <button type="button" onclick="setFinancialPeriod('all')" class="${activeButton('all')}">All</button>
                     </div>
