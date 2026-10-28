@@ -784,6 +784,14 @@
             backdrop-filter: blur(20px) saturate(145%);
             box-shadow: 0 12px 34px rgba(30,41,59,.08), inset 0 1px 0 rgba(255,255,255,.9) !important;
         }
+        html:not(.dark) #app-shell main #saved-cards-section {
+            background: linear-gradient(135deg, rgba(255,255,255,.64), rgba(255,255,255,.3)) !important;
+            border: 1px solid rgba(255,255,255,.88) !important;
+            -webkit-backdrop-filter: blur(28px) saturate(160%);
+            backdrop-filter: blur(28px) saturate(160%);
+            box-shadow: 0 16px 42px rgba(30,41,59,.1), inset 0 1px 0 rgba(255,255,255,.92) !important;
+        }
+        /* ---- Blur + saturation for panels, tiles, and sections (dark mode is already blurred) ---- 
         html:not(.dark) #filters-section > div,
         html:not(.dark) #history-section,
         html:not(.dark) #saved-cards-section > div,
@@ -792,6 +800,8 @@
             -webkit-backdrop-filter: blur(16px) saturate(145%);
             backdrop-filter: blur(16px) saturate(145%);
         }
+        */
+        
         html:not(.dark) #history-section,
         html:not(.dark) #app-shell main .panel > div.bg-white.dark\:bg-slate-800,
         html:not(.dark) #app-shell main .panel > div.bg-white.rounded-xl {
@@ -972,6 +982,71 @@
             #settings-modal > div > div:last-child > div > div { flex-direction: column; }
             #settings-modal button[onclick="addCustomTransactionType()"],
             #settings-modal button[onclick="addCustomCategory()"] { width: 100%; }
+        }
+        #dd-modal {
+            background: rgba(15,23,42,.28) !important;
+            -webkit-backdrop-filter: blur(14px) saturate(145%);
+            backdrop-filter: blur(14px) saturate(145%);
+        }
+        #dd-modal > div {
+            border: 1px solid rgba(255,255,255,.68);
+            background: linear-gradient(145deg, rgba(255,255,255,.82), rgba(248,250,252,.68)) !important;
+            box-shadow: 0 30px 90px rgba(15,23,42,.24), inset 0 1px 0 rgba(255,255,255,.78);
+            -webkit-backdrop-filter: blur(28px) saturate(165%);
+            backdrop-filter: blur(28px) saturate(165%);
+        }
+        #dd-modal > div > div:first-child {
+            border-bottom: 1px solid rgba(148,163,184,.2);
+            padding-bottom: .85rem;
+        }
+        html:not(.dark) #dd-modal {
+            background: rgba(15,23,42,.24) !important;
+            -webkit-backdrop-filter: blur(14px) saturate(145%);
+            backdrop-filter: blur(14px) saturate(145%);
+        }
+        html:not(.dark) #dd-modal > div {
+            border-color: rgba(255,255,255,.72) !important;
+            background: linear-gradient(145deg, rgba(255,255,255,.82), rgba(248,250,252,.68)) !important;
+            box-shadow: 0 30px 90px rgba(15,23,42,.24), inset 0 1px 0 rgba(255,255,255,.78) !important;
+            -webkit-backdrop-filter: blur(28px) saturate(165%);
+            backdrop-filter: blur(28px) saturate(165%);
+        }
+        html:not(.dark) #recommender-modal,
+        html:not(.dark) #import-modal,
+        html:not(.dark) #card-modal {
+            background: rgba(15,23,42,.24) !important;
+            -webkit-backdrop-filter: blur(14px) saturate(145%);
+            backdrop-filter: blur(14px) saturate(145%);
+        }
+        html:not(.dark) #app-shell main #recommender-modal #recommender-section,
+        html:not(.dark) #app-shell main #import-modal #import-section {
+            border: 1px solid rgba(255,255,255,.74) !important;
+            background: linear-gradient(145deg, rgba(255,255,255,.82), rgba(248,250,252,.68)) !important;
+            box-shadow: 0 30px 90px rgba(15,23,42,.24), inset 0 1px 0 rgba(255,255,255,.8) !important;
+            -webkit-backdrop-filter: blur(28px) saturate(165%);
+            backdrop-filter: blur(28px) saturate(165%) !important;
+        }
+        html:not(.dark) #card-modal > div {
+            border: 1px solid rgba(255,255,255,.74) !important;
+            background: linear-gradient(145deg, rgba(255,255,255,.82), rgba(248,250,252,.68)) !important;
+            box-shadow: 0 30px 90px rgba(15,23,42,.24), inset 0 1px 0 rgba(255,255,255,.8) !important;
+            -webkit-backdrop-filter: blur(28px) saturate(165%);
+            backdrop-filter: blur(28px) saturate(165%) !important;
+        }
+        html:not(.dark) #app-shell main #recommender-modal #recommender-section .rec-mini {
+            -webkit-backdrop-filter: none;
+            backdrop-filter: none;
+        }
+        html.dark #dd-modal {
+            background: rgba(2,6,23,.4) !important;
+        }
+        html.dark #dd-modal > div {
+            border-color: rgba(148,163,184,.2);
+            background: linear-gradient(145deg, rgba(30,41,59,.82), rgba(15,23,42,.76)) !important;
+            box-shadow: 0 30px 90px rgba(0,0,0,.42), inset 0 1px 0 rgba(255,255,255,.08);
+        }
+        html.dark #dd-modal > div > div:first-child {
+            border-bottom-color: rgba(148,163,184,.14);
         }
         #tx-modal { background: rgba(8,12,24,.66); }
         #tx-modal > div {
@@ -1276,12 +1351,12 @@
                         <div id="header-menu-dropdown" class="hidden absolute right-0 mt-2 w-56 bg-white dark:bg-[#0f121a] text-slate-800 dark:text-slate-200 rounded-xl shadow-2xl border border-slate-100 dark:border-slate-700 py-2 z-50">
                             <p id="user-email-label" class="hidden px-4 py-1.5 text-xs text-slate-400 dark:text-slate-500 truncate"></p>
                             <button onclick="exportBackup()" class="w-full text-left px-4 py-2 text-sm rounded-lg hover:bg-white/5 transition">📤 Export Backup</button>
+                            <label for="backup-file-input" class="block w-full text-left px-4 py-2 rounded-lg text-sm hover:bg-white/5 transition cursor-pointer">📥 Import Backup</label>
                             <button onclick="exportDueDatesIcs()" class="w-full text-left px-4 py-2 text-sm rounded-lg hover:bg-white/5 transition">📅 Export Due Dates</button>
                             <button onclick="enableDueReminders()" class="w-full text-left px-4 py-2 text-sm rounded-lg hover:bg-white/5 transition">🔔 Enable Due Reminders</button>
+                            <button onclick="repairMissingCardLinks()" class="w-full text-left px-4 py-2 rounded-lg text-sm hover:bg-white/5 transition">🔗 Fix Card Links</button> 
                             <button onclick="ddInsights()" class="w-full text-left px-4 py-2 text-sm rounded-lg hover:bg-white/5 transition">📊 Insights</button>
                             <button onclick="document.getElementById('header-menu-dropdown').classList.add('hidden'); ddOpenWithdrawalPlanner()" class="w-full rounded-lg text-left px-4 py-2 text-sm hover:bg-white/5 transition">💸 Withdrawal Planner</button>
-                            <label for="backup-file-input" class="block w-full text-left px-4 py-2 rounded-lg text-sm hover:bg-white/5 transition cursor-pointer">📥 Import Backup</label>
-                            <button onclick="repairMissingCardLinks()" class="w-full text-left px-4 py-2 rounded-lg text-sm hover:bg-white/5 transition">🔗 Fix Card Links</button> 
                             <button onclick="clearAllData()" class="flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] text-red-400/90 hover:text-red-300 hover:bg-red-500/10 transition w-full text-left"><svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg> Reset Data</button>
                             <button id="sign-out-btn" onclick="signOut()" style="text-align:center;" class="hidden w-full text-left px-4 py-2 text-sm hover:text-white hover:bg-red-500/90 bg-red-500/10 text-red-400/90 transition border-t border-slate-100 dark:border-slate-700 mt-1 pt-2">Sign Out</button>
                         </div>
@@ -5121,6 +5196,12 @@
             const cardOptions = act.map(c => `<option value="${escapeHtml(c.id)}" ${String(c.id) === ddWithdrawalCardId ? 'selected' : ''}>${escapeHtml(c.name)}</option>`).join('');
             const categoryOptions = categories.map(category => `<option value="${escapeHtml(category)}" ${category === selectedCategory ? 'selected' : ''}>${escapeHtml(category)} · ${fmtRate(cardRateFor(selectedCard, category))}%</option>`).join('');
             const result = (id, label, color = 'text-slate-900 dark:text-slate-100') => `<div class="rounded-xl border border-slate-200 bg-white p-3 dark:border-white/[.07] dark:bg-black/15"><p class="text-[10px] uppercase tracking-wider text-slate-500">${label}</p><p id="${id}" class="mono mt-1 text-sm font-semibold ${color}">AED 0.00</p></div>`;
+            const selectedMonth = localDateKey().slice(0, 7);
+            const selectedMonthSpend = ddSum(cardTxList(selectedCard).filter(t =>
+                (t.date || '').startsWith(selectedMonth) && (t.type === 'Purchase' || t.type === 'Cash Withdrawal')
+            ), t => t.amount);
+            const suggestedAvailable = Math.max(0, ddNum(selectedCard.availableLimit) - selectedMonthSpend);
+            const suggestedWithdrawal = Math.floor((suggestedAvailable * 0.97) / 10) * 10;
             return `<div class="grid gap-3 sm:grid-cols-2">
                     <label class="block text-xs font-medium text-slate-600 dark:text-slate-400">Card
                         <select id="dd-withdrawal-card" onchange="ddUpdateWithdrawalPlanner(this)" class="mt-1.5 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 dark:border-white/10 dark:bg-slate-900 dark:text-slate-100">${cardOptions}</select>
@@ -5139,14 +5220,21 @@
                     ${result('dd-withdrawal-limit', 'Total credit card limit')}
                     ${result('dd-withdrawal-spend', 'Current month spend')}
                     ${result('dd-withdrawal-available', 'Available to withdraw', 'text-indigo-700 dark:text-indigo-200')}
-                    ${result('dd-withdrawal-amount', 'Estimated withdrawal amount', 'text-indigo-700 dark:text-indigo-200')}
+                    <div class="rounded-xl border border-slate-200 bg-white p-3 dark:border-white/[.07] dark:bg-black/15">
+                        <label for="dd-withdrawal-amount-input" class="block text-[10px] uppercase tracking-wider text-slate-500">Estimated withdrawal amount (AED)</label>
+                        <input id="dd-withdrawal-amount-input" type="number" min="0" step="0.01" value="${suggestedWithdrawal.toFixed(2)}" oninput="ddUpdateWithdrawalPlanner(this)" aria-describedby="dd-withdrawal-amount-error dd-withdrawal-availability-warning" class="mono mt-1 w-full rounded-lg border border-slate-300 bg-white px-2 py-1 text-sm font-semibold text-indigo-700 dark:border-white/10 dark:bg-slate-900 dark:text-indigo-200">
+                        <p id="dd-withdrawal-amount-error" class="mt-1 hidden text-[10px] text-rose-600 dark:text-rose-300" role="alert">Enter a withdrawal amount of zero or more.</p>
+                        <p id="dd-withdrawal-availability-warning" class="mt-1 hidden text-[10px] text-amber-700 dark:text-amber-300" role="status">This amount exceeds the card's estimated available amount.</p>
+                    </div>
                     ${result('dd-withdrawal-deducted', 'Amount charged to card')}
                     ${result('dd-withdrawal-rate', 'Cashback rate')}
-                    ${result('dd-withdrawal-cashback', 'Estimated total cashback', 'text-emerald-700 dark:text-emerald-300')}
+                    ${result('dd-withdrawal-cashback-used', 'Cashback earned this month')}
+                    ${result('dd-withdrawal-cap-remaining', 'Cashback cap remaining')}
+                    ${result('dd-withdrawal-cashback', 'Estimated cashback after caps', 'text-emerald-700 dark:text-emerald-300')}
                     ${result('dd-withdrawal-charge', 'Withdrawal charge estimate', 'text-amber-700 dark:text-amber-300')}
                     ${result('dd-withdrawal-net', 'Estimated cashback received', 'text-emerald-700 dark:text-emerald-300')}
                 </div>
-                <p class="mt-3 text-[10px] leading-5 text-slate-500">Available to withdraw is estimated as card limit minus current-month spend. Set the charge percentage for the selected category (for example, 3% for Dining or Travel and 2.25% for Grocery). The amount charged is calculated as withdrawal amount ÷ (1 − charge percentage ÷ 100). This does not account for prior-cycle balances or issuer holds; confirm actual fees and cashback with your card issuer.</p>`;
+                <p class="mt-3 text-[10px] leading-5 text-slate-500">Enter the withdrawal amount you want to estimate; it is separate from the card's available amount. Available to withdraw is estimated as card limit minus current-month spend. Cashback is limited by the selected category cap and overall monthly cap configured for the card, after subtracting cashback already earned this month. Set the charge percentage for the selected category; the amount charged is calculated as withdrawal amount ÷ (1 − charge percentage ÷ 100). This does not account for prior-cycle balances or issuer holds; confirm actual fees and cashback with your card issuer.</p>`;
         }
         function ddUpdateWithdrawalPlanner(source) {
             const cardSelect = document.getElementById('dd-withdrawal-card');
@@ -5160,50 +5248,76 @@
             });
             ddWithdrawalCategory = categorySelect.value;
             const ym = localDateKey().slice(0, 7);
-            const monthSpend = ddSum(cardTxList(card).filter(t =>
-                (t.date || '').startsWith(ym) && (t.type === 'Purchase' || t.type === 'Cash Withdrawal')
+            const monthTxs = cardTxList(card).filter(t => (t.date || '').startsWith(ym));
+            const monthSpend = ddSum(monthTxs.filter(t =>
+                t.type === 'Purchase' || t.type === 'Cash Withdrawal'
             ), t => t.amount);
             const limit = Math.max(0, ddNum(card.availableLimit));
             const availableToWithdraw = Math.max(0, limit - monthSpend);
-            const withdrawalAmount = Math.floor((availableToWithdraw * 0.97) / 10) * 10;
+            const amountInput = document.getElementById('dd-withdrawal-amount-input');
+            if (!amountInput) return;
+            if (source && source.id === 'dd-withdrawal-card') {
+                amountInput.value = String(Math.floor((availableToWithdraw * 0.97) / 10) * 10);
+            }
+            const enteredAmount = Number(amountInput.value);
+            const validAmount = amountInput.value !== '' && Number.isFinite(enteredAmount) && enteredAmount >= 0;
+            amountInput.setCustomValidity(validAmount ? '' : 'Enter a withdrawal amount of zero or more.');
+            amountInput.setAttribute('aria-invalid', String(!validAmount));
+            document.getElementById('dd-withdrawal-amount-error').classList.toggle('hidden', validAmount);
+            document.getElementById('dd-withdrawal-availability-warning').classList.toggle('hidden', !validAmount || enteredAmount <= availableToWithdraw);
             const chargeInput = document.getElementById('dd-withdrawal-charge-percent');
             const chargeError = document.getElementById('dd-withdrawal-charge-error');
             if (!chargeInput) return;
+            let validPercentage;
             if (source && source.id === 'dd-withdrawal-charge-percent') {
                 const enteredPercentage = Number(chargeInput.value);
-                const validPercentage = chargeInput.value !== '' && Number.isFinite(enteredPercentage) && enteredPercentage >= 0 && enteredPercentage < 100;
+                validPercentage = chargeInput.value !== '' && Number.isFinite(enteredPercentage) && enteredPercentage >= 0 && enteredPercentage < 100;
                 chargeInput.setCustomValidity(validPercentage ? '' : 'Enter a charge percentage from 0% up to (but not including) 100%.');
                 chargeInput.setAttribute('aria-invalid', String(!validPercentage));
                 chargeError.classList.toggle('hidden', validPercentage);
-                if (!validPercentage) {
-                    ['dd-withdrawal-deducted', 'dd-withdrawal-charge', 'dd-withdrawal-cashback', 'dd-withdrawal-net'].forEach(id => {
-                        const element = document.getElementById(id);
-                        if (element) element.textContent = '—';
-                    });
-                    return;
+                if (validPercentage) {
+                    WITHDRAWAL_CHARGE_PERCENTAGES[ddWithdrawalCategory] = enteredPercentage;
+                    saveWithdrawalChargePercentages();
                 }
-                WITHDRAWAL_CHARGE_PERCENTAGES[ddWithdrawalCategory] = enteredPercentage;
-                saveWithdrawalChargePercentages();
             } else {
                 chargeInput.value = String(WITHDRAWAL_CHARGE_PERCENTAGES[ddWithdrawalCategory]);
                 chargeInput.setCustomValidity('');
                 chargeInput.setAttribute('aria-invalid', 'false');
                 chargeError.classList.add('hidden');
+                validPercentage = true;
             }
             const chargePercentage = WITHDRAWAL_CHARGE_PERCENTAGES[ddWithdrawalCategory];
+            if (!validAmount || !validPercentage) {
+                ['dd-withdrawal-deducted', 'dd-withdrawal-cashback', 'dd-withdrawal-charge', 'dd-withdrawal-net'].forEach(id => {
+                    document.getElementById(id).textContent = '—';
+                });
+                return;
+            }
+            const withdrawalAmount = enteredAmount;
             const chargeFactor = 1 - chargePercentage / 100;
             const amountCharged = withdrawalAmount / chargeFactor;
             const rate = cardRateFor(card, ddWithdrawalCategory);
-            const cashback = amountCharged * rate / 100;
+            const potentialCashback = amountCharged * rate / 100;
+            const caps = ddCaps(ddRule(card));
+            const cashbackUsedThisMonth = ddSum(monthTxs, t => t.cashback);
+            const applicableCaps = [ddWithdrawalCategory, 'All']
+                .filter(key => Object.prototype.hasOwnProperty.call(caps, key))
+                .map(key => {
+                    const used = ddSum(monthTxs.filter(t => key === 'All' || t.category === key), t => t.cashback);
+                    return Math.max(0, caps[key] - used);
+                });
+            const capRemaining = applicableCaps.length ? Math.min(...applicableCaps) : null;
+            const cashback = capRemaining === null ? potentialCashback : Math.min(potentialCashback, capRemaining);
             const withdrawalCharge = amountCharged - withdrawalAmount;
             const netCashback = cashback - withdrawalCharge;
             const values = {
                 'dd-withdrawal-limit': `AED ${formatAED(limit)}`,
                 'dd-withdrawal-spend': `AED ${formatAED(monthSpend)}`,
                 'dd-withdrawal-available': `AED ${formatAED(availableToWithdraw)}`,
-                'dd-withdrawal-amount': `AED ${formatAED(withdrawalAmount)}`,
                 'dd-withdrawal-deducted': `AED ${formatAED(amountCharged)}`,
                 'dd-withdrawal-rate': `${fmtRate(rate)}%`,
+                'dd-withdrawal-cashback-used': `AED ${formatAED(cashbackUsedThisMonth)}`,
+                'dd-withdrawal-cap-remaining': capRemaining === null ? 'No cap set' : `AED ${formatAED(capRemaining)}`,
                 'dd-withdrawal-cashback': `AED ${formatAED(cashback)}`,
                 'dd-withdrawal-charge': `AED ${formatAED(withdrawalCharge)}`,
                 'dd-withdrawal-net': `AED ${formatAED(netCashback)}`
