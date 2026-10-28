@@ -625,9 +625,9 @@
         html:not(.dark) #privacy-mode-toggle,
         html:not(.dark) #theme-mode-toggle { background-color: #fff !important; border-color: #e2e8f0 !important; }
         html:not(.dark) #header-menu-dropdown { background: rgba(255,255,255,.96) !important; border-color: #e2e8f0 !important; box-shadow: 0 16px 38px rgba(15,23,42,.16) !important; }
-        html:not(.dark) #header-menu-dropdown button,
+        html:not(.dark) #header-menu-dropdown button:not(#change-pw-btn):not(#sign-out-btn),
         html:not(.dark) #header-menu-dropdown label { color: #334155 !important; }
-        html:not(.dark) #header-menu-dropdown button:hover,
+        html:not(.dark) #header-menu-dropdown button:not(#change-pw-btn):not(#sign-out-btn):hover,
         html:not(.dark) #header-menu-dropdown label:hover { background-color: #f1f5f9 !important; }
         html:not(.dark) #header-menu-dropdown button[onclick="clearAllData()"],
         html:not(.dark) #header-menu-dropdown #sign-out-btn { color: #b91c1c !important; }
@@ -636,6 +636,23 @@
             color: #991b1b !important;
             background-color: rgba(239,68,68,.1) !important;
         }
+        html:not(.dark) body #header-menu-dropdown button#change-pw-btn:hover,
+        html:not(.dark) body #header-menu-dropdown button#change-pw-btn:focus-visible {
+            color: #fff !important;
+            background: linear-gradient(135deg, #eab308, #ca8a04) !important;
+            box-shadow: 0 5px 14px rgba(202,138,4,.3);
+            outline: none;
+        }
+        html:not(.dark) #header-menu-dropdown #change-pw-btn { color: #a16207 !important; }
+        html:not(.dark) #header-menu-dropdown #sign-out-btn:hover,
+        html:not(.dark) #header-menu-dropdown #sign-out-btn:focus-visible {
+            color: #fff !important;
+            background-color: rgba(239,68,68,.9) !important;
+            box-shadow: 0 5px 14px rgba(220,38,38,.2);
+            outline: none;
+        }
+        html:not(.dark) #header-menu-dropdown #change-pw-btn,
+        html:not(.dark) #header-menu-dropdown #sign-out-btn { transition: color .18s ease, background-color .18s ease, box-shadow .18s ease; }
         html:not(.dark) .text-white { color: #1e293b !important; }
         html:not(.dark) button.text-white { color: #fff !important; }
         html:not(.dark) .cc,
@@ -1282,10 +1299,112 @@
         html.dark #auth-gate .auth-input:focus { border-color: #818cf8; background: rgba(15,23,42,.96); }
         html.dark #auth-gate #auth-signup-btn, html.dark #auth-gate #auth-back-btn { color: #e2e8f0; background: rgba(71,85,105,.56); border-color: rgba(148,163,184,.18); }
         html.dark #auth-gate #auth-signup-btn:hover, html.dark #auth-gate #auth-back-btn:hover { background: rgba(71,85,105,.78); }
+        #change-pw-modal { background: rgba(15,23,42,.42) !important; }
+        #change-pw-modal #change-pw-form {
+            max-width: 30rem;
+            overflow: hidden;
+            padding: 0;
+            border: 1px solid rgba(255,255,255,.72);
+            border-radius: 1.65rem;
+            background: linear-gradient(145deg, rgba(255,255,255,.72), rgba(248,250,255,.58));
+            color: #172033;
+            -webkit-backdrop-filter: blur(30px) saturate(170%);
+            backdrop-filter: blur(30px) saturate(170%);
+            box-shadow: 0 32px 90px rgba(15,23,42,.28), inset 0 1px 0 rgba(255,255,255,.92), 0 0 0 1px rgba(255,255,255,.24);
+        }
+        #change-pw-modal .cp-header {
+            display: flex;
+            align-items: flex-start;
+            gap: 1rem;
+            padding: 1.5rem 1.65rem 1.25rem;
+            border-bottom: 1px solid rgba(148,163,184,.18);
+            background: linear-gradient(120deg, rgba(224,231,255,.7), rgba(255,255,255,.48) 58%, rgba(237,233,254,.62));
+        }
+        #change-pw-modal .cp-mark {
+            display: grid;
+            width: 3rem;
+            height: 3rem;
+            flex: none;
+            place-items: center;
+            border-radius: 1rem;
+            color: #fff;
+            background: linear-gradient(140deg, #6366f1, #4f46e5 55%, #7c3aed);
+            box-shadow: 0 8px 18px rgba(79,70,229,.28), inset 0 1px 0 rgba(255,255,255,.3);
+        }
+        #change-pw-modal .cp-mark svg { width: 1.45rem; height: 1.45rem; }
+        #change-pw-modal .cp-heading { color: #172033; font-family: 'Plus Jakarta Sans', Inter, sans-serif; font-size: 1.15rem; font-weight: 800; letter-spacing: -.035em; line-height: 1.3; }
+        #change-pw-modal .cp-description { margin-top: .35rem; color: #64748b; font-size: .8rem; line-height: 1.5; }
+        #change-pw-modal .cp-form-body { padding: 1.35rem 1.65rem 1.55rem; }
+        #change-pw-modal .cp-label { display: block; margin-bottom: .45rem; color: #475569; font-size: .68rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; }
+        #change-pw-modal .cp-input {
+            width: 100%;
+            min-height: 3rem;
+            border: 1px solid #dbe3ee;
+            border-radius: .85rem;
+            background: rgba(255,255,255,.9);
+            padding: .75rem .95rem;
+            color: #172033;
+            font-size: .88rem;
+            outline: none;
+            transition: border-color .18s ease, box-shadow .18s ease, background .18s ease;
+        }
+        #change-pw-modal .cp-input:focus { border-color: #818cf8; background: #fff; box-shadow: 0 0 0 4px rgba(99,102,241,.13); }
+        #change-pw-modal .cp-password-hint { display: flex; align-items: center; gap: .4rem; color: #64748b; font-size: .68rem; }
+        #change-pw-modal .cp-password-hint svg { width: .9rem; height: .9rem; color: #059669; }
+        #change-pw-modal .cp-actions { display: flex; gap: .65rem; padding-top: .3rem; }
+        #change-pw-modal .cp-action {
+            min-height: 2.9rem;
+            border: 1px solid transparent;
+            border-radius: .85rem;
+            font-size: .85rem;
+            font-weight: 700;
+            transition: transform .18s ease, box-shadow .18s ease, filter .18s ease, background .18s ease;
+        }
+        #change-pw-modal .cp-action:hover:not(:disabled) { transform: translateY(-1px); }
+        #change-pw-modal #cp-save-btn {
+            color: #fff;
+            background: linear-gradient(110deg, #4f46e5, #6366f1 58%, #7c3aed);
+            box-shadow: 0 7px 17px rgba(79,70,229,.25), inset 0 1px 0 rgba(255,255,255,.22);
+        }
+        #change-pw-modal #cp-save-btn:hover:not(:disabled) { filter: brightness(1.06); box-shadow: 0 10px 22px rgba(79,70,229,.32); }
+        #change-pw-modal #cp-save-btn:disabled { cursor: wait; opacity: .65; }
+        #change-pw-modal .cp-cancel-btn { color: #475569; background: rgba(226,232,240,.72); border-color: rgba(203,213,225,.7); }
+        #change-pw-modal .cp-cancel-btn:hover { background: #e2e8f0; }
+        html.dark #change-pw-modal { background: rgba(2,6,23,.72) !important; }
+        html:not(.dark) #change-pw-modal #change-pw-form {
+            border-color: rgba(255,255,255,.82) !important;
+            background: linear-gradient(145deg, rgba(255,255,255,.7), rgba(248,250,255,.54)) !important;
+            -webkit-backdrop-filter: blur(30px) saturate(170%);
+            backdrop-filter: blur(30px) saturate(170%);
+            box-shadow: 0 32px 90px rgba(15,23,42,.28), inset 0 1px 0 rgba(255,255,255,.92), 0 0 0 1px rgba(255,255,255,.24) !important;
+        }
+        html:not(.dark) #change-pw-modal .cp-header {
+            background: linear-gradient(120deg, rgba(224,231,255,.68), rgba(255,255,255,.46) 58%, rgba(237,233,254,.58));
+        }
+        html.dark #change-pw-modal #change-pw-form {
+            border-color: rgba(148,163,184,.2);
+            background: linear-gradient(155deg, rgba(30,41,59,.98), rgba(15,23,42,.98));
+            color: #f1f5f9;
+            -webkit-backdrop-filter: blur(30px) saturate(150%);
+            backdrop-filter: blur(30px) saturate(150%);
+            box-shadow: 0 32px 90px rgba(0,0,0,.54), inset 0 1px 0 rgba(255,255,255,.07);
+        }
+        html.dark #change-pw-modal .cp-header { border-color: rgba(148,163,184,.14); background: linear-gradient(120deg, rgba(49,46,129,.28), rgba(30,41,59,.72) 58%, rgba(76,29,149,.18)); }
+        html.dark #change-pw-modal .cp-heading { color: #f8fafc; }
+        html.dark #change-pw-modal .cp-description,
+        html.dark #change-pw-modal .cp-password-hint { color: #94a3b8; }
+        html.dark #change-pw-modal .cp-label { color: #cbd5e1; }
+        html.dark #change-pw-modal .cp-input { border-color: rgba(148,163,184,.22); background: rgba(15,23,42,.78); color: #f1f5f9; }
+        html.dark #change-pw-modal .cp-input:focus { border-color: #818cf8; background: rgba(15,23,42,.96); }
+        html.dark #change-pw-modal .cp-cancel-btn { color: #e2e8f0; background: rgba(71,85,105,.56); border-color: rgba(148,163,184,.18); }
+        html.dark #change-pw-modal .cp-cancel-btn:hover { background: rgba(71,85,105,.78); }
         @media (max-width: 480px) {
             #auth-gate .auth-panel-header { padding: 1.35rem 1.25rem 1.15rem; }
             #auth-gate .auth-form { padding: 1.25rem; }
             #auth-gate .auth-title { font-size: 1.05rem; }
+            #change-pw-modal .cp-header { padding: 1.3rem 1.25rem 1.1rem; }
+            #change-pw-modal .cp-form-body { padding: 1.2rem 1.25rem 1.3rem; }
+            #change-pw-modal .cp-heading { font-size: 1.05rem; }
         }
         </style>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -1444,7 +1563,6 @@
                             </span>
                         </button>
                         <div id="header-menu-dropdown" class="hidden absolute right-0 mt-2 w-56 bg-white dark:bg-[#0f121a] text-slate-800 dark:text-slate-200 rounded-xl shadow-2xl border border-slate-100 dark:border-slate-700 py-2 z-50">
-                            <p id="user-email-label" class="hidden px-4 py-1.5 text-xs text-slate-400 dark:text-slate-500 truncate"></p>
                             <button onclick="exportBackup()" class="w-full text-left px-4 py-2 text-sm rounded-lg hover:bg-white/5 transition">📤 Export Backup</button>
                             <label for="backup-file-input" class="block w-full text-left px-4 py-2 rounded-lg text-sm hover:bg-white/5 transition cursor-pointer">📥 Import Backup</label>
                             <button onclick="exportDueDatesIcs()" class="w-full text-left px-4 py-2 text-sm rounded-lg hover:bg-white/5 transition">📅 Export Due Dates</button>
@@ -1453,8 +1571,9 @@
                             <button onclick="ddInsights()" class="w-full text-left px-4 py-2 text-sm rounded-lg hover:bg-white/5 transition">📊 Insights</button>
                             <button onclick="document.getElementById('header-menu-dropdown').classList.add('hidden'); ddOpenWithdrawalPlanner()" class="w-full rounded-lg text-left px-4 py-2 text-sm hover:bg-white/5 transition">💸 Withdrawal Planner</button>
                             <button onclick="clearAllData()" class="flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] text-red-400/90 hover:text-red-300 hover:bg-red-500/10 transition w-full text-left"><svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg> Reset Data</button>
-                            <button id="change-pw-btn" onclick="openChangePassword()" class="hidden w-full text-left px-4 py-2 text-sm rounded-lg hover:bg-white/5 transition">🔑 Change Password</button>
-                            <button id="sign-out-btn" onclick="signOut()" style="text-align:center;" class="hidden w-full text-left px-4 py-2 text-sm hover:text-white hover:bg-red-500/90 bg-red-500/10 text-red-400/90 transition border-t border-slate-100 dark:border-slate-700 mt-1 pt-2">Sign Out</button>
+                            <button id="change-pw-btn" onclick="openChangePassword()" style="text-align:center;" class="hidden w-full text-left px-4 py-2 text-sm hover:text-white hover:bg-yellow-500/90 bg-yellow-500/10 text-yellow-400/90 transition">Change Password</button>
+                            <button id="sign-out-btn" onclick="signOut()" style="text-align:center;" class="hidden w-full text-left px-4 py-2 text-sm hover:text-white hover:bg-red-500/90 bg-red-500/10 text-red-400/90 transition border-t border-slate-100 dark:border-slate-700 ">Sign Out</button>
+                            <p id="user-email-label" style="text-align:center;" class="hidden px-4 py-1.5 text-xs text-slate-400 dark:text-slate-500 truncate"></p>
                         </div>
                     </div>
                 </div>
@@ -2112,28 +2231,36 @@
 
     <!-- CHANGE PASSWORD MODAL (signed-in users) -->
     <div id="change-pw-modal" class="fixed inset-0 z-[55] hidden flex items-center justify-center bg-slate-950/65 backdrop-blur-md p-4">
-        <form id="change-pw-form" class="w-full max-w-sm bg-white dark:bg-[#0f121a] text-slate-800 dark:text-slate-200 rounded-2xl shadow-2xl border border-slate-100 dark:border-slate-700 p-6 space-y-4">
-            <div>
-                <h3 class="text-lg font-bold">Change password</h3>
-                <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Enter your current password, then choose a new one.</p>
+        <form id="change-pw-form" class="w-full space-y-4">
+            <div class="cp-header">
+                <span class="cp-mark" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 1 1 8 0v3"/><path d="m9 15 2 2 4-4"/></svg>
+                </span>
+                <div>
+                    <h3 class="cp-heading">Change password</h3>
+                    <p class="cp-description">Verify your current password and secure your account with a new one.</p>
+                </div>
             </div>
-            <div>
-                <label for="cp-current" class="block text-xs font-semibold mb-1">Current password</label>
-                <input type="password" id="cp-current" autocomplete="current-password" required class="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-transparent px-3 py-2 text-sm">
-            </div>
-            <div>
-                <label for="cp-new" class="block text-xs font-semibold mb-1">New password</label>
-                <input type="password" id="cp-new" autocomplete="new-password" required minlength="6" class="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-transparent px-3 py-2 text-sm">
-            </div>
-            <div>
-                <label for="cp-confirm" class="block text-xs font-semibold mb-1">Confirm new password</label>
-                <input type="password" id="cp-confirm" autocomplete="new-password" required minlength="6" class="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-transparent px-3 py-2 text-sm">
-            </div>
-            <p id="cp-error" class="text-xs text-red-600 hidden"></p>
-            <p id="cp-info" class="text-xs text-emerald-600 hidden"></p>
-            <div class="flex gap-2 pt-1">
-                <button type="submit" id="cp-save-btn" class="flex-1 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-semibold py-2 disabled:opacity-60">Update Password</button>
-                <button type="button" onclick="closeChangePassword()" class="flex-1 rounded-lg bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 text-sm font-semibold py-2">Cancel</button>
+            <div class="cp-form-body space-y-4">
+                <div>
+                    <label for="cp-current" class="cp-label">Current password</label>
+                    <input type="password" id="cp-current" autocomplete="current-password" required class="cp-input">
+                </div>
+                <div>
+                    <label for="cp-new" class="cp-label">New password</label>
+                    <input type="password" id="cp-new" autocomplete="new-password" required minlength="6" class="cp-input">
+                </div>
+                <div>
+                    <label for="cp-confirm" class="cp-label">Confirm new password</label>
+                    <input type="password" id="cp-confirm" autocomplete="new-password" required minlength="6" class="cp-input">
+                </div>
+                <p class="cp-password-hint"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg>Use at least 6 characters for your new password</p>
+                <p id="cp-error" class="text-xs text-red-600 hidden" role="alert"></p>
+                <p id="cp-info" class="text-xs text-emerald-600 hidden" role="status"></p>
+                <div class="cp-actions">
+                    <button type="submit" id="cp-save-btn" class="cp-action flex-1">Update Password</button>
+                    <button type="button" onclick="closeChangePassword()" class="cp-action cp-cancel-btn flex-1">Cancel</button>
+                </div>
             </div>
         </form>
     </div>
