@@ -1679,7 +1679,7 @@
                 </div>
                 -->
                 <div id="disabled-toggle-row" class="flex justify-end pt-3 pb-1"></div>
-                <div id="cards-list" class="grid grid-cols-1 sm:grid-cols-2  max-[1499px]:col-span-1 min-[1500px]:grid-cols-4 gap-4"></div>
+                <div id="cards-list" style="padding-top: 8px;;" class="grid grid-cols-1 sm:grid-cols-2  max-[1499px]:col-span-1 min-[1500px]:grid-cols-4 gap-4"></div>
             </section>
 
             <!-- ACTIVE INSTALLMENTS (EMI) -->
@@ -5691,10 +5691,10 @@
                 <div class="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
                     ${result('dd-withdrawal-limit', 'Total credit card limit')}
                     ${result('dd-withdrawal-spend', 'Current month spend')}
-                    ${result('dd-withdrawal-available', 'Available to withdraw', 'text-indigo-700 dark:text-indigo-200')}
+                    ${result('dd-withdrawal-available', 'Available to withdraw', 'text-indigo-700 dark:text-indigo-500')}
                     <div class="rounded-xl border border-slate-200 bg-white p-3 dark:border-white/[.07] dark:bg-black/15">
                         <p class="text-[10px] uppercase tracking-wider text-slate-500">Estimated withdrawal amount (AED)</p>
-                        <p id="dd-withdrawal-amount-text" class="mono mt-1 text-sm font-semibold text-indigo-700 dark:text-indigo-200">AED ${formatAED(suggestedWithdrawal)}</p>
+                        <p id="dd-withdrawal-amount-text" class="mono mt-1 text-sm font-semibold text-indigo-700 dark:text-indigo-500">AED ${formatAED(suggestedWithdrawal)}</p>
                         <input id="dd-withdrawal-amount-input" type="hidden" value="${suggestedWithdrawal}">
                         <p id="dd-withdrawal-amount-error" class="mt-1 hidden text-[10px] text-rose-600 dark:text-rose-300" role="alert">Enter a withdrawal amount of zero or more.</p>
                         <p id="dd-withdrawal-availability-warning" class="mt-1 hidden text-[10px] text-amber-700 dark:text-amber-300" role="status">This amount exceeds the card's estimated available amount.</p>
@@ -5707,7 +5707,7 @@
                     ${result('dd-withdrawal-charge', 'Withdrawal charge estimate', 'text-amber-700 dark:text-amber-300')}
                     ${result('dd-withdrawal-net', 'Estimated cashback received', 'text-emerald-700 dark:text-emerald-300')}
                 </div>
-                <p id="dd-withdrawal-suggestion-note" class="mt-3 text-xs font-medium text-indigo-700 dark:text-indigo-200"></p>
+                <p id="dd-withdrawal-suggestion-note" class="mt-3 text-xs font-bold text-indigo-700 dark:text-indigo-200"></p>
                 <p class="mt-2 text-[10px] leading-5 text-slate-500">The estimated withdrawal amount is calculated from the cashback cap remaining for the selected category (limited by the card's available amount). Available to withdraw is estimated as card limit minus current-month spend. Cashback is limited by the selected category cap and overall monthly cap configured for the card, after subtracting cashback already earned this month. Set the charge percentage for the selected category; the amount charged is calculated as withdrawal amount ÷ (1 − charge percentage ÷ 100). This does not account for prior-cycle balances or issuer holds; confirm actual fees and cashback with your card issuer.</p>`;
         }
         function ddUpdateWithdrawalPlanner(source) {
@@ -6063,15 +6063,15 @@
                 visibilityToggle.classList.toggle('hidden', cards.length === 0);
             }
             if (container) container.classList.toggle('hidden', !showSavedCards);
-            if (toggleRow) toggleRow.classList.toggle('hidden', !showSavedCards);
+            if (toggleRow) toggleRow.classList.toggle('hidden', !showSavedCards || disabledCount === 0);
             if (toggleRow) {
-                toggleRow.innerHTML = cards.length === 0 ? '' : `
-                    <button type="button" role="switch" aria-checked="${showDisabledCards}" onclick="setShowDisabledCards(!showDisabledCards)"
+                toggleRow.innerHTML = disabledCount === 0 ? '' : `
+                    <button type="button" role="switch" aria-checked="${showDisabledCards}" aria-label="${showDisabledCards ? 'Hide Disabled Cards' : 'Show Disabled Cards'}" title="${showDisabledCards ? 'Hide Disabled Cards' : 'Show Disabled Cards'}" onclick="setShowDisabledCards(!showDisabledCards)"
                         class="flex items-center gap-2 text-xs text-slate-400 hover:text-slate-200 transition select-none">
                         <span style="position:relative;display:inline-block;width:32px;height:18px;border-radius:999px;transition:background .2s;background:${showDisabledCards ? '#6366f1' : '#334155'}">
                             <span style="position:absolute;top:2px;left:2px;width:14px;height:14px;border-radius:999px;background:#fff;transition:transform .2s;transform:translateX(${showDisabledCards ? '14px' : '0'})"></span>
                         </span>
-                        Show disabled cards <span class="mono text-slate-500">(${disabledCount})</span>
+                        ${showDisabledCards ? 'Hide Disabled Cards' : 'Show Disabled Cards'}
                     </button>`;
             }
             if (cards.length === 0) {
