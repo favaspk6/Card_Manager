@@ -5626,6 +5626,33 @@
                 }
             }
         }
+        // Remaining cashback cap for a category (tightest of category cap and overall 'All' cap); null = no cap.
+        function ddWithdrawalCapRemaining(card, category, monthTxs) {
+            const caps = ddCaps(ddRule(card));
+            const remaining = [category, 'All']
+                .filter(key => Object.prototype.hasOwnProperty.call(caps, key))
+                .map(key => Math.max(0, caps[key] - ddSum(monthTxs.filter(t => key === 'All' || t.category === key), t => t.cashback)));
+            return remaining.length ? Math.min(...remaining) : null;
+        }
+        // Withdrawal amount that exactly uses the remaining cashback cap for the selected category
+        // (limited by what is still available on the card). No cap set -> based on available limit only.
+        function ddSuggestedWithdrawal(card, category, monthTxs, availableToWithdraw, chargePercentage) {
+            const factor = 1 - chargePercentage / 100;
+            const rate = cardRateFor(card, category);
+            const capRemaining = ddWithdrawalCapRemaining(card, category, monthTxs);
+            const availableWithdrawal = Math.max(0, availableToWithdraw * factor);
+            let amount = availableWithdrawal, basis = 'available';
+            if (capRemaining !== null) {
+                if (rate > 0) {
+                    // cashback = charged * rate% ; charged = withdrawal / factor
+                    amount = Math.min(availableWithdrawal, (capRemaining * 100 / rate) * factor);
+                    basis = 'cap';
+                } else {
+                    amount = 0; basis = 'norate';
+                }
+            }
+            return { amount: Math.max(0, Math.floor(amount + 1e-9)), capRemaining, basis };
+        }
         function ddWithdrawalPlannerHtml(act) {
             if (!act.length) return '<p class="rounded-xl border border-dashed border-slate-300 px-4 py-6 text-center text-xs text-slate-500 dark:border-white/10">Add an active credit card to estimate a withdrawal.</p>';
             const selectedCard = act.find(c => String(c.id) === String(ddWithdrawalCardId))
@@ -5645,7 +5672,8 @@
                 (t.date || '').startsWith(selectedMonth) && (t.type === 'Purchase' || t.type === 'Cash Withdrawal')
             ), t => t.amount);
             const suggestedAvailable = Math.max(0, ddNum(selectedCard.availableLimit) - selectedMonthSpend);
-            const suggestedWithdrawal = Math.floor((suggestedAvailable * 0.97) / 10) * 10;
+            const suggestedMonthTxs = cardTxList(selectedCard).filter(t => (t.date || '').startsWith(selectedMonth));
+            const suggestedWithdrawal = ddSuggestedWithdrawal(selectedCard, selectedCategory, suggestedMonthTxs, suggestedAvailable, WITHDRAWAL_CHARGE_PERCENTAGES[selectedCategory]).amount;
             return `<div class="grid gap-3 sm:grid-cols-2">
                     <label class="block text-xs font-medium text-slate-600 dark:text-slate-400">Card
                         <select id="dd-withdrawal-card" onchange="ddUpdateWithdrawalPlanner(this)" class="mt-1.5 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 dark:border-white/10 dark:bg-slate-900 dark:text-slate-100">${cardOptions}</select>
@@ -5665,8 +5693,9 @@
                     ${result('dd-withdrawal-spend', 'Current month spend')}
                     ${result('dd-withdrawal-available', 'Available to withdraw', 'text-indigo-700 dark:text-indigo-200')}
                     <div class="rounded-xl border border-slate-200 bg-white p-3 dark:border-white/[.07] dark:bg-black/15">
-                        <label for="dd-withdrawal-amount-input" class="block text-[10px] uppercase tracking-wider text-slate-500">Estimated withdrawal amount (AED)</label>
-                        <input id="dd-withdrawal-amount-input" type="number" min="0" step="0.01" value="${suggestedWithdrawal.toFixed(2)}" oninput="ddUpdateWithdrawalPlanner(this)" aria-describedby="dd-withdrawal-amount-error dd-withdrawal-availability-warning" class="mono mt-1 w-full rounded-lg border border-slate-300 bg-white px-2 py-1 text-sm font-semibold text-indigo-700 dark:border-white/10 dark:bg-slate-900 dark:text-indigo-200">
+                        <p class="text-[10px] uppercase tracking-wider text-slate-500">Estimated withdrawal amount (AED)</p>
+                        <p id="dd-withdrawal-amount-text" class="mono mt-1 text-sm font-semibold text-indigo-700 dark:text-indigo-200">AED ${formatAED(suggestedWithdrawal)}</p>
+                        <input id="dd-withdrawal-amount-input" type="hidden" value="${suggestedWithdrawal}">
                         <p id="dd-withdrawal-amount-error" class="mt-1 hidden text-[10px] text-rose-600 dark:text-rose-300" role="alert">Enter a withdrawal amount of zero or more.</p>
                         <p id="dd-withdrawal-availability-warning" class="mt-1 hidden text-[10px] text-amber-700 dark:text-amber-300" role="status">This amount exceeds the card's estimated available amount.</p>
                     </div>
@@ -5678,7 +5707,8 @@
                     ${result('dd-withdrawal-charge', 'Withdrawal charge estimate', 'text-amber-700 dark:text-amber-300')}
                     ${result('dd-withdrawal-net', 'Estimated cashback received', 'text-emerald-700 dark:text-emerald-300')}
                 </div>
-                <p class="mt-3 text-[10px] leading-5 text-slate-500">Enter the withdrawal amount you want to estimate; it is separate from the card's available amount. Available to withdraw is estimated as card limit minus current-month spend. Cashback is limited by the selected category cap and overall monthly cap configured for the card, after subtracting cashback already earned this month. Set the charge percentage for the selected category; the amount charged is calculated as withdrawal amount ÷ (1 − charge percentage ÷ 100). This does not account for prior-cycle balances or issuer holds; confirm actual fees and cashback with your card issuer.</p>`;
+                <p id="dd-withdrawal-suggestion-note" class="mt-3 text-xs font-medium text-indigo-700 dark:text-indigo-200"></p>
+                <p class="mt-2 text-[10px] leading-5 text-slate-500">The estimated withdrawal amount is calculated from the cashback cap remaining for the selected category (limited by the card's available amount). Available to withdraw is estimated as card limit minus current-month spend. Cashback is limited by the selected category cap and overall monthly cap configured for the card, after subtracting cashback already earned this month. Set the charge percentage for the selected category; the amount charged is calculated as withdrawal amount ÷ (1 − charge percentage ÷ 100). This does not account for prior-cycle balances or issuer holds; confirm actual fees and cashback with your card issuer.</p>`;
         }
         function ddUpdateWithdrawalPlanner(source) {
             const cardSelect = document.getElementById('dd-withdrawal-card');
@@ -5700,9 +5730,31 @@
             const availableToWithdraw = Math.max(0, limit - monthSpend);
             const amountInput = document.getElementById('dd-withdrawal-amount-input');
             if (!amountInput) return;
-            if (source && source.id === 'dd-withdrawal-card') {
-                amountInput.value = String(Math.floor((availableToWithdraw * 0.97) / 10) * 10);
+            // Prefill the withdrawal amount from the remaining cashback cap of the selected category
+            // whenever the card, category or charge % changes.
+            const chargeEl = document.getElementById('dd-withdrawal-charge-percent');
+            const resetAmount = !!chargeEl;
+            const suggestionNote = document.getElementById('dd-withdrawal-suggestion-note');
+            if (resetAmount) {
+                let suggestPct = WITHDRAWAL_CHARGE_PERCENTAGES[ddWithdrawalCategory];
+                if (source && source.id === 'dd-withdrawal-charge-percent') {
+                    const typedPct = Number(chargeEl.value);
+                    suggestPct = (chargeEl.value !== '' && Number.isFinite(typedPct) && typedPct >= 0 && typedPct < 100) ? typedPct : null;
+                }
+                if (suggestPct !== null) {
+                    const suggestion = ddSuggestedWithdrawal(card, ddWithdrawalCategory, monthTxs, availableToWithdraw, suggestPct);
+                    amountInput.value = String(suggestion.amount);
+                    if (suggestionNote) {
+                        suggestionNote.textContent =
+                            suggestion.basis === 'cap' ? `Prefilled to use the remaining AED ${formatAED(suggestion.capRemaining)} cashback cap for ${ddWithdrawalCategory}.`
+                            : suggestion.basis === 'norate' ? `No cashback rate for ${ddWithdrawalCategory} on this card.`
+                            : 'No cashback cap set for this category; prefilled from the available limit.';
+                        if (suggestion.basis === 'cap' && suggestion.capRemaining <= 0) suggestionNote.textContent = `No cashback cap remaining for ${ddWithdrawalCategory} this month.`;
+                    }
+                }
             }
+            const amountText = document.getElementById('dd-withdrawal-amount-text');
+            if (amountText) amountText.textContent = `AED ${formatAED(Number(amountInput.value) || 0)}`;
             const enteredAmount = Number(amountInput.value);
             const validAmount = amountInput.value !== '' && Number.isFinite(enteredAmount) && enteredAmount >= 0;
             amountInput.setCustomValidity(validAmount ? '' : 'Enter a withdrawal amount of zero or more.');
@@ -5742,15 +5794,8 @@
             const amountCharged = withdrawalAmount / chargeFactor;
             const rate = cardRateFor(card, ddWithdrawalCategory);
             const potentialCashback = amountCharged * rate / 100;
-            const caps = ddCaps(ddRule(card));
             const cashbackUsedThisMonth = ddSum(monthTxs, t => t.cashback);
-            const applicableCaps = [ddWithdrawalCategory, 'All']
-                .filter(key => Object.prototype.hasOwnProperty.call(caps, key))
-                .map(key => {
-                    const used = ddSum(monthTxs.filter(t => key === 'All' || t.category === key), t => t.cashback);
-                    return Math.max(0, caps[key] - used);
-                });
-            const capRemaining = applicableCaps.length ? Math.min(...applicableCaps) : null;
+            const capRemaining = ddWithdrawalCapRemaining(card, ddWithdrawalCategory, monthTxs);
             const cashback = capRemaining === null ? potentialCashback : Math.min(potentialCashback, capRemaining);
             const withdrawalCharge = amountCharged - withdrawalAmount;
             const netCashback = cashback - withdrawalCharge;
