@@ -13,6 +13,15 @@
         } catch (error) {
             console.warn('Could not read saved theme:', error);
         }
+        let desktopLayoutEnabled = false;
+        try {
+            desktopLayoutEnabled = localStorage.getItem('cb_desktop_layout') === '1';
+        } catch (error) {
+            console.warn('Could not read saved layout preference:', error);
+        }
+        if (desktopLayoutEnabled) {
+            document.querySelector('meta[name="viewport"]').content = 'width=1280';
+        }
     </script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -1570,6 +1579,7 @@
                             <button onclick="repairMissingCardLinks()" class="w-full text-left px-4 py-2 rounded-lg text-sm hover:bg-white/5 transition">🔗 Fix Card Links</button> 
                             <button onclick="ddInsights()" class="w-full text-left px-4 py-2 text-sm rounded-lg hover:bg-white/5 transition">📊 Insights</button>
                             <button onclick="document.getElementById('header-menu-dropdown').classList.add('hidden'); ddOpenWithdrawalPlanner()" class="w-full rounded-lg text-left px-4 py-2 text-sm hover:bg-white/5 transition">💸 Withdrawal Planner</button>
+                            <button id="layout-mode-toggle" type="button" aria-pressed="false" onclick="toggleDesktopLayout()" class="w-full text-left px-4 py-2 text-sm rounded-lg hover:bg-white/5 transition">🖥️ Use Desktop Layout</button>
                             <button onclick="clearAllData()" class="flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] text-red-400/90 hover:text-red-300 hover:bg-red-500/10 transition w-full text-left"><svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg> Reset Data</button>
                             <button id="change-pw-btn" onclick="openChangePassword()" style="text-align:center;" class="hidden w-full text-left px-4 py-2 text-sm hover:text-white hover:bg-yellow-500/90 bg-yellow-500/10 text-yellow-400/90 transition">Change Password</button>
                             <button id="sign-out-btn" onclick="signOut()" style="text-align:center;" class="hidden w-full text-left px-4 py-2 text-sm hover:text-white hover:bg-red-500/90 bg-red-500/10 text-red-400/90 transition border-t border-slate-100 dark:border-slate-700 ">Sign Out</button>
@@ -2350,6 +2360,26 @@
 
         let cards = [];
         let showSavedCards = (() => { try { return localStorage.getItem('cb_show_saved_cards') !== '0'; } catch (e) { return true; } })();
+
+        function syncDesktopLayoutToggle() {
+            const button = document.getElementById('layout-mode-toggle');
+            if (!button) return;
+            button.textContent = desktopLayoutEnabled ? '📱 Use Mobile Layout' : '🖥️ Use Desktop Layout';
+            button.setAttribute('aria-pressed', String(desktopLayoutEnabled));
+        }
+        function toggleDesktopLayout() {
+            desktopLayoutEnabled = !desktopLayoutEnabled;
+            try {
+                localStorage.setItem('cb_desktop_layout', desktopLayoutEnabled ? '1' : '0');
+            } catch (error) {
+                console.warn('Could not save layout preference:', error);
+            }
+            const viewport = document.querySelector('meta[name="viewport"]');
+            if (!viewport) throw new Error('Viewport metadata is missing.');
+            viewport.content = desktopLayoutEnabled ? 'width=1280' : 'width=device-width, initial-scale=1.0';
+            syncDesktopLayoutToggle();
+        }
+        syncDesktopLayoutToggle();
 
         // ---- DISABLED CARDS ----
         // A disabled card is hidden from the saved-cards list, the card filters, the recommender and the
