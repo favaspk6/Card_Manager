@@ -4979,9 +4979,12 @@
             }
 
             let cardObj;
+            let renamedTx = [];
+            let nameChanged = false;
             if (editingId) {
                 const index = cards.findIndex(c => c.id === editingId);
                 if (index !== -1) {
+                    if (cards[index].name !== name) { nameChanged = true; renamedTx = transactions.filter(t => txBelongsToCard(t, cards[index])); }
                     cards[index].name = name;
                     cards[index].availableLimit = availableLimit;
                     cards[index].rates = rates;
@@ -5004,6 +5007,14 @@
                 try {
                     const saved = await saveCardToDB(cardObj);
                     if (saved !== false) {
+                        // Keep every transaction attached to the renamed card (name + link), and save the change.
+                        if (renamedTx.length || nameChanged) {
+                            const synced = await renameCardTransactionsInDB(renamedTx, cardObj);
+                            showToast(synced
+                                ? `Card renamed on Supabase${renamedTx.length ? ' — ' + renamedTx.length + ' transaction(s) updated' : ''}.`
+                                : 'Card renamed, but some transactions could not be updated on Supabase. Use "Fix Card Links" to retry.',
+                                { tone: synced ? 'success' : 'error', duration: 6000 });
+                        }
                         showToast('Card saved.', { tone: 'success', duration: 2500 });
                     }
                 } finally {
@@ -5201,7 +5212,7 @@
                 if (byId) return byId;
             }
             // Legacy fallback for transactions saved before cardId existed
-            return cards.find(c => c.name.trim().toLowerCase() === tx.cardName.trim().toLowerCase());
+            return cards.find(c => tx.cardId && String(c.id) === String(tx.cardId)) || cards.find(c => normCardName(c.name) === normCardName(tx.cardName));
         }
 
         function editTransaction(id) {
@@ -5609,8 +5620,35 @@
         // anything imported before the CSV importer started setting cardId, and any row saved
         // while the emi_*/card_id columns hadn't been migrated in yet. Matches purely by name,
         // so it can't recover a transaction whose card was since renamed or deleted.
+        // After a card is renamed, push the new name (and the card link) to every one of its transactions on Supabase.
+        async function renameCardTransactionsInDB(txs, card) {
+            txs.forEach(t => { t.cardName = card.name; t.cardId = card.id; });
+            if (!_supabase) { saveData(); return true; }
+            let ok = true;
+            const run = async (build) => {
+                let { error } = await build({ card_name: card.name, card_id: String(card.id) });
+                if (error && /card_id/i.test(error.message || '')) ({ error } = await build({ card_name: card.name }));
+                if (error) { console.error('Renaming card on Supabase failed:', error); ok = false; }
+            };
+            // 1) the transactions this session knows about, in batches
+            const ids = txs.map(t => String(t.id));
+            for (let k = 0; k < ids.length; k += 100) {
+                const chunk = ids.slice(k, k + 100);
+                await run(payload => _supabase.from('transactions').update(payload).in('id', chunk));
+            }
+            // 2) any other rows already linked to this card id (e.g. beyond what was loaded)
+            await run(payload => _supabase.from('transactions').update({ card_name: payload.card_name }).eq('card_id', String(card.id)));
+            saveData();
+            return ok;
+        }
         async function repairMissingCardLinks() {
-            const orphaned = transactions.filter(t => !t.cardId && t.cardName);
+            const cardOf = t => (t.cardId ? cards.find(c => String(c.id) === String(t.cardId)) : null)
+                || cards.find(c => normCardName(c.name) === normCardName(t.cardName));
+            const orphaned = transactions.filter(t => {
+                if (!t.cardId && !t.cardName) return false;
+                const c = cardOf(t);
+                return !c || String(t.cardId) !== String(c.id) || t.cardName !== c.name;
+            });
             if (orphaned.length === 0) {
                 showToast('Nothing to fix — every transaction already has a linked card.', { tone: 'success' });
                 return;
@@ -5618,9 +5656,10 @@
 
             let matched = 0, unmatched = 0, failed = 0;
             for (const t of orphaned) {
-                const card = cards.find(c => c.name.trim().toLowerCase() === (t.cardName || '').trim().toLowerCase());
+                const card = cardOf(t);
                 if (!card) { unmatched++; continue; }
                 t.cardId = card.id;
+                t.cardName = card.name;
                 if ((await saveTransactionToDB(t)) === false) failed++;
                 else matched++;
             }
@@ -5793,8 +5832,14 @@
 
         // Footer row: "Stmt: 15th" on the left, due-date badge on the right.
         // ---- Due-date tools: mark paid, utilization, calendar export, reminders ----
+        // Names are compared ignoring case, spaces and punctuation, so "ADCB - 365" and "ADCB 365" are the same card.
+        const normCardName = v => String(v || '').toLowerCase().replace(/[^a-z0-9]+/g, '');
+        function txBelongsToCard(t, c) {
+            if (t.cardId && String(t.cardId) === String(c.id)) return true;
+            return !!t.cardName && normCardName(t.cardName) === normCardName(c.name);
+        }
         function cardTxList(c) {
-            return transactions.filter(t => t.cardId === c.id || (!t.cardId && t.cardName === c.name));
+            return transactions.filter(t => txBelongsToCard(t, c));
         }
         async function markCardPaid(cardId) {
             const c = cards.find(x => String(x.id) === String(cardId));
@@ -6676,7 +6721,7 @@
                 const totalLimit = Number(c.availableLimit) || 0;
                 const targetLimit = totalLimit * 0.97;
 
-                const cardTx = transactions.filter(t => t.cardName.trim().toLowerCase() === c.name.trim().toLowerCase());
+                const cardTx = cardTxList(c);
 
                 const currentMonthSpend = cardTx
                     .filter(t => t.date && t.date.startsWith(currentMonthKey) &&
