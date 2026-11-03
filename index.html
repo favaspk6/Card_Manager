@@ -6208,6 +6208,7 @@
         // ---- Withdrawal planner: multi-card plan popup (pick cards, see estimated withdrawal + amount charged) ----
         let ddWpSelected = null;
         const ddWpCategory = {};
+        const ddWpCustom = {}; // cardId -> typed withdrawal amount (this session only)
         const ddWpRound = ddLoad('dd-wp-round'); // cardId -> 0 (exact) | 10 | 100, remembered on this device
         function ddWpDefaultCategory(card) {
             const cats = ddWithdrawalCategories(card);
@@ -6223,11 +6224,15 @@
             const spend = ddSum(monthTxs.filter(t => t.type === 'Purchase' || t.type === 'Cash Withdrawal'), t => t.amount);
             const available = Math.max(0, ddNum(card.availableLimit) - spend);
             let amount = ddSuggestedWithdrawal(card, category, monthTxs, available, pct).amount;
-            // Optional rounding per card: round DOWN so the plan never exceeds the cashback cap or available limit.
+            const suggested = amount;
+            // A typed withdrawal amount overrides the estimate. Otherwise optional rounding per card:
+            // round DOWN so the plan never exceeds the cashback cap or available limit.
+            const custom = applyRound ? (Number(ddWpCustom[String(card.id)]) || 0) : 0;
             const step = applyRound ? (Number(ddWpRound[String(card.id)]) || 0) : 0;
-            if (step > 0) amount = Math.floor(amount / step) * step;
+            if (custom > 0) amount = custom;
+            else if (step > 0) amount = Math.floor(amount / step) * step;
             const charged = amount / (1 - pct / 100);
-            return { amount, charged, pct, available, step };
+            return { amount, charged, pct, available, step, custom: custom > 0, suggested };
         }
         function ddWpActiveCards() {
             return activeCards().filter(c => c.cardType !== 'debit' && ddWithdrawalCategories(c).length > 0);
@@ -6249,7 +6254,12 @@
                 if (roundLine) roundLine.style.display = on ? '' : 'none';
                 row.querySelector('[data-wp-amount]').textContent = 'AED ' + formatAED(r.amount);
                 row.querySelector('[data-wp-charged]').textContent = 'AED ' + formatAED(r.charged);
-                row.querySelector('[data-wp-meta]').textContent = 'Charge ' + fmtRate(r.pct) + '%\nAvailable AED ' + formatAED(r.available);
+                let meta = 'Charge ' + fmtRate(r.pct) + '%\nAvailable AED ' + formatAED(r.available);
+                if (r.custom && r.charged > r.available + 0.005) meta += '\n⚠ Exceeds available limit';
+                else if (r.custom && r.amount > r.suggested + 0.005) meta += '\n⚠ Above estimated cashback cap';
+                row.querySelector('[data-wp-meta]').textContent = meta;
+                const radios = row.querySelector('[data-wp-radios]');
+                if (radios) radios.style.opacity = r.custom ? '.45' : '';
                 row.classList.toggle('dd-sel', on);
                 const box = row.querySelector('input[type=checkbox]');
                 if (box) box.checked = on;
@@ -6273,6 +6283,11 @@
         function ddWpSetRound(id, step) {
             ddWpRound[String(id)] = Number(step) || 0;
             ddSave('dd-wp-round', ddWpRound);
+            ddWpRefresh();
+        }
+        function ddWpSetCustom(id, value) {
+            const n = parseFloat(String(value).replace(/[^0-9.]/g, ''));
+            if (n > 0) ddWpCustom[String(id)] = n; else delete ddWpCustom[String(id)];
             ddWpRefresh();
         }
         function ddWpSetCategory(id, category) {
@@ -6348,9 +6363,13 @@
                     + '</div>'
                     + '<div data-wp-round class="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-slate-300/40 pt-3 text-xs dark:border-white/10 sm:col-span-5 sm:mt-0">'
                     + '<span class="' + lbl + '">Round estimate</span>'
+                    + '<span data-wp-radios class="inline-flex flex-wrap items-center gap-x-4 gap-y-2">'
                     + [[0, 'Exact'], [10, 'Round 10'], [100, 'Round 100']].map(function (o) {
                         return '<label class="inline-flex cursor-pointer items-center gap-1.5 font-medium"><input type="radio" name="wp-round-' + escapeHtml(id) + '" value="' + o[0] + '"' + ((Number(ddWpRound[id]) || 0) === o[0] ? ' checked' : '') + ' onchange="ddWpSetRound(\'' + escapeHtml(id) + '\', ' + o[0] + ')" class="h-4 w-4 accent-indigo-500"> ' + o[1] + '</label>';
                     }).join('')
+                    + '</span>'
+                    + '<label class="inline-flex items-center gap-2 sm:ml-auto"><span class="' + lbl + '">Withdrawal amount</span>'
+                    + '<input type="text" inputmode="decimal" autocomplete="off" placeholder="Auto" value="' + (ddWpCustom[id] ? escapeHtml(String(ddWpCustom[id])) : '') + '" oninput="ddWpSetCustom(\'' + escapeHtml(id) + '\', this.value)" aria-label="Withdrawal amount for ' + escapeHtml(c.name) + '" class="dd-glass-input mono w-32 px-3 py-1.5 text-right text-sm"></label>'
                     + '</div></div>';
             }).join('');
             const o = document.createElement('div');
