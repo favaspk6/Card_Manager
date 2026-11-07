@@ -1803,6 +1803,17 @@
         html:not(.dark) .cc .cc-more .bg-slate-100, html:not(.dark) .cc .cc-more .bg-slate-50, html:not(.dark) .cc .cc-more .bg-white { background-color: rgba(255,255,255,.07) !important; }
         html:not(.dark) .cc .cc-more .bg-emerald-50 { background-color: rgba(16,185,129,.18) !important; }
 
+        /* ---- Best Card Recommender in the LIGHT theme: the remaining light-on-white text ---- */
+        html:not(.dark) #recommender-section .rec-name { color: #0f172a; }
+        html:not(.dark) #recommender-section .rec-router { color: #4338ca; background: rgba(99,102,241,.1); border-color: rgba(99,102,241,.35); }
+        html:not(.dark) #recommender-section .rec-router i { background: #6366f1; box-shadow: 0 0 8px rgba(99,102,241,.5); }
+        html:not(.dark) #recommender-section .rec-sub, html:not(.dark) #recommender-section .rec-sub * { color: #475569; }
+        html:not(.dark) #recommender-section .text-slate-400, html:not(.dark) #recommender-section .text-slate-500 { color: #475569 !important; }
+        html:not(.dark) #recommender-section button.text-xl { color: #64748b !important; }
+        html:not(.dark) #recommender-section button.text-xl:hover { color: #0f172a !important; }
+        html:not(.dark) #recommender-section .rec-btn:not(.is-default):not(:disabled) { color: #fff; }
+        html:not(.dark) #recommender-section .rec-pill svg { color: currentColor; }
+
         </style>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
@@ -6578,7 +6589,9 @@
                 const r = ddWpCalc(card, category);
                 totalAmount += r.amount;
                 totalCharged += r.charged;
-                lines.push([card.name, category, num(r.amount), num(r.charged)].join(' - '));
+                // "Card Name 1234 - Category - Estimate - Charged": the card's last 4 digits follow its name (omitted if none is saved).
+                const cardLabel = card.name + (card.last4 ? ' ' + card.last4 : '');
+                lines.push([cardLabel, category, num(r.amount), num(r.charged)].join(' - '));
             });
             if (!lines.length) return { text: '', count: 0 };
             // Same totals that are shown at the bottom of the popup.
