@@ -1791,6 +1791,18 @@
         html select.dd-glass-input { padding-right: 26px !important; }
         html .dd-glass-row [data-wp-radios] label, html .dd-glass-row [data-wp-round] label { font-size: 12px; }
 
+        /* ---- Saved-card details in the LIGHT theme: the tile stays dark, so the details must use light text (same look as the dark theme) ---- */
+        html:not(.dark) .cc .cc-more { color: #e2e8f0; }
+        html:not(.dark) .cc .cc-more .text-slate-300, html:not(.dark) .cc .cc-more .text-slate-600, html:not(.dark) .cc .cc-more .text-slate-700 { color: #cbd5e1 !important; }
+        html:not(.dark) .cc .cc-more .text-slate-400, html:not(.dark) .cc .cc-more .text-slate-500 { color: #a3adc2 !important; }
+        html:not(.dark) .cc .cc-more .text-slate-100, html:not(.dark) .cc .cc-more .text-slate-200, html:not(.dark) .cc .cc-more .text-slate-800, html:not(.dark) .cc .cc-more .text-slate-900 { color: #f1f5f9 !important; }
+        html:not(.dark) .cc .cc-more .text-emerald-600, html:not(.dark) .cc .cc-more .text-emerald-500 { color: #34d399 !important; }
+        html:not(.dark) .cc .cc-more .text-emerald-700 { color: #6ee7b7 !important; }
+        html:not(.dark) .cc .cc-more .text-red-400, html:not(.dark) .cc .cc-more .text-red-500 { color: #f87171 !important; }
+        html:not(.dark) .cc .cc-more .border-slate-200, html:not(.dark) .cc .cc-more .border-slate-300 { border-color: rgba(255,255,255,.14) !important; }
+        html:not(.dark) .cc .cc-more .bg-slate-100, html:not(.dark) .cc .cc-more .bg-slate-50, html:not(.dark) .cc .cc-more .bg-white { background-color: rgba(255,255,255,.07) !important; }
+        html:not(.dark) .cc .cc-more .bg-emerald-50 { background-color: rgba(16,185,129,.18) !important; }
+
         </style>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
