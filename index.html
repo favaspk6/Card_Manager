@@ -1814,6 +1814,13 @@
         html:not(.dark) #recommender-section .rec-btn:not(.is-default):not(:disabled) { color: #fff; }
         html:not(.dark) #recommender-section .rec-pill svg { color: currentColor; }
 
+        /* ---- Toast messages in the LIGHT theme: keep the text readable on the dark toast ---- */
+        html:not(.dark) #toast-container > div { color: #fff !important; box-shadow: 0 12px 32px rgba(15,23,42,.28); }
+        html:not(.dark) #toast-container > div > span { color: #fff !important; }
+        html:not(.dark) #toast-container .toast-action { color: #fde68a !important; }
+        html:not(.dark) #toast-container .toast-dismiss { color: rgba(255,255,255,.75) !important; }
+        html:not(.dark) #toast-container .toast-dismiss:hover { color: #fff !important; }
+
         </style>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
@@ -2115,13 +2122,14 @@
                                 <h2 id="recommender-title" class="rec-title">Best Card Recommender</h2>
                             <p class="rec-desc">Pick a spend category to route it to your highest-earning card before checkout</p>
                         </div>
-                    </div>
-                    <div class="flex items-center gap-3">
+                        <div class="flex items-center gap-3">
                         <!--
                         <span class="rec-router"><i></i>Algorithmic Router</span>
                     -->
                         <button type="button" onclick="closeUtilityModal('recommender-modal')" class="text-slate-400 hover:text-white text-xl leading-none" aria-label="Close recommender dialog">&times;</button>
                     </div>
+                    </div>
+                    
                 </div>
                 <div id="rec-category-pills" class="flex flex-wrap gap-3 mt-5"></div>
                 <select id="rec-category" onchange="recommendBestCard()" class="hidden"></select>
@@ -6697,7 +6705,7 @@
                     <p class="mt-1 text-xs text-slate-500">Choose a card and cashback category, then enter its withdrawal charge percentage to see the estimate.</p>
                 </div>
                 ${ddWithdrawalPlannerHtml(act)}
-                ${act.length ? `<div class="mt-5 flex justify-end"><button type="button" onclick="ddOpenWithdrawalMulti()" class="inline-flex items-center gap-2 rounded-lg border border-indigo-400/40 bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow hover:bg-indigo-500">☑️ Select cards</button></div>` : ''}`;
+                ${act.length ? `<div class="mt-5 flex justify-end"><button type="button" onclick="ddOpenWithdrawalMulti()" class="inline-flex items-center gap-2 rounded-lg border border-indigo-400/40 bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow hover:bg-indigo-500">☑️ Plan withdrawals</button></div>` : ''}`;
             ddModal('Withdrawal Planner', content);
             ddUpdateWithdrawalPlanner();
         }
