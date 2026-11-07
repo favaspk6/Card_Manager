@@ -2110,11 +2110,11 @@
                 <div id="emi-list" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 mt-4"></div>
             </section>
 
-            <!-- BEST CARD RECOMMENDER MODAL -->
+            <!-- BEST CARD RECOMMENDER MODAL claude
             <div id="recommender-modal" class="fixed inset-0 z-[60] hidden items-center justify-center bg-black/60 backdrop-blur-sm p-4" onclick="if(event.target===this) closeUtilityModal('recommender-modal')">
             <section id="recommender-section" role="dialog" aria-modal="true" aria-labelledby="recommender-title" class="panel p-5 sm:p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto min-w-0 flex flex-col">
-                <div class="flex flex-wrap items-start justify-between gap-4">
-                    <div class="flex items-center gap-4">
+                <div class="flex flex-wrap items-start justify-between gap-4 w-full min-w-0">
+                    <div class="flex items-center gap-4  min-w-0 flex-1">
                         <div class="rec-ico">   
                             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3 1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8L12 3Z"/><path d="m19 16 .8 2.2L22 19l-2.2.8L19 22l-.8-2.2L16 19l2.2-.8L19 16Z"/></svg>
                         </div>
@@ -2122,20 +2122,63 @@
                                 <h2 id="recommender-title" class="rec-title">Best Card Recommender</h2>
                             <p class="rec-desc">Pick a spend category to route it to your highest-earning card before checkout</p>
                         </div>
-                        <div class="flex items-center gap-3">
-                        <!--
+
+                            <button type="button" onclick="closeUtilityModal('recommender-modal')" class="shrink-0 flex items-center justify-center w-8 h-8 text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white text-2xl leading-none rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition-colors cursor-pointer" aria-label="Close recommender dialog">&times;</button>
+                    </div>
+
+                -->                    
+                    <!--
+                    <div class="flex items-right gap-3">
+                        
                         <span class="rec-router"><i></i>Algorithmic Router</span>
-                    -->
-                        <button type="button" onclick="closeUtilityModal('recommender-modal')" class="text-slate-400 hover:text-white text-xl leading-none" aria-label="Close recommender dialog">&times;</button>
-                    </div>
-                    </div>
                     
+                        <button type="button" onclick="closeUtilityModal('recommender-modal')" class="text-slate-400 hover:text-white text-xl leading-none" aria-label="Close recommender dialog">&times;</button>
+                     </div> -->
+                <!--    
                 </div>
                 <div id="rec-category-pills" class="flex flex-wrap gap-3 mt-5"></div>
                 <select id="rec-category" onchange="recommendBestCard()" class="hidden"></select>
                 <div id="recommendation-result" class="mt-auto pt-4"></div>
             </section>
             </div>
+        -->
+
+        <!-- BEST CARD RECOMMENDER MODAL -->
+<div id="recommender-modal" class="fixed inset-0 z-[60] hidden items-center justify-center bg-black/60 backdrop-blur-sm p-4" onclick="if(event.target===this) closeUtilityModal('recommender-modal')">
+    <section id="recommender-section" role="dialog" aria-modal="true" aria-labelledby="recommender-title" class="panel p-5 sm:p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto min-w-0 flex flex-col">
+        <!-- HEADER -->
+        <div class="flex items-start justify-between gap-4 w-full min-w-0">
+            <!-- LEFT: ICON + TITLE + DESCRIPTION -->
+            <div class="flex items-center gap-4 min-w-0 flex-1">
+                <div class="rec-ico shrink-0">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"> <path d="m12 3 1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8L12 3Z"/> <path d="m19 16 .8 2.2L22 19l-2.2.8L19 22l-.8-2.2L16 19l2.2-.8L19 16Z"/> </svg>
+                </div>
+                <div class="min-w-0 flex-1">
+                    <h2 id="recommender-title" class="rec-title"> Best Card Recommender </h2>
+                    <p class="rec-desc"> Pick a spend category to route it to your highest-earning card before checkout </p>
+                </div>
+            </div>
+
+            <!-- RIGHT: CLOSE BUTTON -->
+            <button
+                type="button" onclick="closeUtilityModal('recommender-modal')" class="shrink-0 flex items-center justify-center w-8 h-8 text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white text-2xl leading-none rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition-colors cursor-pointer" aria-label="Close recommender dialog"> &times;
+            </button>
+        </div>
+
+        <!-- CATEGORY PILLS -->
+        <div id="rec-category-pills"
+            class="flex flex-wrap gap-3 mt-5">
+        </div>
+
+        <!-- HIDDEN CATEGORY SELECT -->
+        <select id="rec-category" onchange="recommendBestCard()" class="hidden"> </select>
+
+        <!-- RECOMMENDATION RESULT -->
+        <div id="recommendation-result" class="mt-auto pt-4">
+        </div>
+
+    </section>
+</div>
 
             <!-- EXCEL / CSV IMPORT MODAL -->
             <div id="import-modal" class="fixed inset-0 z-[60] hidden items-center justify-center bg-black/60 backdrop-blur-sm p-4" onclick="if(event.target===this) closeUtilityModal('import-modal')">
