@@ -1971,9 +1971,13 @@
                     </div>
                     <div class="relative ml-0 flex items-center gap-2 md:ml-3">
                         <button onclick="toggleHeaderMenu()" id="header-menu-btn" class="flex items-center gap-2.5 rounded-xl px-2 py-1.5 hover:bg-white/5 transition" aria-label="Account menu">
-                            <span id="user-avatar" class="w-8 h-8 rounded-full bg-indigo-500/25 text-indigo-200 grid place-items-center text-xs font-bold">U</span>
+                            <span class="relative">
+                                <span id="user-avatar" class="w-8 h-8 rounded-full bg-indigo-500/25 text-indigo-200 grid place-items-center text-xs font-bold">U</span>
+                                <span id="sp-avatar-badge" style="color:white" class="hidden absolute -right-1 -top-1 min-w-4 h-4 rounded-full bg-red-500 px-1 text-[10px] leading-4 text-center font-bold" aria-live="polite"></span>
+                            </span>
                             <span class="text-left leading-tight">
-                                <span id="user-name-label" class="block text-xs font-semibold text-white">Account</span>
+                                <span id="user-name-label" class="block text-xs font-semibold text-white">Account
+                                </span>
                                 <span id="user-sub-label" class="block eyebrow">Local mode</span>
                             </span>
                         </button>
@@ -1989,7 +1993,7 @@
                             <button onclick="repairMissingCardLinks()" class="w-full text-left px-4 py-2 rounded-lg text-sm hover:bg-white/5 transition">🔗 Fix Card Links</button> 
                             <button onclick="ddInsights()" class="w-full text-left px-4 py-2 text-sm rounded-lg hover:bg-white/5 transition">📊 Insights</button>
                             <button onclick="document.getElementById('header-menu-dropdown').classList.add('hidden'); ddOpenWithdrawalPlanner()" class="w-full rounded-lg text-left px-4 py-2 text-sm hover:bg-white/5 transition">💸 Withdrawal Planner</button>
-                            <button id="sp-menu-btn" onclick="spOpen()" class="hidden w-full text-left px-4 py-2 text-sm rounded-lg hover:bg-white/5 transition"><span id="sp-menu-label">💬 Support &amp; Feedback</span><span id="sp-badge" class="hidden ml-2 rounded-full bg-red-500 px-1.5 py-0.5 text-[10px] font-bold text-white">0</span></button>
+                            <button id="sp-menu-btn" onclick="spOpen()" class="hidden w-full text-left px-4 py-2 text-sm rounded-lg hover:bg-white/5 transition"><span id="sp-menu-label">💬 Support &amp; Feedback</span><span id="sp-badge" style="color:white" class="hidden ml-2 rounded-full bg-red-500 px-1.5 py-0.5 text-[10px] font-bold">0</span></button>
                             <button onclick="clearAllData()" class="flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] text-red-400/90 hover:text-red-300 hover:bg-red-500/10 transition w-full text-left"><svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg> Reset Data</button>
                             <button id="change-pw-btn" onclick="openChangePassword()" style="text-align:center;" class="hidden w-full text-left px-4 py-2 text-sm hover:text-white hover:bg-yellow-500/90 bg-yellow-500/10 text-yellow-400/90 transition">Change Password</button>
                             <button id="sign-out-btn" onclick="signOut()" style="text-align:center;" class="hidden w-full text-left px-4 py-2 text-sm hover:text-white hover:bg-red-500/90 bg-red-500/10 text-red-400/90 transition border-t border-slate-100 dark:border-slate-700 ">Sign Out</button>
@@ -2674,13 +2678,146 @@
         #log-fab:hover svg { transform: rotate(90deg); }
         @media (min-width: 640px) { #log-fab { right: 28px; bottom: calc(28px + env(safe-area-inset-bottom, 0px)); } #toast-container { right: 28px !important; bottom: calc(6.5rem + env(safe-area-inset-bottom, 0px)) !important; } }
         @media (prefers-reduced-motion: reduce) { #log-fab, #log-fab svg { transition: none; } }
+
+        /* Frosted-glass styling for the support window and its inbox cards. */
+        #sp-modal {
+            background: rgba(222,232,247,.28);
+            -webkit-backdrop-filter: blur(14px) saturate(145%);
+            backdrop-filter: blur(14px) saturate(145%);
+        }
+        html.dark #sp-modal { background: rgba(2,6,23,.42); }
+        #sp-modal > .sp-glass-window {
+            width: min(90vw, 560px);
+            max-width: 560px;
+            height: min(620px, 82dvh) !important;
+            overflow: hidden;
+            border: 1px solid rgba(255,255,255,.72);
+            background: linear-gradient(145deg, rgba(255,255,255,.86), rgba(244,248,255,.7));
+            -webkit-backdrop-filter: blur(30px) saturate(175%);
+            backdrop-filter: blur(30px) saturate(175%);
+            box-shadow: 0 26px 70px rgba(45,55,90,.2), inset 0 1px 0 rgba(255,255,255,.88);
+        }
+        html.dark #sp-modal > .sp-glass-window {
+            border-color: rgba(255,255,255,.2);
+            background: linear-gradient(145deg, rgba(30,41,59,.82), rgba(15,23,42,.72));
+            box-shadow: 0 26px 70px rgba(0,0,0,.42), inset 0 1px 0 rgba(255,255,255,.12);
+        }
+        #sp-modal .sp-chat-header,
+        #sp-modal .sp-chat-composer {
+            flex: none;
+            border-color: rgba(255,255,255,.58);
+            background: rgba(255,255,255,.48);
+            -webkit-backdrop-filter: blur(20px) saturate(160%);
+            backdrop-filter: blur(20px) saturate(160%);
+            box-shadow: inset 0 1px 0 rgba(255,255,255,.62);
+        }
+        html.dark #sp-modal .sp-chat-header,
+        html.dark #sp-modal .sp-chat-composer {
+            border-color: rgba(255,255,255,.1);
+            background: rgba(15,23,42,.42);
+            box-shadow: inset 0 1px 0 rgba(255,255,255,.06);
+        }
+        #sp-modal .sp-chat-body {
+            min-height: 0;
+            background: rgba(255,255,255,.2);
+            -webkit-backdrop-filter: blur(10px);
+            backdrop-filter: blur(10px);
+        }
+        html.dark #sp-modal .sp-chat-body { background: rgba(2,6,23,.16); }
+        #sp-modal .sp-inbox-item {
+            border: 1px solid rgba(255,255,255,.78);
+            border-radius: 18px;
+            background: rgba(255,255,255,.46);
+            box-shadow: 0 8px 24px rgba(68,79,115,.07), inset 0 1px 0 rgba(255,255,255,.76);
+            -webkit-backdrop-filter: blur(18px) saturate(155%);
+            backdrop-filter: blur(18px) saturate(155%);
+            transition: background .18s ease, border-color .18s ease, transform .18s ease, box-shadow .18s ease;
+        }
+        #sp-modal .sp-inbox-item:hover {
+            transform: translateY(-1px);
+            border-color: rgba(129,140,248,.44);
+            background: rgba(255,255,255,.68);
+            box-shadow: 0 10px 26px rgba(68,79,115,.1), inset 0 1px 0 rgba(255,255,255,.86);
+        }
+        #sp-modal .sp-inbox-announcement {
+            border-color: rgba(165,180,252,.62);
+            background: rgba(224,231,255,.68);
+            box-shadow: 0 8px 24px rgba(99,102,241,.1), inset 0 1px 0 rgba(255,255,255,.72);
+        }
+        #sp-modal .sp-inbox-announcement:hover { background: rgba(224,231,255,.84); }
+        html.dark #sp-modal .sp-inbox-item {
+            border-color: rgba(255,255,255,.12);
+            background: rgba(255,255,255,.055);
+            box-shadow: 0 8px 24px rgba(0,0,0,.12), inset 0 1px 0 rgba(255,255,255,.07);
+        }
+        html.dark #sp-modal .sp-inbox-item:hover {
+            border-color: rgba(165,180,252,.3);
+            background: rgba(255,255,255,.09);
+        }
+        html.dark #sp-modal .sp-inbox-announcement {
+            border-color: rgba(129,140,248,.28);
+            background: rgba(99,102,241,.14);
+        }
+        html.dark #sp-modal .sp-inbox-announcement:hover { background: rgba(99,102,241,.22); }
+        html:not(.dark) #sp-modal > .sp-glass-window {
+            border-color: rgba(255,255,255,.92);
+            background: linear-gradient(145deg, rgba(255,255,255,.66), rgba(255,255,255,.5)) !important;
+            -webkit-backdrop-filter: blur(36px) saturate(180%);
+            backdrop-filter: blur(36px) saturate(180%);
+            box-shadow: 0 28px 70px rgba(51,65,85,.2), inset 0 1px 0 rgba(255,255,255,.98), inset 0 -1px 0 rgba(255,255,255,.4);
+        }
+        html:not(.dark) #sp-modal .sp-chat-header,
+        html:not(.dark) #sp-modal .sp-chat-composer {
+            border-color: rgba(255,255,255,.88);
+            background: rgba(255,255,255,.56);
+            -webkit-backdrop-filter: blur(28px) saturate(175%);
+            backdrop-filter: blur(28px) saturate(175%);
+            box-shadow: inset 0 1px 0 rgba(255,255,255,.96), 0 4px 18px rgba(51,65,85,.035);
+        }
+        html:not(.dark) #sp-modal .sp-chat-body {
+            background: rgba(255,255,255,.16);
+            -webkit-backdrop-filter: blur(16px);
+            backdrop-filter: blur(16px);
+        }
+        html:not(.dark) #sp-modal .sp-inbox-item {
+            border-color: rgba(255,255,255,.94);
+            background: rgba(255,255,255,.44);
+            -webkit-backdrop-filter: blur(24px) saturate(175%);
+            backdrop-filter: blur(24px) saturate(175%);
+            box-shadow: 0 8px 24px rgba(51,65,85,.07), inset 0 1px 0 rgba(255,255,255,.98);
+        }
+        html:not(.dark) #sp-modal .sp-inbox-item:hover {
+            background: rgba(255,255,255,.58);
+            box-shadow: 0 10px 28px rgba(51,65,85,.1), inset 0 1px 0 rgba(255,255,255,1);
+        }
+        html:not(.dark) #sp-modal .sp-inbox-announcement {
+            border-color: rgba(255,255,255,.94);
+            background: rgba(255,255,255,.54);
+        }
+        html:not(.dark) #sp-modal .sp-inbox-announcement:hover { background: rgba(255,255,255,.66); }
+        html:not(.dark) #sp-modal #sp-kind,
+        html:not(.dark) #sp-modal #sp-input {
+            border-color: rgba(255,255,255,.88);
+            background-color: rgba(255,255,255,.62);
+            -webkit-backdrop-filter: blur(18px) saturate(165%);
+            backdrop-filter: blur(18px) saturate(165%);
+            box-shadow: inset 0 1px 0 rgba(255,255,255,.96), 0 4px 14px rgba(51,65,85,.035);
+        }
+        @media (max-width: 639px) {
+            #sp-modal { padding: .5rem; }
+            #sp-modal > .sp-glass-window { width: min(calc(100vw - 1rem), 560px); max-width: 560px; height: min(620px, 88dvh) !important; }
+        }
+        @media (prefers-reduced-motion: reduce) {
+            #sp-modal .sp-inbox-item { transition: none; }
+            #sp-modal .sp-inbox-item:hover { transform: none; }
+        }
     </style>
     <button id="log-fab" type="button" onclick="openTxModal()" aria-label="Log transaction" title="Log transaction">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
     </button>
 
     <!-- CONFIRM MODAL: styled replacement for window.confirm(), used for destructive actions -->
-    <div id="confirm-modal" class="fixed inset-0 z-[85] hidden flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4">
+    <div id="confirm-modal" class="fixed inset-0 z-[95] hidden flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4">
         <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-xl border border-slate-100 dark:border-slate-700 w-full max-w-sm overflow-hidden">
             <div class="p-6">
                 <p id="confirm-modal-title" class="text-base font-bold text-slate-900 dark:text-slate-100 mb-2"></p>
@@ -2696,27 +2833,38 @@
     <!-- SETTINGS MODAL -->
     <!-- SUPPORT CHAT (users <-> admin) -->
     <div id="sp-modal" class="fixed inset-0 z-[88] hidden flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-3 sm:p-5">
-        <div class="bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 rounded-2xl shadow-2xl w-full max-w-lg flex flex-col" style="height:min(640px,88dvh)">
-            <div class="flex items-center justify-between px-4 py-3 border-b border-slate-200 dark:border-slate-700">
-                <div class="min-w-0">
-                    <h3 id="sp-title" class="text-sm font-bold truncate">Support &amp; Feedback</h3>
-                    <p id="sp-sub" class="text-[11px] text-slate-500 truncate"></p>
+        <div class="sp-glass-window text-slate-800 dark:text-slate-200 rounded-2xl w-full max-w-lg flex flex-col" style="height:min(640px,88dvh)">
+            <div class="sp-chat-header flex items-center justify-between gap-3 px-4 py-3 border-b">
+                <div class="flex min-w-0 items-center gap-3">
+                    <span class="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-white/20 bg-white/10 text-lg shadow-inner" aria-hidden="true">💬</span>
+                    <div class="min-w-0">
+                        <h3 id="sp-title" class="text-sm font-bold truncate">Support &amp; Feedback</h3>
+                        <p id="sp-sub" class="text-[11px] truncate"></p>
+                    </div>
                 </div>
                 <div class="flex items-center gap-2">
+                    <button id="sp-clear-history" onclick="spClearHistory()" class="hidden text-xs px-2 py-1 rounded-lg border border-red-300 text-red-600 dark:border-red-900 dark:text-red-300 hover:bg-red-50 dark:hover:bg-red-950/30">Clear history</button>
                     <button id="sp-back" onclick="spBack()" class="hidden text-xs px-2 py-1 rounded-lg border border-slate-300 dark:border-slate-600">← Inbox</button>
-                    <button onclick="spClose()" class="text-slate-400 hover:text-slate-200 text-xl leading-none px-1" aria-label="Close">&times;</button>
+                    <button onclick="spClose()" class="grid h-9 w-9 shrink-0 place-items-center rounded-full hover:bg-blue-500/10  text-xl leading-none transition" aria-label="Close">&times;</button>
                 </div>
             </div>
-            <div id="sp-body" class="flex-1 overflow-y-auto p-4 space-y-2"></div>
-            <div id="sp-composer" class="border-t border-slate-200 dark:border-slate-700 p-3 space-y-2">
+            <div id="sp-body" class="sp-chat-body flex-1 overflow-y-auto p-4 space-y-2"></div>
+            <div id="sp-composer" class="sp-chat-composer border-t p-3 space-y-2">
                 <select id="sp-kind" class="w-full px-3 py-1.5 border rounded-lg text-xs bg-white dark:bg-slate-700 border-slate-200 dark:border-slate-600">
                     <option value="doubt">❓ Doubt / question</option>
                     <option value="suggestion">💡 Suggestion</option>
                     <option value="other">💬 Other</option>
                 </select>
+                <div id="sp-attachments-preview" class="hidden flex flex-wrap gap-2"></div>
                 <div class="flex gap-2">
                     <textarea id="sp-input" rows="2" maxlength="4000" placeholder="Type your message…" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();spSend();}" class="flex-1 px-3 py-2 border rounded-lg text-sm outline-none focus:ring-2 focus:ring-indigo-500 bg-white dark:bg-slate-700 border-slate-200 dark:border-slate-600 resize-none"></textarea>
-                    <button id="sp-send" onclick="spSend()" class="px-4 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium transition">Send</button>
+                    <div class="flex flex-col gap-1">
+                        <label id="sp-image-picker" class="cursor-pointer rounded-lg border border-slate-300 dark:border-slate-600 px-2 py-1.5 text-center text-xs hover:bg-slate-50 dark:hover:bg-slate-700" title="Attach up to 4 images (JPEG, PNG, or WebP; 5 MB each)">
+                            <span aria-hidden="true">📷</span><span class="sr-only">Attach images</span>
+                            <input id="sp-image-input" type="file" accept="image/jpeg,image/png,image/webp" multiple class="hidden" onchange="spChooseImages(event)">
+                        </label>
+                        <button id="sp-send" onclick="spSend()" class="flex-1 px-4 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium transition">Send</button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -8421,12 +8569,21 @@
             });
         }
 
-        // ---- SUPPORT CHAT: users send doubts / suggestions, admin replies (run support_chat.sql once) ----
+        // ---- SUPPORT CHAT: users send doubts / suggestions, admin replies (run support_chat.sql and support_chat_features.sql) ----
         let spIsAdmin = false, spMsgs = [], spChannel = null, spActiveThread = null, spReady = false;
+        let spSelectedImages = [], spHistoryClearedAt = null, spHistoryStateReady = false;
+        let spAnnouncements = [], spAnnouncementsReadAt = null, spBroadcastMode = false, spAnnouncementsReadPending = false;
+        let spAnnouncementsReady = false, spAnnouncementsError = '';
+        let spRenderVersion = 0;
+        const SP_IMAGE_BUCKET = 'support-attachments';
+        const SP_MAX_IMAGES = 4;
+        const SP_MAX_IMAGE_BYTES = 5 * 1024 * 1024;
+        const spSignedUrlCache = new Map();
         const SP_KINDS = { doubt: '❓ Doubt', suggestion: '💡 Suggestion', other: '💬 Other' };
         const spModalOpen = () => !document.getElementById('sp-modal').classList.contains('hidden');
         const spIncoming = m => spIsAdmin ? m.sender_role === 'user' : m.sender_role === 'admin';
         const spUnreadOf = m => spIncoming(m) && !(spIsAdmin ? m.read_by_admin : m.read_by_user);
+        const spVisibleToUser = m => spIsAdmin || !spHistoryClearedAt || new Date(m.created_at) > new Date(spHistoryClearedAt);
 
         async function spInit() {
             if (!_supabase || !currentUserId) return;
@@ -8436,6 +8593,7 @@
             } catch (e) { spIsAdmin = false; }
             document.getElementById('sp-menu-label').textContent = spIsAdmin ? '🛠 Admin Inbox' : '💬 Support & Feedback';
             document.getElementById('sp-menu-btn').classList.remove('hidden');
+            await spLoadHistoryState();
             await spLoad();
             if (!spChannel) {
                 spChannel = _supabase.channel('support-msgs')
@@ -8446,19 +8604,86 @@
                         if (spIncoming(m) && !spModalOpen()) showToast(spIsAdmin ? `New message from ${m.user_label || 'a user'}` : 'New reply from admin', { tone: 'success' });
                         spChanged();
                     })
+                    .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'support_messages' }, payload => {
+                        const id = payload.old?.id;
+                        if (id == null) return;
+                        spMsgs = spMsgs.filter(m => String(m.id) !== String(id));
+                        spChanged();
+                    })
+                    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'support_announcements' }, payload => {
+                        const announcement = payload.new;
+                        if (!announcement || spAnnouncements.some(x => x.id === announcement.id)) return;
+                        spAnnouncements.push(announcement);
+                        spAnnouncements.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+                        if (!spIsAdmin && !spModalOpen()) showToast('New announcement from admin', { tone: 'success' });
+                        spChanged();
+                    })
+                    .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'support_announcements' }, payload => {
+                        const id = payload.old?.id;
+                        if (id == null) return;
+                        spAnnouncements = spAnnouncements.filter(item => String(item.id) !== String(id));
+                        spChanged();
+                    })
                     .subscribe();
             }
+        }
+        async function spLoadHistoryState() {
+            spHistoryClearedAt = null;
+            spAnnouncementsReadAt = null;
+            spHistoryStateReady = false;
+            if (spIsAdmin) { spHistoryStateReady = true; return; }
+            const { data, error } = await _supabase.from('support_thread_state')
+                .select('history_cleared_at').eq('thread_user_id', currentUserId).maybeSingle();
+            if (error) { console.warn('Support history state not available:', error.message); return; }
+            spHistoryClearedAt = data?.history_cleared_at || null;
+            spHistoryStateReady = true;
+            const { data: announcementState, error: announcementStateError } = await _supabase.from('support_thread_state')
+                .select('announcements_read_at').eq('thread_user_id', currentUserId).maybeSingle();
+            if (announcementStateError) {
+                console.warn('Support announcement read state not available:', announcementStateError.message);
+                return;
+            }
+            spAnnouncementsReadAt = announcementState?.announcements_read_at || null;
         }
         async function spLoad() {
             const { data, error } = await _supabase.from('support_messages').select('*').order('created_at', { ascending: true }).limit(2000);
             if (error) { console.warn('Support chat not available:', error.message); spReady = false; return; }
-            spReady = true; spMsgs = data || []; spChanged();
+            spReady = true;
+            spMsgs = data || [];
+            await spLoadAnnouncements();
+            spChanged();
+        }
+        async function spLoadAnnouncements() {
+            const { data, error } = await _supabase.from('support_announcements').select('*').order('created_at', { ascending: true }).limit(2000);
+            if (error) {
+                console.warn('Support announcements not available:', error.message);
+                spAnnouncementsReady = false;
+                spAnnouncementsError = error.message;
+                spAnnouncements = [];
+                return;
+            }
+            spAnnouncementsReady = true;
+            spAnnouncementsError = '';
+            spAnnouncements = data || [];
         }
         function spChanged() {
-            const n = spMsgs.filter(spUnreadOf).length;
-            const b = document.getElementById('sp-badge');
-            b.textContent = n > 99 ? '99+' : n; b.classList.toggle('hidden', n === 0);
+            spUpdateBadges();
             if (spModalOpen()) spRender();
+        }
+        function spUpdateBadges() {
+            const unreadMessages = spMsgs.filter(m => spVisibleToUser(m) && spUnreadOf(m)).length;
+            const unreadAnnouncements = spIsAdmin ? 0 : spAnnouncements.filter(a =>
+                !spAnnouncementsReadAt || new Date(a.created_at) > new Date(spAnnouncementsReadAt)
+            ).length;
+            const n = unreadMessages + unreadAnnouncements;
+            const b = document.getElementById('sp-badge');
+            const avatarBadge = document.getElementById('sp-avatar-badge');
+            const label = n > 99 ? '99+' : String(n);
+            b.textContent = label;
+            b.classList.toggle('hidden', n === 0);
+            avatarBadge.textContent = label;
+            avatarBadge.classList.toggle('hidden', n === 0);
+            avatarBadge.setAttribute('aria-label', `${n} unread support ${n === 1 ? 'message' : 'messages'}`);
         }
         function spThreads() {
             const map = {};
@@ -8471,68 +8696,387 @@
         }
         function spOpen() {
             document.getElementById('header-menu-dropdown').classList.add('hidden');
-            if (!spReady) { showToast('Support chat is not set up yet. Run support_chat.sql in Supabase, then reload.', { tone: 'error', duration: 8000 }); return; }
+            if (!spReady) { showToast('Support chat is not set up yet. Run support_chat.sql and support_chat_features.sql in Supabase, then reload.', { tone: 'error', duration: 8000 }); return; }
             document.getElementById('sp-modal').classList.remove('hidden');
+            spBroadcastMode = false;
             spActiveThread = spIsAdmin ? null : currentUserId;
             spRender();
         }
         function spClose() { document.getElementById('sp-modal').classList.add('hidden'); }
-        function spBack() { spActiveThread = null; spRender(); }
-        function spOpenThread(id) { spActiveThread = id; spRender(); }
+        function spBack() {
+            spClearSelectedImages();
+            if (spBroadcastMode) document.getElementById('sp-input').value = '';
+            spBroadcastMode = false;
+            spActiveThread = null;
+            spRender();
+        }
+        function spOpenThread(id) {
+            if (spActiveThread !== id || spBroadcastMode) spClearSelectedImages();
+            if (spBroadcastMode) document.getElementById('sp-input').value = '';
+            spBroadcastMode = false;
+            spActiveThread = id;
+            spRender();
+        }
+        function spOpenBroadcast() {
+            if (!spAnnouncementsReady) {
+                showToast(`Announcements are unavailable: ${spAnnouncementsError || 'run support_chat_features.sql in Supabase, then reload'}`, { tone: 'error', duration: 8000 });
+                return;
+            }
+            spClearSelectedImages();
+            document.getElementById('sp-input').value = '';
+            spActiveThread = null;
+            spBroadcastMode = true;
+            spRender();
+        }
         function spFmt(ts) { const d = new Date(ts); return d.toLocaleString([], { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }); }
+        function spRenderSelectedImages() {
+            const preview = document.getElementById('sp-attachments-preview');
+            preview.classList.toggle('hidden', spSelectedImages.length === 0);
+            preview.innerHTML = spSelectedImages.map((item, index) => `<div class="relative">
+                <img src="${item.previewUrl}" alt="${escapeHtml(item.file.name)}" class="h-14 w-14 rounded-lg border border-slate-300 dark:border-slate-600 object-cover">
+                <button type="button" onclick="spRemoveImage(${index})" aria-label="Remove ${escapeHtml(item.file.name)}" class="absolute -right-1.5 -top-1.5 h-5 w-5 rounded-full bg-red-600 text-xs text-white">×</button>
+            </div>`).join('');
+        }
+        function spChooseImages(event) {
+            const input = event.target;
+            const files = Array.from(input.files || []);
+            input.value = '';
+            for (const file of files) {
+                if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
+                    showToast('Choose a JPEG, PNG, or WebP image.', { tone: 'error' });
+                    continue;
+                }
+                if (file.size > SP_MAX_IMAGE_BYTES) {
+                    showToast(`${file.name} is larger than 5 MB.`, { tone: 'error' });
+                    continue;
+                }
+                if (spSelectedImages.length >= SP_MAX_IMAGES) {
+                    showToast('You can attach up to 4 images per message.', { tone: 'error' });
+                    break;
+                }
+                spSelectedImages.push({ file, previewUrl: URL.createObjectURL(file), storagePath: null });
+            }
+            spRenderSelectedImages();
+        }
+        function spRemoveImage(index) {
+            const [removed] = spSelectedImages.splice(index, 1);
+            if (removed) URL.revokeObjectURL(removed.previewUrl);
+            spRenderSelectedImages();
+        }
+        function spClearSelectedImages() {
+            spSelectedImages.forEach(item => URL.revokeObjectURL(item.previewUrl));
+            spSelectedImages = [];
+            spRenderSelectedImages();
+        }
+        async function spClearHistory() {
+            if (spIsAdmin) return;
+            const confirmed = await showConfirm(
+                'Clear your chat history?',
+                'Previous messages will disappear from your view, but support administrators will retain access to the full conversation.',
+                { confirmLabel: 'Clear for me' }
+            );
+            if (!confirmed) return;
+            if (!spHistoryStateReady) {
+                showToast('History clearing is not set up. Run support_chat_features.sql in Supabase, then reload.', { tone: 'error', duration: 8000 });
+                return;
+            }
+            const button = document.getElementById('sp-clear-history');
+            button.disabled = true;
+            try {
+                const { data, error } = await _supabase.rpc('support_clear_history');
+                if (error) throw error;
+                const clearedAt = Array.isArray(data) ? data[0] : data;
+                if (typeof clearedAt !== 'string' || !Number.isFinite(Date.parse(clearedAt))) {
+                    throw new Error('The server did not return a valid clear timestamp.');
+                }
+                spHistoryClearedAt = clearedAt;
+                spMsgs = spMsgs.filter(spVisibleToUser);
+                spChanged();
+                showToast('Your chat history is cleared. Support administrators can still see the full conversation.', { tone: 'success' });
+            } catch (error) {
+                showToast(`Could not clear chat history: ${error.message}`, { tone: 'error', duration: 8000 });
+            } finally {
+                button.disabled = false;
+            }
+        }
         function spBubble(m) {
             const mine = spIsAdmin ? m.sender_role === 'admin' : m.sender_role === 'user';
             const who = m.sender_role === 'admin' ? 'Admin' : (spIsAdmin ? (m.user_label || 'User') : 'You');
             const tag = m.kind && m.sender_role === 'user' ? `<span class="opacity-70">${SP_KINDS[m.kind] || ''} · </span>` : '';
+            const images = (Array.isArray(m.image_paths) ? m.image_paths : [])
+                .filter(path => typeof path === 'string' && path.startsWith(`${m.thread_user_id}/`))
+                .map(path => `<img data-sp-image-path="${escapeHtml(path)}" alt="Attached image" class="mt-2 max-h-56 max-w-full rounded-lg object-contain bg-black/10">`).join('');
+            const deleteButton = spIsAdmin && m.sender_role === 'admin' && m.sender_id === currentUserId
+                ? `<button type="button" data-sp-delete-message="${escapeHtml(String(m.id))}" class="mt-2 text-[10px] underline opacity-75 hover:opacity-100" aria-label="Delete your reply">Delete reply</button>`
+                : '';
             return `<div class="flex ${mine ? 'justify-end' : 'justify-start'}"><div class="max-w-[85%] rounded-2xl px-3 py-2 text-sm ${mine ? 'bg-indigo-600 text-white' : 'bg-slate-100 dark:bg-slate-700'}">
-                <div class="text-[10px] mb-0.5 ${mine ? 'text-indigo-200' : 'text-slate-500 dark:text-slate-400'}">${tag}${escapeHtml(who)} · ${spFmt(m.created_at)}</div>
-                <div style="white-space:pre-wrap;word-break:break-word">${escapeHtml(m.body)}</div></div></div>`;
+                <div class="text-[10px] mb-0.5 ${mine ? 'text-indigo-100' : 'text-slate-500 dark:text-slate-400'}">${tag}${escapeHtml(who)} · ${spFmt(m.created_at)}</div>
+                ${m.body ? `<div style="white-space:pre-wrap;word-break:break-word">${escapeHtml(m.body)}</div>` : ''}${images}${deleteButton}</div></div>`;
+        }
+        function spAnnouncementBubble(announcement) {
+            const deleteButton = spIsAdmin
+                ? `<button type="button" data-sp-delete-announcement="${escapeHtml(String(announcement.id))}" class="mt-2 text-[10px] underline opacity-75 hover:opacity-100" aria-label="Delete announcement">Delete announcement</button>`
+                : '';
+            const images = (Array.isArray(announcement.image_paths) ? announcement.image_paths : [])
+                .filter(path => typeof path === 'string' && announcement.created_by && path.startsWith(`${announcement.created_by}/`))
+                .map(path => `<img data-sp-image-path="${escapeHtml(path)}" alt="Announcement image" class="mt-2 max-h-56 max-w-full rounded-lg object-contain bg-black/10">`).join('');
+            return `<div class="flex justify-start"><div class="max-w-[90%] rounded-2xl border border-amber-300/50 bg-amber-50 px-3 py-2 text-sm dark:border-amber-500/30 dark:bg-amber-950/30">
+                <div class="mb-0.5 text-[10px] text-amber-700 dark:text-amber-300">📢 Admin announcement · ${spFmt(announcement.created_at)}</div>
+                ${announcement.body ? `<div style="white-space:pre-wrap;word-break:break-word">${escapeHtml(announcement.body)}</div>` : ''}${images}${deleteButton}</div></div>`;
+        }
+        function spBindDeleteActions(body) {
+            body.querySelectorAll('[data-sp-delete-message]').forEach(button => {
+                button.addEventListener('click', () => spDeleteAdminReply(button.dataset.spDeleteMessage));
+            });
+            body.querySelectorAll('[data-sp-delete-announcement]').forEach(button => {
+                button.addEventListener('click', () => spDeleteAnnouncement(button.dataset.spDeleteAnnouncement));
+            });
+        }
+        async function spDeleteAdminReply(messageId) {
+            if (!spIsAdmin || !messageId) return;
+            const message = spMsgs.find(item => String(item.id) === String(messageId));
+            if (!message || message.sender_role !== 'admin' || message.sender_id !== currentUserId) return;
+            const confirmed = await showConfirm(
+                'Delete your reply?',
+                'This removes your reply from the conversation for you and the user.',
+                { confirmLabel: 'Delete reply' }
+            );
+            if (!confirmed) return;
+            try {
+                const { data: imagePaths, error } = await _supabase.rpc('support_delete_admin_reply', { p_message_id: String(messageId) });
+                if (error) throw error;
+                spMsgs = spMsgs.filter(item => String(item.id) !== String(messageId));
+                spChanged();
+                if (Array.isArray(imagePaths) && imagePaths.length) {
+                    const { error: cleanupError } = await _supabase.storage.from(SP_IMAGE_BUCKET).remove(imagePaths);
+                    if (cleanupError) {
+                        console.warn('Deleted reply but could not remove its attached images:', cleanupError.message);
+                        showToast('Reply deleted, but its attached images could not be removed.', { tone: 'error', duration: 8000 });
+                        return;
+                    }
+                }
+                showToast('Reply deleted.', { tone: 'success' });
+            } catch (error) {
+                showToast(`Could not delete reply: ${error.message}`, { tone: 'error', duration: 8000 });
+            }
+        }
+        async function spDeleteAnnouncement(announcementId) {
+            if (!spIsAdmin || !announcementId || !spAnnouncements.some(item => String(item.id) === String(announcementId))) return;
+            const confirmed = await showConfirm(
+                'Delete this announcement?',
+                'This removes the announcement from the announcements list for all users.',
+                { confirmLabel: 'Delete announcement' }
+            );
+            if (!confirmed) return;
+            try {
+                const { data: imagePaths, error } = await _supabase.rpc('support_delete_announcement', { p_announcement_id: String(announcementId) });
+                if (error) throw error;
+                spAnnouncements = spAnnouncements.filter(item => String(item.id) !== String(announcementId));
+                spChanged();
+                if (Array.isArray(imagePaths) && imagePaths.length) {
+                    const { error: cleanupError } = await _supabase.storage.from(SP_IMAGE_BUCKET).remove(imagePaths);
+                    if (cleanupError) {
+                        console.warn('Deleted announcement but could not remove its attached images:', cleanupError.message);
+                        showToast('Announcement deleted, but its attached images could not be removed.', { tone: 'error', duration: 8000 });
+                        return;
+                    }
+                }
+                showToast('Announcement deleted.', { tone: 'success' });
+            } catch (error) {
+                showToast(`Could not delete announcement: ${error.message}`, { tone: 'error', duration: 8000 });
+            }
+        }
+        async function spHydrateImages(body, renderVersion) {
+            for (const img of body.querySelectorAll('[data-sp-image-path]')) {
+                const path = img.dataset.spImagePath;
+                try {
+                    let url = spSignedUrlCache.get(path);
+                    if (!url || url.expiresAt <= Date.now() + 30000) {
+                        const { data, error } = await _supabase.storage.from(SP_IMAGE_BUCKET).createSignedUrl(path, 3600);
+                        if (error) throw error;
+                        url = { value: data.signedUrl, expiresAt: Date.now() + 3500000 };
+                        spSignedUrlCache.set(path, url);
+                    }
+                    if (renderVersion !== spRenderVersion || !img.isConnected) continue;
+                    img.src = url.value;
+                } catch (error) {
+                    console.warn('Could not load support image:', error.message);
+                    if (renderVersion === spRenderVersion && img.isConnected) {
+                        const unavailable = document.createElement('span');
+                        unavailable.className = 'mt-2 block text-xs opacity-70';
+                        unavailable.textContent = 'Image unavailable';
+                        img.replaceWith(unavailable);
+                    }
+                }
+            }
         }
         function spRender() {
             const body = document.getElementById('sp-body'), composer = document.getElementById('sp-composer');
             const title = document.getElementById('sp-title'), sub = document.getElementById('sp-sub'), back = document.getElementById('sp-back');
-            if (spIsAdmin && !spActiveThread) {
-                title.textContent = 'Admin Inbox'; sub.textContent = 'All user conversations'; back.classList.add('hidden'); composer.classList.add('hidden');
-                const th = spThreads();
-                body.innerHTML = th.length ? th.map(t => `<button onclick="spOpenThread('${t.id}')" class="w-full text-left rounded-xl border border-slate-200 dark:border-slate-700 px-3 py-2 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition">
-                    <div class="flex items-center justify-between gap-2"><span class="text-sm font-semibold truncate">${escapeHtml(t.label)}</span><span class="text-[10px] text-slate-500 shrink-0">${spFmt(t.last.created_at)}</span></div>
-                    <div class="flex items-center justify-between gap-2 mt-0.5"><span class="text-xs text-slate-500 truncate">${t.last.sender_role === 'admin' ? 'You: ' : ''}${escapeHtml(t.last.body)}</span>${t.unread ? `<span class="rounded-full bg-red-500 px-1.5 py-0.5 text-[10px] font-bold text-white shrink-0">${t.unread}</span>` : ''}</div></button>`).join('')
-                    : '<p class="text-sm text-slate-500 text-center mt-8">No messages yet.</p>';
+            const clearHistory = document.getElementById('sp-clear-history');
+            const kind = document.getElementById('sp-kind');
+            const imagePicker = document.getElementById('sp-image-picker');
+            const input = document.getElementById('sp-input');
+            const send = document.getElementById('sp-send');
+            if (spIsAdmin && spBroadcastMode) {
+                title.textContent = 'Announcements to all users';
+                sub.textContent = 'Every signed-in user can see these messages';
+                back.classList.remove('hidden');
+                clearHistory.classList.add('hidden');
+                composer.classList.remove('hidden');
+                kind.classList.add('hidden');
+                imagePicker.classList.remove('hidden');
+                document.getElementById('sp-attachments-preview').classList.toggle('hidden', spSelectedImages.length === 0);
+                input.placeholder = 'Write an update for all users…';
+                send.textContent = 'Announce';
+                body.innerHTML = spAnnouncements.length
+                    ? spAnnouncements.map(spAnnouncementBubble).join('')
+                    : '<p class="text-sm text-slate-500 text-center mt-8">No announcements yet. Send an update to all users.</p>';
+                spBindDeleteActions(body);
+                const renderVersion = ++spRenderVersion;
+                spHydrateImages(body, renderVersion);
+                body.scrollTop = body.scrollHeight;
                 return;
             }
-            const arr = spMsgs.filter(m => m.thread_user_id === spActiveThread);
+            if (spIsAdmin && !spActiveThread) {
+                title.textContent = 'Admin Inbox'; sub.textContent = 'All user conversations'; back.classList.add('hidden'); composer.classList.add('hidden');
+                clearHistory.classList.add('hidden');
+                const th = spThreads();
+                body.innerHTML = `<button onclick="spOpenBroadcast()" class="sp-inbox-item sp-inbox-announcement mb-2 w-full rounded-xl border border-indigo-300/50 bg-indigo-50 px-3 py-3 text-left text-sm font-semibold text-indigo-700 hover:bg-indigo-100 dark:border-indigo-500/30 dark:bg-indigo-950/30 dark:text-indigo-200 dark:hover:bg-indigo-950/50">📢 Announce to all users<span class="mt-0.5 block text-xs font-normal opacity-75">Share updates and changes in one message</span></button>`
+                    + (th.length ? th.map(t => `<button onclick="spOpenThread('${t.id}')" class="sp-inbox-item w-full text-left rounded-xl border border-slate-200 dark:border-slate-700 px-3 py-2 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition">
+                    <div class="flex items-center justify-between gap-2"><span class="text-sm font-semibold truncate">${escapeHtml(t.label)}</span><span class="text-[10px] text-slate-500 shrink-0">${spFmt(t.last.created_at)}</span></div>
+                    <div class="flex items-center justify-between gap-2 mt-0.5"><span class="text-xs text-slate-500 truncate">${t.last.sender_role === 'admin' ? 'You: ' : ''}${escapeHtml(t.last.body || (t.last.image_paths?.length ? '📷 Photo' : ''))}</span>${t.unread ? `<span class="rounded-full bg-red-500 px-1.5 py-0.5 text-[10px] font-bold text-white shrink-0">${t.unread}</span>` : ''}</div></button>`).join('')
+                    : '<p class="py-4 text-sm text-slate-500 text-center">No direct conversations yet.</p>');
+                return;
+            }
+            const arr = spMsgs.filter(m => m.thread_user_id === spActiveThread && spVisibleToUser(m));
+            const announcements = spIsAdmin ? [] : spAnnouncements;
+            const timeline = arr.map(message => ({ ...message, isAnnouncement: false }))
+                .concat(announcements.map(announcement => ({ ...announcement, isAnnouncement: true })))
+                .sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
             const th = spThreads().find(t => t.id === spActiveThread);
             title.textContent = spIsAdmin ? (th ? th.label : 'Conversation') : 'Chat with Admin';
-            sub.textContent = spIsAdmin ? 'Reply goes to this user' : 'Ask a doubt, share a suggestion, or request a clarification';
+            sub.textContent = spIsAdmin ? 'Reply goes to this user' : 'Messages to support.';
             back.classList.toggle('hidden', !spIsAdmin);
+            clearHistory.classList.toggle('hidden', spIsAdmin);
             composer.classList.remove('hidden');
-            document.getElementById('sp-kind').classList.toggle('hidden', spIsAdmin);
-            body.innerHTML = arr.length ? arr.map(spBubble).join('') : '<p class="text-sm text-slate-500 text-center mt-8">No messages yet. Say hello 👋</p>';
+            kind.classList.toggle('hidden', spIsAdmin);
+            imagePicker.classList.toggle('hidden', false);
+            input.placeholder = 'Type your message…';
+            send.textContent = 'Send';
+            body.innerHTML = timeline.length ? timeline.map(item => item.isAnnouncement ? spAnnouncementBubble(item) : spBubble(item)).join('')
+                : '<p class="text-sm text-slate-500 text-center mt-8">No messages yet. Say hello 👋</p>';
+            spBindDeleteActions(body);
+            const renderVersion = ++spRenderVersion;
+            spHydrateImages(body, renderVersion);
             body.scrollTop = body.scrollHeight;
             if (arr.some(spUnreadOf)) spMarkRead(spActiveThread);
+            if (!spIsAdmin && announcements.length) spMarkAnnouncementsRead();
         }
         async function spMarkRead(thread) {
             const { error } = await _supabase.rpc('support_mark_read', { p_thread: thread });
             if (error) { console.warn('mark read failed:', error.message); return; }
             spMsgs.forEach(m => { if (m.thread_user_id === thread && spIncoming(m)) { if (spIsAdmin) m.read_by_admin = true; else m.read_by_user = true; } });
-            const n = spMsgs.filter(spUnreadOf).length, b = document.getElementById('sp-badge');
-            b.textContent = n > 99 ? '99+' : n; b.classList.toggle('hidden', n === 0);
+            spUpdateBadges();
+        }
+        async function spMarkAnnouncementsRead() {
+            if (spIsAdmin || spAnnouncementsReadPending || !spAnnouncements.length) return;
+            const latest = spAnnouncements[spAnnouncements.length - 1].created_at;
+            if (spAnnouncementsReadAt && new Date(latest) <= new Date(spAnnouncementsReadAt)) return;
+            spAnnouncementsReadPending = true;
+            try {
+                const { data, error } = await _supabase.rpc('support_mark_announcements_read');
+                if (error) throw error;
+                const readAt = Array.isArray(data) ? data[0] : data;
+                if (typeof readAt !== 'string' || !Number.isFinite(Date.parse(readAt))) {
+                    throw new Error('The server did not return a valid read timestamp.');
+                }
+                spAnnouncementsReadAt = readAt;
+                spUpdateBadges();
+            } catch (error) {
+                console.warn('Could not mark announcements as read:', error.message);
+            } finally {
+                spAnnouncementsReadPending = false;
+            }
         }
         let spSending = false;
         async function spSend() {
+            if (spIsAdmin && spBroadcastMode) {
+                await spSendAnnouncement();
+                return;
+            }
             const ta = document.getElementById('sp-input'), text = ta.value.trim();
             const thread = spIsAdmin ? spActiveThread : currentUserId;
-            if (!text || !thread || spSending) return;
+            if ((!text && !spSelectedImages.length) || !thread || spSending) return;
             spSending = true; document.getElementById('sp-send').disabled = true;
-            const label = currentUsername || (document.getElementById('user-email-label')?.title || '').split('@')[0] || 'user';
-            const row = { thread_user_id: thread, sender_id: currentUserId, sender_role: spIsAdmin ? 'admin' : 'user', body: text,
-                          kind: spIsAdmin ? null : document.getElementById('sp-kind').value, user_label: spIsAdmin ? null : label };
-            const { data, error } = await _supabase.from('support_messages').insert(row).select().single();
-            spSending = false; document.getElementById('sp-send').disabled = false;
-            if (error) { showToast(`Message not sent: ${error.message}`, { tone: 'error', duration: 8000 }); return; }
-            ta.value = '';
-            if (!spMsgs.some(x => x.id === data.id)) spMsgs.push(data);
-            spChanged();
+            try {
+                const imagePaths = [];
+                for (const item of spSelectedImages) {
+                    if (!item.storagePath) {
+                        const extension = item.file.type === 'image/jpeg' ? 'jpg' : item.file.type === 'image/png' ? 'png' : 'webp';
+                        const storagePath = `${thread}/${newId()}.${extension}`;
+                        const { error: uploadError } = await _supabase.storage.from(SP_IMAGE_BUCKET)
+                            .upload(storagePath, item.file, { contentType: item.file.type, upsert: false });
+                        if (uploadError) throw uploadError;
+                        item.storagePath = storagePath;
+                    }
+                    imagePaths.push(item.storagePath);
+                }
+                const label = currentUsername || (document.getElementById('user-email-label')?.title || '').split('@')[0] || 'user';
+                const row = { thread_user_id: thread, sender_id: currentUserId, sender_role: spIsAdmin ? 'admin' : 'user', body: text,
+                              kind: spIsAdmin ? null : document.getElementById('sp-kind').value, user_label: spIsAdmin ? null : label };
+                if (imagePaths.length) row.image_paths = imagePaths;
+                const { data, error } = await _supabase.from('support_messages').insert(row).select().single();
+                if (error) throw error;
+                ta.value = '';
+                spClearSelectedImages();
+                if (!spMsgs.some(x => x.id === data.id)) spMsgs.push(data);
+                spChanged();
+            } catch (error) {
+                showToast(`Message not sent: ${error.message}`, { tone: 'error', duration: 8000 });
+            } finally {
+                spSending = false;
+                document.getElementById('sp-send').disabled = false;
+            }
+        }
+        async function spSendAnnouncement() {
+            const input = document.getElementById('sp-input');
+            const text = input.value.trim();
+            if ((!text && !spSelectedImages.length) || spSending) return;
+            spSending = true;
+            document.getElementById('sp-send').disabled = true;
+            try {
+                const imagePaths = [];
+                for (const item of spSelectedImages) {
+                    if (!item.storagePath) {
+                        const extension = item.file.type === 'image/jpeg' ? 'jpg' : item.file.type === 'image/png' ? 'png' : 'webp';
+                        const storagePath = `${currentUserId}/${newId()}.${extension}`;
+                        const { error: uploadError } = await _supabase.storage.from(SP_IMAGE_BUCKET)
+                            .upload(storagePath, item.file, { contentType: item.file.type, upsert: false });
+                        if (uploadError) throw uploadError;
+                        item.storagePath = storagePath;
+                    }
+                    imagePaths.push(item.storagePath);
+                }
+                const announcementRow = { created_by: currentUserId, body: text };
+                if (imagePaths.length) announcementRow.image_paths = imagePaths;
+                const { data, error } = await _supabase.from('support_announcements')
+                    .insert(announcementRow).select().single();
+                if (error) throw error;
+                if (!spAnnouncements.some(item => item.id === data.id)) {
+                    spAnnouncements.push(data);
+                    spAnnouncements.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+                }
+                input.value = '';
+                spClearSelectedImages();
+                spChanged();
+                showToast('Announcement sent to all users.', { tone: 'success' });
+            } catch (error) {
+                showToast(`Announcement not sent: ${error.message}`, { tone: 'error', duration: 8000 });
+            } finally {
+                spSending = false;
+                document.getElementById('sp-send').disabled = false;
+            }
         }
 
         function render() {
