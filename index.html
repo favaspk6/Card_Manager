@@ -1989,8 +1989,8 @@
                             <button onclick="repairMissingCardLinks()" class="w-full text-left px-4 py-2 rounded-lg text-sm hover:bg-white/5 transition">🔗 Fix Card Links</button> 
                             <button onclick="ddInsights()" class="w-full text-left px-4 py-2 text-sm rounded-lg hover:bg-white/5 transition">📊 Insights</button>
                             <button onclick="document.getElementById('header-menu-dropdown').classList.add('hidden'); ddOpenWithdrawalPlanner()" class="w-full rounded-lg text-left px-4 py-2 text-sm hover:bg-white/5 transition">💸 Withdrawal Planner</button>
-                            <button onclick="clearAllData()" class="flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] text-red-400/90 hover:text-red-300 hover:bg-red-500/10 transition w-full text-left"><svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg> Reset Data</button>
                             <button id="sp-menu-btn" onclick="spOpen()" class="hidden w-full text-left px-4 py-2 text-sm rounded-lg hover:bg-white/5 transition"><span id="sp-menu-label">💬 Support &amp; Feedback</span><span id="sp-badge" class="hidden ml-2 rounded-full bg-red-500 px-1.5 py-0.5 text-[10px] font-bold text-white">0</span></button>
+                            <button onclick="clearAllData()" class="flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] text-red-400/90 hover:text-red-300 hover:bg-red-500/10 transition w-full text-left"><svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg> Reset Data</button>
                             <button id="change-pw-btn" onclick="openChangePassword()" style="text-align:center;" class="hidden w-full text-left px-4 py-2 text-sm hover:text-white hover:bg-yellow-500/90 bg-yellow-500/10 text-yellow-400/90 transition">Change Password</button>
                             <button id="sign-out-btn" onclick="signOut()" style="text-align:center;" class="hidden w-full text-left px-4 py-2 text-sm hover:text-white hover:bg-red-500/90 bg-red-500/10 text-red-400/90 transition border-t border-slate-100 dark:border-slate-700 ">Sign Out</button>
                             <p id="user-email-label" style="text-align:center;" class="hidden px-4 py-1.5 text-xs text-slate-400 dark:text-slate-500 truncate"></p>
@@ -2559,6 +2559,11 @@
                 </div>
 
                 <div>
+                    <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase mb-1">Card Used</label>
+                    <select id="exp-card" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-sm bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 border-slate-200 dark:border-slate-600" required></select>
+                </div>
+
+                <div>
                     <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase mb-1">Description</label>
                     <input type="text" id="exp-desc" placeholder="e.g. Visa Fee" required class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-sm bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 border-slate-200 dark:border-slate-600 placeholder-slate-400 dark:placeholder-slate-500">
                 </div>
@@ -2641,11 +2646,6 @@
                         <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase mb-1">Cashback</label>
                         <input type="number" step="0.01" id="exp-cashback" placeholder="0.00" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-sm bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 border-slate-200 dark:border-slate-600 placeholder-slate-400 dark:placeholder-slate-500">
                     </div>
-                </div>
-
-                <div>
-                    <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase mb-1">Card Used</label>
-                    <select id="exp-card" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-sm bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 border-slate-200 dark:border-slate-600" required></select>
                 </div>
 
                 <div class="flex gap-2 pt-2">
