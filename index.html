@@ -1990,6 +1990,7 @@
                             <button onclick="ddInsights()" class="w-full text-left px-4 py-2 text-sm rounded-lg hover:bg-white/5 transition">📊 Insights</button>
                             <button onclick="document.getElementById('header-menu-dropdown').classList.add('hidden'); ddOpenWithdrawalPlanner()" class="w-full rounded-lg text-left px-4 py-2 text-sm hover:bg-white/5 transition">💸 Withdrawal Planner</button>
                             <button onclick="clearAllData()" class="flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] text-red-400/90 hover:text-red-300 hover:bg-red-500/10 transition w-full text-left"><svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg> Reset Data</button>
+                            <button id="sp-menu-btn" onclick="spOpen()" class="hidden w-full text-left px-4 py-2 text-sm rounded-lg hover:bg-white/5 transition"><span id="sp-menu-label">💬 Support &amp; Feedback</span><span id="sp-badge" class="hidden ml-2 rounded-full bg-red-500 px-1.5 py-0.5 text-[10px] font-bold text-white">0</span></button>
                             <button id="change-pw-btn" onclick="openChangePassword()" style="text-align:center;" class="hidden w-full text-left px-4 py-2 text-sm hover:text-white hover:bg-yellow-500/90 bg-yellow-500/10 text-yellow-400/90 transition">Change Password</button>
                             <button id="sign-out-btn" onclick="signOut()" style="text-align:center;" class="hidden w-full text-left px-4 py-2 text-sm hover:text-white hover:bg-red-500/90 bg-red-500/10 text-red-400/90 transition border-t border-slate-100 dark:border-slate-700 ">Sign Out</button>
                             <p id="user-email-label" style="text-align:center;" class="hidden px-4 py-1.5 text-xs text-slate-400 dark:text-slate-500 truncate"></p>
@@ -2693,6 +2694,34 @@
     </div>
 
     <!-- SETTINGS MODAL -->
+    <!-- SUPPORT CHAT (users <-> admin) -->
+    <div id="sp-modal" class="fixed inset-0 z-[88] hidden flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-3 sm:p-5">
+        <div class="bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 rounded-2xl shadow-2xl w-full max-w-lg flex flex-col" style="height:min(640px,88dvh)">
+            <div class="flex items-center justify-between px-4 py-3 border-b border-slate-200 dark:border-slate-700">
+                <div class="min-w-0">
+                    <h3 id="sp-title" class="text-sm font-bold truncate">Support &amp; Feedback</h3>
+                    <p id="sp-sub" class="text-[11px] text-slate-500 truncate"></p>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button id="sp-back" onclick="spBack()" class="hidden text-xs px-2 py-1 rounded-lg border border-slate-300 dark:border-slate-600">← Inbox</button>
+                    <button onclick="spClose()" class="text-slate-400 hover:text-slate-200 text-xl leading-none px-1" aria-label="Close">&times;</button>
+                </div>
+            </div>
+            <div id="sp-body" class="flex-1 overflow-y-auto p-4 space-y-2"></div>
+            <div id="sp-composer" class="border-t border-slate-200 dark:border-slate-700 p-3 space-y-2">
+                <select id="sp-kind" class="w-full px-3 py-1.5 border rounded-lg text-xs bg-white dark:bg-slate-700 border-slate-200 dark:border-slate-600">
+                    <option value="doubt">❓ Doubt / question</option>
+                    <option value="suggestion">💡 Suggestion</option>
+                    <option value="other">💬 Other</option>
+                </select>
+                <div class="flex gap-2">
+                    <textarea id="sp-input" rows="2" maxlength="4000" placeholder="Type your message…" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();spSend();}" class="flex-1 px-3 py-2 border rounded-lg text-sm outline-none focus:ring-2 focus:ring-indigo-500 bg-white dark:bg-slate-700 border-slate-200 dark:border-slate-600 resize-none"></textarea>
+                    <button id="sp-send" onclick="spSend()" class="px-4 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium transition">Send</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div id="settings-modal" class="fixed inset-0 z-[85] hidden flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
         <div class="w-full max-w-xl overflow-hidden rounded-3xl border border-[#1d2230] bg-[#0f121a] shadow-2xl">
             <div class="flex items-center justify-between border-b border-[#1d2230] px-5 py-5 sm:px-7">
@@ -2771,8 +2800,8 @@
             </div>
             <form id="auth-form" class="auth-form space-y-4">
                 <div id="auth-email-wrap">
-                    <label for="auth-email" class="auth-label">Email</label>
-                    <input type="email" id="auth-email" autocomplete="email" required class="auth-input">
+                    <label for="auth-email" class="auth-label">Email or username</label>
+                    <input type="text" id="auth-email" autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false" required class="auth-input">
                 </div>
                 <div id="auth-password-wrap">
                     <label for="auth-password" class="auth-label">Password</label>
@@ -2806,6 +2835,66 @@
                 </div>
                 <p class="auth-private-note"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 1 1 8 0v3"/></svg>Your account data stays private and secure</p>
             </form>
+        </div>
+        <!-- CREATE ACCOUNT POPUP -->
+        <div id="signup-modal" class="fixed inset-0 z-[5] hidden flex items-start sm:items-center justify-center bg-slate-900/70 backdrop-blur-md p-4 overflow-y-auto" onclick="if(event.target===this)closeSignup()">
+            <div class="auth-panel w-full overflow-hidden my-auto" role="dialog" aria-modal="true" aria-labelledby="su-title">
+                <div class="auth-panel-header">
+                    <span class="auth-mark" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 19a6 6 0 0 0-12 0"/><circle cx="9" cy="8" r="4"/><path d="M19 8v6M16 11h6"/></svg>
+                    </span>
+                    <div class="min-w-0">
+                        <h2 class="auth-title" id="su-title">Create your account</h2>
+                        <p class="auth-subtitle">Free, private, and takes under a minute.</p>
+                    </div>
+                    <button type="button" onclick="closeSignup()" aria-label="Close" style="margin-left:auto;font-size:1.5rem;line-height:1;opacity:.55;background:none;border:0;cursor:pointer;color:inherit">&times;</button>
+                </div>
+                <form id="signup-form" class="auth-form space-y-4" novalidate>
+                    <div>
+                        <label for="su-username" class="auth-label">Username</label>
+                        <input type="text" id="su-username" autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false" maxlength="20" oninput="suCheckUsername()" class="auth-input">
+                        <p id="su-user-status" style="margin-top:.4rem;font-size:.7rem;color:#64748b">3–20 characters: letters, numbers, dot or underscore. You can sign in with it instead of your email.</p>
+                    </div>
+                    <div>
+                        <label for="su-email" class="auth-label">Email</label>
+                        <input type="email" id="su-email" autocomplete="email" class="auth-input">
+                    </div>
+                    <div>
+                        <label for="su-password" class="auth-label">Password</label>
+                        <div style="position:relative">
+                            <input type="password" id="su-password" autocomplete="new-password" oninput="suStrength(this.value)" class="auth-input" style="padding-right:3.4rem">
+                            <button type="button" onclick="suToggle('su-password', this)" class="auth-link" style="position:absolute;right:.9rem;top:50%;transform:translateY(-50%)">Show</button>
+                        </div>
+                        <div id="su-meter" class="hidden" style="margin-top:.55rem">
+                            <div style="display:flex;gap:4px">
+                                <span class="su-seg" style="flex:1;height:4px;border-radius:4px;background:rgba(148,163,184,.35)"></span>
+                                <span class="su-seg" style="flex:1;height:4px;border-radius:4px;background:rgba(148,163,184,.35)"></span>
+                                <span class="su-seg" style="flex:1;height:4px;border-radius:4px;background:rgba(148,163,184,.35)"></span>
+                                <span class="su-seg" style="flex:1;height:4px;border-radius:4px;background:rgba(148,163,184,.35)"></span>
+                            </div>
+                            <p id="su-meter-label" style="margin-top:.3rem;font-size:.7rem;color:#64748b"></p>
+                        </div>
+                        <p style="margin-top:.4rem;font-size:.7rem;color:#64748b">At least 8 characters. Mix letters, numbers and symbols for a stronger password.</p>
+                    </div>
+                    <div>
+                        <label for="su-confirm" class="auth-label">Confirm password</label>
+                        <input type="password" id="su-confirm" autocomplete="new-password" class="auth-input">
+                    </div>
+                    <p id="su-error" class="text-xs text-red-600 hidden"></p>
+                    <button type="submit" id="su-submit" class="auth-button" style="width:100%">Create Account</button>
+                    <p style="text-align:center;font-size:.78rem;color:#64748b">Already have an account? <button type="button" class="auth-link" onclick="closeSignup()">Sign in</button></p>
+                </form>
+                <div id="signup-success" class="auth-form hidden" style="text-align:center">
+                    <div style="font-size:2.4rem">✉️</div>
+                    <h3 class="auth-title" style="margin-top:.5rem">Check your inbox</h3>
+                    <p class="auth-subtitle" style="margin-top:.4rem">We sent a confirmation link to <strong id="su-sent-email"></strong>. Open it to activate your account, then sign in.</p>
+                    <div class="auth-actions" style="margin-top:1.25rem">
+                        <button type="button" id="su-resend" class="auth-button flex-1" onclick="suResend()">Resend email</button>
+                        <button type="button" class="auth-button flex-1" onclick="closeSignup()">Back to Sign In</button>
+                    </div>
+                    <p id="su-resend-info" class="text-xs text-emerald-600 hidden" style="margin-top:.7rem"></p>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -3135,6 +3224,7 @@
             renderTransactionsAndMetrics();
         }
         let currentUserId = null;
+        let currentUsername = '';
 
         // ---- SINGLE SOURCE OF TRUTH FOR CATEGORIES ----
         // Add/remove/rename a category here ONLY. Every dropdown and the
@@ -4324,13 +4414,21 @@
             label.textContent = email.split('@')[0]; // show just the username part, not the full address
             label.title = email; // full email still available on hover
             label.classList.remove('hidden');
-            const nameEl = document.getElementById('user-name-label'); if (nameEl) nameEl.textContent = email.split('@')[0] || 'Account';
-            const avEl = document.getElementById('user-avatar'); if (avEl) avEl.textContent = (email[0] || 'U').toUpperCase();
+            let username = ((session.user.user_metadata && session.user.user_metadata.username) || '').trim();
+            try {
+                const { data: prof } = await _supabase.from('profiles').select('username').eq('user_id', session.user.id).maybeSingle();
+                if (prof && prof.username) username = prof.username;
+            } catch (e) { console.warn('Could not load username:', e); }
+            currentUsername = username;
+            if (username) { label.textContent = username; }
+            const nameEl = document.getElementById('user-name-label'); if (nameEl) nameEl.textContent = username || email.split('@')[0] || 'Account';
+            const avEl = document.getElementById('user-avatar'); if (avEl) avEl.textContent = ((username || email)[0] || 'U').toUpperCase();
             const subEl = document.getElementById('user-sub-label'); if (subEl) subEl.textContent = 'Signed in';
             await initData();
             hideLoadingOverlay();
             await ddLoadFromDB();
             try { checkDueNotifications(); } catch (e) { console.warn(e); }
+            try { await spInit(); } catch (e) { console.warn('Support chat init:', e); }
         }
 
         // ---- FORGOT / RESET PASSWORD ----
@@ -4366,7 +4464,7 @@
 
             const titles = {
                 signin: ['Sign in to your Cashback Tracker', 'Your cards and transactions are private to your account.'],
-                forgot: ['Reset your password', "Enter your account email and we'll send you a link to set a new password."],
+                forgot: ['Reset your password', "Enter your account email or username and we'll send a link to the account email to set a new password."],
                 recovery: ['Set a new password', 'Choose a new password for your account.']
             };
             document.getElementById('auth-title').textContent = titles[mode][0];
@@ -4385,19 +4483,21 @@
         });
 
         async function handleForgotPassword() {
-            const email = document.getElementById('auth-email').value.trim();
+            const identifier = document.getElementById('auth-email').value.trim();
             const btn = document.getElementById('auth-reset-btn');
-            if (!email) { showAuthMessage('Please enter your email address.', 'error'); return; }
+            if (!identifier) { showAuthMessage('Please enter your email or username.', 'error'); return; }
             showAuthMessage('');
             btn.disabled = true;
             // The reset email links back to this page. This exact URL must be listed under
             // Supabase > Authentication > URL Configuration > Redirect URLs.
             const redirectTo = window.location.origin + window.location.pathname;
-            const { error } = await _supabase.auth.resetPasswordForEmail(email, { redirectTo });
+            const email = await resolveLoginEmail(identifier);
+            let error = null;
+            if (email) ({ error } = await _supabase.auth.resetPasswordForEmail(email, { redirectTo }));
             btn.disabled = false;
             if (error) { showAuthMessage(error.message, 'error'); return; }
-            // Same message whether or not the email exists, so accounts can't be probed.
-            showAuthMessage('If an account exists for that email, a password reset link has been sent. Check your inbox (and spam folder).', 'info');
+            // Same message whether or not the account exists, so accounts can't be probed.
+            showAuthMessage('If an account exists for that email or username, a password reset link has been sent to the account email. Check your inbox (and spam folder).', 'info');
         }
 
         async function handleUpdatePassword() {
@@ -4423,17 +4523,138 @@
                 showAuthMessage('Password updated. Please sign in with your new password.', 'info');
             }
         }
-        document.getElementById('auth-signup-btn').addEventListener('click', async () => {
-            await handleAuth('signup');
-        });
+        document.getElementById('auth-signup-btn').addEventListener('click', openSignup);
 
+        // ---- CREATE ACCOUNT POPUP ----
+        const suEl = id => document.getElementById(id);
+        let suUserOk = null, suUserTimer = null, suUserSeq = 0;
+        const SU_USERNAME_RE = /^[a-z0-9_.]{3,20}$/;
+        function suUserStatus(text, tone) {
+            const el = suEl('su-user-status'); el.textContent = text;
+            el.style.color = tone === 'ok' ? '#059669' : tone === 'bad' ? '#dc2626' : '#64748b';
+        }
+        function suCheckUsername() {
+            const raw = suEl('su-username').value.trim().toLowerCase();
+            clearTimeout(suUserTimer); suUserOk = null;
+            if (!raw) { suUserStatus('3–20 characters: letters, numbers, dot or underscore. You can sign in with it instead of your email.'); return; }
+            if (!SU_USERNAME_RE.test(raw)) { suUserStatus(raw.length < 3 ? 'Too short — use at least 3 characters.' : 'Only letters, numbers, dot and underscore are allowed (max 20).', 'bad'); return; }
+            suUserStatus('Checking availability…');
+            const seq = ++suUserSeq;
+            suUserTimer = setTimeout(async () => {
+                const { data, error } = await _supabase.rpc('username_available', { p_username: raw });
+                if (seq !== suUserSeq) return;
+                if (error) { suUserOk = null; suUserStatus('Could not check availability right now — it will be checked when you create the account.'); return; }
+                suUserOk = !!data;
+                suUserStatus(data ? `“${raw}” is available` : `“${raw}” is already taken`, data ? 'ok' : 'bad');
+            }, 350);
+        }
+        function suMessage(t) { const e = suEl('su-error'); e.textContent = t || ''; e.classList.toggle('hidden', !t); }
+        function openSignup() {
+            suEl('signup-form').reset();
+            suEl('signup-form').classList.remove('hidden');
+            suEl('signup-success').classList.add('hidden');
+            const typed = suEl('auth-email').value.trim();
+            suEl('su-email').value = typed.includes('@') ? typed : '';
+            suEl('su-username').value = (!typed.includes('@') && /^[A-Za-z0-9_.]{3,20}$/.test(typed)) ? typed.toLowerCase() : '';
+            suUserOk = null; suCheckUsername();
+            suEl('su-password').type = 'password';
+            suMessage(''); suStrength('');
+            suEl('signup-modal').classList.remove('hidden');
+            setTimeout(() => suEl('su-username').focus(), 60);
+        }
+        function closeSignup() {
+            suEl('signup-modal').classList.add('hidden');
+            const em = suEl('su-email').value.trim();
+            if (em) suEl('auth-email').value = em;
+            suEl('auth-password').value = '';
+            suEl('auth-email').focus();
+        }
+        document.addEventListener('keydown', e => { if (e.key === 'Escape' && !suEl('signup-modal').classList.contains('hidden')) closeSignup(); });
+        function suToggle(id, btn) {
+            const i = suEl(id), show = i.type === 'password';
+            i.type = show ? 'text' : 'password'; btn.textContent = show ? 'Hide' : 'Show';
+        }
+        function suScore(pw) {
+            return (pw.length >= 8 ? 1 : 0) + (/[a-z]/.test(pw) && /[A-Z]/.test(pw) ? 1 : 0) + (/\d/.test(pw) ? 1 : 0) + (/[^A-Za-z0-9]/.test(pw) ? 1 : 0);
+        }
+        function suStrength(pw) {
+            const meter = suEl('su-meter');
+            if (!pw) { meter.classList.add('hidden'); return; }
+            meter.classList.remove('hidden');
+            const sc = pw.length < 8 ? Math.min(1, suScore(pw)) : suScore(pw);
+            const colors = ['#ef4444', '#f59e0b', '#84cc16', '#10b981'], labels = ['Too weak', 'Weak', 'Fair', 'Good', 'Strong'];
+            const idx = Math.max(0, sc - 1);
+            meter.querySelectorAll('.su-seg').forEach((seg, i) => { seg.style.background = i < sc ? colors[idx] : 'rgba(148,163,184,.35)'; });
+            suEl('su-meter-label').textContent = pw.length < 8 ? 'Too short — use at least 8 characters' : labels[sc];
+        }
+        suEl('signup-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const username = suEl('su-username').value.trim().toLowerCase(), email = suEl('su-email').value.trim();
+            const pw = suEl('su-password').value, pw2 = suEl('su-confirm').value;
+            if (!SU_USERNAME_RE.test(username)) { suMessage('Choose a username of 3–20 characters using letters, numbers, dot or underscore.'); suEl('su-username').focus(); return; }
+            if (suUserOk === false) { suMessage('That username is already taken. Please choose another.'); suEl('su-username').focus(); return; }
+            if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) { suMessage('Please enter a valid email address.'); suEl('su-email').focus(); return; }
+            if (pw.length < 8) { suMessage('Password must be at least 8 characters.'); suEl('su-password').focus(); return; }
+            if (pw !== pw2) { suMessage('Passwords do not match.'); suEl('su-confirm').focus(); return; }
+            suMessage('');
+            const btn = suEl('su-submit'); btn.disabled = true; btn.textContent = 'Creating account…';
+            const options = { data: { username } };
+            if (/^https?:/.test(location.protocol)) options.emailRedirectTo = location.origin + location.pathname;
+            const { data, error } = await _supabase.auth.signUp({ email, password: pw, options });
+            btn.disabled = false; btn.textContent = 'Create Account';
+            if (error) {
+                suMessage(/database error|duplicate|unique/i.test(error.message) ? 'That username was just taken. Please choose another.' : error.message);
+                return;
+            }
+            // Supabase returns an empty identities list (and no error) when the email is already registered.
+            if (data.user && Array.isArray(data.user.identities) && data.user.identities.length === 0) {
+                suMessage('This email is already registered. Close this window and sign in, or use “Forgot password?”.');
+                return;
+            }
+            if (data.session) { suEl('signup-modal').classList.add('hidden'); return; } // confirmations off: signed in already, onAuthStateChange takes over
+            suEl('su-sent-email').textContent = email;
+            suEl('signup-form').classList.add('hidden');
+            suEl('signup-success').classList.remove('hidden');
+            suCooldown();
+        });
+        let suTimer = null;
+        function suCooldown() {
+            let left = 30; const b = suEl('su-resend'); b.disabled = true; clearInterval(suTimer);
+            suTimer = setInterval(() => { left--; if (left <= 0) { clearInterval(suTimer); b.disabled = false; b.textContent = 'Resend email'; } else b.textContent = `Resend in ${left}s`; }, 1000);
+            b.textContent = `Resend in ${left}s`;
+        }
+        async function suResend() {
+            const email = suEl('su-sent-email').textContent, info = suEl('su-resend-info');
+            const { error } = await _supabase.auth.resend({ type: 'signup', email });
+            info.textContent = error ? error.message : 'Email sent again — check your inbox and spam folder.';
+            info.classList.toggle('text-red-600', !!error); info.classList.toggle('text-emerald-600', !error);
+            info.classList.remove('hidden');
+            if (!error) suCooldown();
+        }
+
+        // Sign-in accepts an email or a username. A username is looked up to its account email first.
+        async function resolveLoginEmail(identifier) {
+            const id = (identifier || '').trim();
+            if (id.includes('@')) return id;
+            try {
+                const { data, error } = await _supabase.rpc('email_for_username', { p_username: id });
+                if (error) { console.warn('username lookup failed:', error.message); return null; }
+                return data || null;
+            } catch (e) { return null; }
+        }
         async function handleAuth(mode) {
-            const email = document.getElementById('auth-email').value.trim();
+            const identifier = document.getElementById('auth-email').value.trim();
+            const email = mode === 'signin' ? (await resolveLoginEmail(identifier)) : identifier;
             const password = document.getElementById('auth-password').value;
             const errorEl = document.getElementById('auth-error');
             errorEl.classList.add('hidden');
             document.getElementById('auth-info').classList.add('hidden');
 
+            if (!email) { // unknown username: same wording as a wrong password so usernames can't be probed
+                errorEl.textContent = 'Invalid login credentials';
+                errorEl.classList.remove('hidden');
+                return;
+            }
             const { data, error } = mode === 'signup'
                 ? await _supabase.auth.signUp({ email, password })
                 : await _supabase.auth.signInWithPassword({ email, password });
@@ -8198,6 +8419,120 @@
                     cutout: '65%'
                 }
             });
+        }
+
+        // ---- SUPPORT CHAT: users send doubts / suggestions, admin replies (run support_chat.sql once) ----
+        let spIsAdmin = false, spMsgs = [], spChannel = null, spActiveThread = null, spReady = false;
+        const SP_KINDS = { doubt: '❓ Doubt', suggestion: '💡 Suggestion', other: '💬 Other' };
+        const spModalOpen = () => !document.getElementById('sp-modal').classList.contains('hidden');
+        const spIncoming = m => spIsAdmin ? m.sender_role === 'user' : m.sender_role === 'admin';
+        const spUnreadOf = m => spIncoming(m) && !(spIsAdmin ? m.read_by_admin : m.read_by_user);
+
+        async function spInit() {
+            if (!_supabase || !currentUserId) return;
+            try {
+                const { data } = await _supabase.from('admins').select('user_id').eq('user_id', currentUserId).maybeSingle();
+                spIsAdmin = !!data;
+            } catch (e) { spIsAdmin = false; }
+            document.getElementById('sp-menu-label').textContent = spIsAdmin ? '🛠 Admin Inbox' : '💬 Support & Feedback';
+            document.getElementById('sp-menu-btn').classList.remove('hidden');
+            await spLoad();
+            if (!spChannel) {
+                spChannel = _supabase.channel('support-msgs')
+                    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'support_messages' }, payload => {
+                        const m = payload.new;
+                        if (!m || spMsgs.some(x => x.id === m.id)) return;
+                        spMsgs.push(m);
+                        if (spIncoming(m) && !spModalOpen()) showToast(spIsAdmin ? `New message from ${m.user_label || 'a user'}` : 'New reply from admin', { tone: 'success' });
+                        spChanged();
+                    })
+                    .subscribe();
+            }
+        }
+        async function spLoad() {
+            const { data, error } = await _supabase.from('support_messages').select('*').order('created_at', { ascending: true }).limit(2000);
+            if (error) { console.warn('Support chat not available:', error.message); spReady = false; return; }
+            spReady = true; spMsgs = data || []; spChanged();
+        }
+        function spChanged() {
+            const n = spMsgs.filter(spUnreadOf).length;
+            const b = document.getElementById('sp-badge');
+            b.textContent = n > 99 ? '99+' : n; b.classList.toggle('hidden', n === 0);
+            if (spModalOpen()) spRender();
+        }
+        function spThreads() {
+            const map = {};
+            spMsgs.forEach(m => (map[m.thread_user_id] = map[m.thread_user_id] || []).push(m));
+            return Object.entries(map).map(([id, arr]) => ({
+                id, arr, last: arr[arr.length - 1],
+                label: (arr.find(x => x.sender_role === 'user') || {}).user_label || id.slice(0, 8),
+                unread: arr.filter(x => x.sender_role === 'user' && !x.read_by_admin).length
+            })).sort((a, b) => new Date(b.last.created_at) - new Date(a.last.created_at));
+        }
+        function spOpen() {
+            document.getElementById('header-menu-dropdown').classList.add('hidden');
+            if (!spReady) { showToast('Support chat is not set up yet. Run support_chat.sql in Supabase, then reload.', { tone: 'error', duration: 8000 }); return; }
+            document.getElementById('sp-modal').classList.remove('hidden');
+            spActiveThread = spIsAdmin ? null : currentUserId;
+            spRender();
+        }
+        function spClose() { document.getElementById('sp-modal').classList.add('hidden'); }
+        function spBack() { spActiveThread = null; spRender(); }
+        function spOpenThread(id) { spActiveThread = id; spRender(); }
+        function spFmt(ts) { const d = new Date(ts); return d.toLocaleString([], { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }); }
+        function spBubble(m) {
+            const mine = spIsAdmin ? m.sender_role === 'admin' : m.sender_role === 'user';
+            const who = m.sender_role === 'admin' ? 'Admin' : (spIsAdmin ? (m.user_label || 'User') : 'You');
+            const tag = m.kind && m.sender_role === 'user' ? `<span class="opacity-70">${SP_KINDS[m.kind] || ''} · </span>` : '';
+            return `<div class="flex ${mine ? 'justify-end' : 'justify-start'}"><div class="max-w-[85%] rounded-2xl px-3 py-2 text-sm ${mine ? 'bg-indigo-600 text-white' : 'bg-slate-100 dark:bg-slate-700'}">
+                <div class="text-[10px] mb-0.5 ${mine ? 'text-indigo-200' : 'text-slate-500 dark:text-slate-400'}">${tag}${escapeHtml(who)} · ${spFmt(m.created_at)}</div>
+                <div style="white-space:pre-wrap;word-break:break-word">${escapeHtml(m.body)}</div></div></div>`;
+        }
+        function spRender() {
+            const body = document.getElementById('sp-body'), composer = document.getElementById('sp-composer');
+            const title = document.getElementById('sp-title'), sub = document.getElementById('sp-sub'), back = document.getElementById('sp-back');
+            if (spIsAdmin && !spActiveThread) {
+                title.textContent = 'Admin Inbox'; sub.textContent = 'All user conversations'; back.classList.add('hidden'); composer.classList.add('hidden');
+                const th = spThreads();
+                body.innerHTML = th.length ? th.map(t => `<button onclick="spOpenThread('${t.id}')" class="w-full text-left rounded-xl border border-slate-200 dark:border-slate-700 px-3 py-2 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition">
+                    <div class="flex items-center justify-between gap-2"><span class="text-sm font-semibold truncate">${escapeHtml(t.label)}</span><span class="text-[10px] text-slate-500 shrink-0">${spFmt(t.last.created_at)}</span></div>
+                    <div class="flex items-center justify-between gap-2 mt-0.5"><span class="text-xs text-slate-500 truncate">${t.last.sender_role === 'admin' ? 'You: ' : ''}${escapeHtml(t.last.body)}</span>${t.unread ? `<span class="rounded-full bg-red-500 px-1.5 py-0.5 text-[10px] font-bold text-white shrink-0">${t.unread}</span>` : ''}</div></button>`).join('')
+                    : '<p class="text-sm text-slate-500 text-center mt-8">No messages yet.</p>';
+                return;
+            }
+            const arr = spMsgs.filter(m => m.thread_user_id === spActiveThread);
+            const th = spThreads().find(t => t.id === spActiveThread);
+            title.textContent = spIsAdmin ? (th ? th.label : 'Conversation') : 'Chat with Admin';
+            sub.textContent = spIsAdmin ? 'Reply goes to this user' : 'Ask a doubt, share a suggestion, or request a clarification';
+            back.classList.toggle('hidden', !spIsAdmin);
+            composer.classList.remove('hidden');
+            document.getElementById('sp-kind').classList.toggle('hidden', spIsAdmin);
+            body.innerHTML = arr.length ? arr.map(spBubble).join('') : '<p class="text-sm text-slate-500 text-center mt-8">No messages yet. Say hello 👋</p>';
+            body.scrollTop = body.scrollHeight;
+            if (arr.some(spUnreadOf)) spMarkRead(spActiveThread);
+        }
+        async function spMarkRead(thread) {
+            const { error } = await _supabase.rpc('support_mark_read', { p_thread: thread });
+            if (error) { console.warn('mark read failed:', error.message); return; }
+            spMsgs.forEach(m => { if (m.thread_user_id === thread && spIncoming(m)) { if (spIsAdmin) m.read_by_admin = true; else m.read_by_user = true; } });
+            const n = spMsgs.filter(spUnreadOf).length, b = document.getElementById('sp-badge');
+            b.textContent = n > 99 ? '99+' : n; b.classList.toggle('hidden', n === 0);
+        }
+        let spSending = false;
+        async function spSend() {
+            const ta = document.getElementById('sp-input'), text = ta.value.trim();
+            const thread = spIsAdmin ? spActiveThread : currentUserId;
+            if (!text || !thread || spSending) return;
+            spSending = true; document.getElementById('sp-send').disabled = true;
+            const label = currentUsername || (document.getElementById('user-email-label')?.title || '').split('@')[0] || 'user';
+            const row = { thread_user_id: thread, sender_id: currentUserId, sender_role: spIsAdmin ? 'admin' : 'user', body: text,
+                          kind: spIsAdmin ? null : document.getElementById('sp-kind').value, user_label: spIsAdmin ? null : label };
+            const { data, error } = await _supabase.from('support_messages').insert(row).select().single();
+            spSending = false; document.getElementById('sp-send').disabled = false;
+            if (error) { showToast(`Message not sent: ${error.message}`, { tone: 'error', duration: 8000 }); return; }
+            ta.value = '';
+            if (!spMsgs.some(x => x.id === data.id)) spMsgs.push(data);
+            spChanged();
         }
 
         function render() {
