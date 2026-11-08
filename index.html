@@ -2410,10 +2410,31 @@
                         <details id="card-rules-section" class="card-option-section p-4">
                             <summary class="cursor-pointer text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase">Fees &amp; cashback caps</summary>
                             <div class="grid grid-cols-2 gap-2 mt-3">
-                                <div class=""><label class="block text-[11px] font-medium text-slate-600 dark:text-slate-400 mb-1">Annual fee (AED)</label><input type="number" id="cr-fee" placeholder="e.g. 500" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-sm bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 border-slate-200 dark:border-slate-600 placeholder-slate-400 dark:placeholder-slate-500"></div>
-                                <div class=""><label class="block text-[11px] font-medium text-slate-600 dark:text-slate-400 mb-1">Fee renewal month (1-12)</label><input type="number" id="cr-renewal" placeholder="e.g. 3" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-sm bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 border-slate-200 dark:border-slate-600 placeholder-slate-400 dark:placeholder-slate-500"></div>
-                                <div class="col-span-2"><label class="block text-[11px] font-medium text-slate-600 dark:text-slate-400 mb-1">Fee waived at yearly spend (AED)</label><input type="number" id="cr-waiver" placeholder="e.g. 30000" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-sm bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 border-slate-200 dark:border-slate-600 placeholder-slate-400 dark:placeholder-slate-500"></div>
+                                <fieldset class="col-span-2 rounded-xl border border-slate-200 p-3 dark:border-slate-700">
+                                    <legend class="px-1 text-[11px] font-medium text-slate-600 dark:text-slate-400">Annual fee</legend>
+                                    <div class="flex flex-wrap gap-4">
+                                        <label class="flex items-center gap-2 text-[11px] font-medium text-slate-600 dark:text-slate-400">
+                                            <input id="cr-annual-fee-free" type="radio" name="cr-annual-fee-type" value="free" checked onchange="toggleAnnualFeeFields()" class="h-4 w-4 border-slate-300 text-indigo-600 focus:ring-indigo-500">
+                                            Free for Life
+                                        </label>
+                                        <label class="flex items-center gap-2 text-[11px] font-medium text-slate-600 dark:text-slate-400">
+                                            <input id="cr-annual-fee-paid" type="radio" name="cr-annual-fee-type" value="paid" onchange="toggleAnnualFeeFields()" class="h-4 w-4 border-slate-300 text-indigo-600 focus:ring-indigo-500">
+                                            Annual fee applies
+                                        </label>
+                                    </div>
+                                    <div id="cr-annual-fee-fields" class="mt-3 grid grid-cols-2 gap-2" style="display: none;" hidden>
+                                        <div><label for="cr-fee" class="mb-1 block text-[11px] font-medium text-slate-600 dark:text-slate-400">Annual fee (AED)</label><input type="number" step="any" min="0.01" id="cr-fee" placeholder="e.g. 500" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-sm bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 border-slate-200 dark:border-slate-600 placeholder-slate-400 dark:placeholder-slate-500"></div>
+                                        <div><label for="cr-renewal" class="mb-1 block text-[11px] font-medium text-slate-600 dark:text-slate-400">Fee renewal month (1-12)</label><input type="number" step="1" min="1" max="12" id="cr-renewal" placeholder="e.g. 3" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-sm bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 border-slate-200 dark:border-slate-600 placeholder-slate-400 dark:placeholder-slate-500"></div>
+                                        <div class="col-span-2"><label for="cr-waiver" class="mb-1 block text-[11px] font-medium text-slate-600 dark:text-slate-400">Fee waived at yearly spend (AED)</label><input type="number" id="cr-waiver" placeholder="e.g. 30000" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-sm bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 border-slate-200 dark:border-slate-600 placeholder-slate-400 dark:placeholder-slate-500"></div>
+                                    </div>
+                                </fieldset>
                                 <div class="col-span-2"><label class="block text-[11px] font-medium text-slate-600 dark:text-slate-400 mb-1">Minimum monthly spend (AED)</label><input type="number" id="cr-minSpend" placeholder="e.g. 3000" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-sm bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 border-slate-200 dark:border-slate-600 placeholder-slate-400 dark:placeholder-slate-500"></div>
+                                <div class="col-span-2 rounded-xl border border-slate-200 p-3 dark:border-slate-700">
+                                    <label class="flex items-start gap-2 text-[11px] font-medium text-slate-600 dark:text-slate-400">
+                                        <input id="cr-limit-cashback-spend" type="checkbox" checked class="mt-0.5 h-4 w-4 shrink-0 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500">
+                                        <span>Limit cashback-eligible spending to the card limit each month <span class="block mt-1 font-normal text-slate-500 dark:text-slate-500">Repayments do not restore this monthly cashback allowance. Uncheck to keep earning cashback as you spend, subject to your cashback caps.</span></span>
+                                    </label>
+                                </div>
                                 <div data-cap-control class="col-span-2 rounded-xl border border-slate-200 p-3 dark:border-slate-700">
                                     <label class="flex items-center gap-2 text-[11px] font-medium text-slate-600 dark:text-slate-400">
                                         <input id="cr-cap-all-enabled" type="checkbox" onchange="toggleCardCapInput(this)" class="h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500">
@@ -4074,13 +4095,27 @@
         const fmtRate = r => String(Number(Number(r).toFixed(2)));
 
         function getDefaultCardId() {
+            const dbDefault = cards.find(c => c.isDefault);
+            if (dbDefault) return String(dbDefault.id);
             try { return localStorage.getItem('cb_default_card_id') || ''; } catch (e) { return ''; }
         }
-        // "Default" = the card pre-selected when you add a new transaction (kept on this device).
+        // "Default" = the card pre-selected when you add a new transaction (synced to Supabase when the is_default column exists).
         function setDefaultCard(id) {
             const card = cards.find(c => String(c.id) === String(id));
             if (!card) return;
             try { localStorage.setItem('cb_default_card_id', String(card.id)); } catch (e) { /* private mode */ }
+            cards.forEach(c => { c.isDefault = String(c.id) === String(card.id); });
+            if (_supabase && currentUserId) {
+                (async () => {
+                    const clear = await _supabase.from('cards').update({ is_default: false }).eq('user_id', currentUserId);
+                    if (clear.error) {
+                        console.warn('Could not sync default card:', clear.error.message);
+                        showToast('Default card saved on this device only. Run cards_full_details.sql in Supabase to sync it.', { tone: 'error', duration: 8000 });
+                        return;
+                    }
+                    await _supabase.from('cards').update({ is_default: true }).eq('id', String(card.id));
+                })();
+            }
             showToast(`${card.name} is now your default card for new transactions.`, { tone: 'success' });
             recommendBestCard();
         }
@@ -4482,6 +4517,7 @@
                         netVariant: c.card_network_variant ?? '',
                         tier: c.card_tier ?? '',
                         last4: c.card_last4 ?? '',                // last 4 digits only, never the full number
+                        isDefault: ('is_default' in c) ? !!c.is_default : false, // default card for new transactions (synced once the is_default column exists)
                         // DB column is the source of truth once it exists; before that, fall back to this device's copy
                         disabled: ('is_disabled' in c && c.is_disabled !== null) ? !!c.is_disabled : localDisabled.has(String(c.id))
                     }));
@@ -4765,13 +4801,23 @@
                 const selectedCard = cards.find(c => c.id === cardId);
                 if (selectedCard && amount > 0) {
                     const rate = selectedCard.rates[category] !== undefined ? selectedCard.rates[category] : (selectedCard.rates['All Other Spend'] || 0);
-                    let cashbackValue = amount * (rate / 100);
+                    let eligibleSpend = amount;
+                    const cardRules = ddRule(selectedCard);
+                    if (cardRules.limitCashbackSpendToMonthlyLimit !== false) {
+                        const month = (document.getElementById('exp-date').value || localDateKey()).slice(0, 7);
+                        const editingId = document.getElementById('editing-tx-id').value;
+                        const monthTx = cardTxList(selectedCard).filter(t => t.id !== editingId && (t.date || '').startsWith(month));
+                        const spent = ddSum(monthTx.filter(t => t.type === 'Purchase' || t.type === 'Cash Withdrawal'), t => t.amount);
+                        eligibleSpend = Math.min(amount, Math.max(0, ddNum(selectedCard.availableLimit) - spent));
+                    }
+                    let cashbackValue = eligibleSpend * (rate / 100);
                     // Enforce the monthly cashback caps configured for this card (category cap and/or "All").
                     const caps = ddCaps(ddRule(selectedCard));
                     const month = (document.getElementById('exp-date').value || localDateKey()).slice(0, 7);
                     const editingId = document.getElementById('editing-tx-id').value;
                     const monthTx = cardTxList(selectedCard).filter(t => t.id !== editingId && (t.date || '').startsWith(month));
                     const capNotes = [];
+                    if (eligibleSpend < amount && rate > 0) capNotes.push(`Monthly card-limit cashback allowance reached (AED ${formatAED(Math.max(0, ddNum(selectedCard.availableLimit)))} eligible spend per month)`);
                     [category, 'All'].forEach(k => {
                         if (!(k in caps)) return;
                         const used = ddSum(monthTx.filter(t => k === 'All' || t.category === k), t => t.cashback);
@@ -4786,7 +4832,7 @@
             }
         }
 
-        ['exp-amount', 'exp-category', 'exp-card'].forEach(id => {
+        ['exp-amount', 'exp-category', 'exp-card', 'exp-date'].forEach(id => {
             document.getElementById(id).addEventListener('input', calculateDynamicCashback);
             document.getElementById(id).addEventListener('change', calculateDynamicCashback);
         });
@@ -6294,6 +6340,19 @@
                 .map(key => Math.max(0, caps[key] - ddSum(monthTxs.filter(t => key === 'All' || t.category === key), t => t.cashback)));
             return remaining.length ? Math.min(...remaining) : null;
         }
+        function ddWithdrawalAvailability(card, monthTxs) {
+            const limit = Math.max(0, ddNum(card.availableLimit));
+            const usesMonthlySpend = ddRule(card).limitCashbackSpendToMonthlyLimit !== false;
+            const used = usesMonthlySpend
+                ? ddSum(monthTxs.filter(t => t.type === 'Purchase' || t.type === 'Cash Withdrawal'), t => t.amount)
+                : Math.max(0, calculateOutstanding(cardTxList(card)).outstanding);
+            return {
+                amount: Math.max(0, limit - used),
+                description: usesMonthlySpend
+                    ? 'Available to withdraw is the card limit minus current-month purchases and cash withdrawals.'
+                    : "Available to withdraw is the card limit minus the card's current outstanding balance."
+            };
+        }
         // Withdrawal amount that exactly uses the remaining cashback cap for the selected category
         // (limited by what is still available on the card). No cap set -> based on available limit only.
         function ddSuggestedWithdrawal(card, category, monthTxs, availableToWithdraw, chargePercentage) {
@@ -6335,14 +6394,13 @@
                 : '<option value="">No configured categories at 3% or higher</option>';
             const result = (id, label, color = 'text-slate-900 dark:text-slate-100') => `<div class="rounded-xl border border-slate-200 bg-white p-3 dark:border-white/[.07] dark:bg-black/15"><p class="text-[10px] uppercase tracking-wider text-slate-500">${label}</p><p id="${id}" class="mono mt-1 text-sm font-semibold ${color}">AED 0.00</p></div>`;
             const selectedMonth = localDateKey().slice(0, 7);
-            const selectedMonthSpend = ddSum(cardTxList(selectedCard).filter(t =>
-                (t.date || '').startsWith(selectedMonth) && (t.type === 'Purchase' || t.type === 'Cash Withdrawal')
-            ), t => t.amount);
-            const suggestedAvailable = Math.max(0, ddNum(selectedCard.availableLimit) - selectedMonthSpend);
             const suggestedMonthTxs = cardTxList(selectedCard).filter(t => (t.date || '').startsWith(selectedMonth));
+            const suggestedAvailability = ddWithdrawalAvailability(selectedCard, suggestedMonthTxs);
+            const suggestedAvailable = suggestedAvailability.amount;
             const suggestedWithdrawal = selectedCategory
                 ? ddSuggestedWithdrawal(selectedCard, selectedCategory, suggestedMonthTxs, suggestedAvailable, WITHDRAWAL_CHARGE_PERCENTAGES[selectedCategory]).amount
                 : 0;
+            const availabilityDescription = suggestedAvailability.description;
             return `<div class="grid gap-3 sm:grid-cols-2">
                     <label class="block text-xs font-medium text-slate-600 dark:text-slate-400">Card
                         <select id="dd-withdrawal-card" onchange="ddUpdateWithdrawalPlanner(this)" class="mt-1.5 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 dark:border-white/10 dark:bg-slate-900 dark:text-slate-100">${cardOptions}</select>
@@ -6377,7 +6435,8 @@
                     ${result('dd-withdrawal-net', 'Estimated cashback received', 'text-emerald-700 dark:text-emerald-300')}
                 </div>
                 <p id="dd-withdrawal-suggestion-note" class="mt-3 text-xs font-bold text-indigo-700 dark:text-indigo-200"></p>
-                <p class="mt-2 text-[10px] leading-5 text-slate-500">The estimated withdrawal amount is calculated from the cashback cap remaining for the selected category (limited by the card's available amount). Available to withdraw is the card limit minus the card's current outstanding balance. Cashback is limited by the selected category cap and overall monthly cap configured for the card, after subtracting cashback already earned this month. Set the charge percentage for the selected category; the amount charged is calculated as withdrawal amount ÷ (1 − charge percentage ÷ 100). This does not account for prior-cycle balances or issuer holds; confirm actual fees and cashback with your card issuer.</p>`;
+                <p id="dd-withdrawal-availability-description" class="mt-2 text-[10px] leading-5 text-slate-500">${availabilityDescription}</p>
+                <p class="mt-1 text-[10px] leading-5 text-slate-500">The estimated withdrawal amount is limited by the available amount and the remaining cashback cap for the selected category. Cashback is also limited by the overall monthly cap configured for the card, after subtracting cashback already earned this month. Set the charge percentage for the selected category; the amount charged is calculated as withdrawal amount ÷ (1 − charge percentage ÷ 100). This does not account for issuer holds; confirm actual fees and cashback with your card issuer.</p>`;
         }
         function ddUpdateWithdrawalPlanner(source) {
             const cardSelect = document.getElementById('dd-withdrawal-card');
@@ -6406,9 +6465,10 @@
                 t.type === 'Purchase' || t.type === 'Cash Withdrawal'
             ), t => t.amount);
             const limit = Math.max(0, ddNum(card.availableLimit));
-            // Available to withdraw = total card limit minus the card's current outstanding balance.
-            const currentOutstanding = Math.max(0, calculateOutstanding(cardTxList(card)).outstanding);
-            const availableToWithdraw = Math.max(0, limit - currentOutstanding);
+            const availability = ddWithdrawalAvailability(card, monthTxs);
+            const availableToWithdraw = availability.amount;
+            const availabilityDescription = document.getElementById('dd-withdrawal-availability-description');
+            if (availabilityDescription) availabilityDescription.textContent = availability.description;
             const amountInput = document.getElementById('dd-withdrawal-amount-input');
             if (!amountInput) return;
             if (!ddWithdrawalCategory) {
@@ -6539,9 +6599,7 @@
             const pct = WITHDRAWAL_CHARGE_PERCENTAGES[category];
             const ym = localDateKey().slice(0, 7);
             const monthTxs = cardTxList(card).filter(t => (t.date || '').startsWith(ym));
-            // Available to withdraw = total card limit minus the card's current outstanding balance.
-            const outstanding = Math.max(0, calculateOutstanding(cardTxList(card)).outstanding);
-            const available = Math.max(0, ddNum(card.availableLimit) - outstanding);
+            const available = ddWithdrawalAvailability(card, monthTxs).amount;
             let amount = ddSuggestedWithdrawal(card, category, monthTxs, available, pct).amount;
             const suggested = amount;
             // A typed withdrawal amount overrides the estimate. Otherwise optional rounding per card:
@@ -6950,24 +7008,52 @@
             control.classList.toggle('dark:border-indigo-500/50', checkbox.checked);
             const inputWrapper = control.querySelector('[data-cap-input-wrapper]');
             if (inputWrapper) {
+                inputWrapper.style.display = checkbox.checked ? '' : 'none';
                 inputWrapper.classList.toggle('border-indigo-300', checkbox.checked);
                 inputWrapper.classList.toggle('dark:border-indigo-500/50', checkbox.checked);
+            } else {
+                input.style.display = checkbox.checked ? '' : 'none';
             }
+        }
+        function toggleAnnualFeeFields() {
+            const feeApplies = document.getElementById('cr-annual-fee-paid').checked;
+            const fields = document.getElementById('cr-annual-fee-fields');
+            const feeInput = document.getElementById('cr-fee');
+            const renewalInput = document.getElementById('cr-renewal');
+            const waiverInput = document.getElementById('cr-waiver');
+            fields.hidden = !feeApplies;
+            fields.style.display = feeApplies ? 'grid' : 'none';
+            feeInput.disabled = !feeApplies;
+            feeInput.required = feeApplies;
+            renewalInput.disabled = !feeApplies;
+            waiverInput.disabled = !feeApplies;
         }
         function ddFillRulesForm(card) {
             const r = card ? ddRule(card) : {};
             const caps = ddCaps(r);
             DD_RULE_FIELDS.forEach(k => { document.getElementById('cr-' + k).value = r[k] ?? ''; });
+            const hasAnnualFee = r.annualFeeType === 'paid' || (!r.annualFeeType && [r.fee, r.renewal, r.waiver].some(value => ddNum(value) > 0));
+            document.getElementById(hasAnnualFee ? 'cr-annual-fee-paid' : 'cr-annual-fee-free').checked = true;
+            toggleAnnualFeeFields();
+            document.getElementById('cr-limit-cashback-spend').checked = r.limitCashbackSpendToMonthlyLimit !== false;
             const overallCapEnabled = Object.prototype.hasOwnProperty.call(caps, 'All');
             const overallCapCheckbox = document.getElementById('cr-cap-all-enabled');
             overallCapCheckbox.checked = overallCapEnabled;
             document.getElementById('cr-cap-all').value = overallCapEnabled ? caps.All : '';
             toggleCardCapInput(overallCapCheckbox);
-            document.getElementById('card-rules-section').open = DD_RULE_FIELDS.some(k => r[k]) || Object.keys(caps).length > 0;
+            document.getElementById('card-rules-section').open = hasAnnualFee || DD_RULE_FIELDS.some(k => r[k]) || Object.keys(caps).length > 0;
         }
         function ddSaveRulesFromForm(id) {
             const rules = {};
             DD_RULE_FIELDS.forEach(k => { rules[k] = document.getElementById('cr-' + k).value.trim(); });
+            const annualFeeApplies = document.getElementById('cr-annual-fee-paid').checked;
+            rules.annualFeeType = annualFeeApplies ? 'paid' : 'free';
+            if (!annualFeeApplies) {
+                rules.fee = '';
+                rules.renewal = '';
+                rules.waiver = '';
+            }
+            rules.limitCashbackSpendToMonthlyLimit = document.getElementById('cr-limit-cashback-spend').checked;
             const caps = {};
             const overallCapCheckbox = document.getElementById('cr-cap-all-enabled');
             const overallCap = ddNum(document.getElementById('cr-cap-all').value);
