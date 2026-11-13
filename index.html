@@ -5769,7 +5769,7 @@
             const enabled = mode === 'monthly';
             dayInput.disabled = !enabled;
             dayInput.required = enabled;
-            document.getElementById('card-cashback-credit-day-field').classList.toggle('opacity-50', !enabled);
+            document.getElementById('card-cashback-credit-day-field').classList.toggle('hidden', !enabled);
         }
 
         document.getElementById('card-form').addEventListener('submit', async (e) => {
