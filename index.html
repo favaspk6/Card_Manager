@@ -8710,6 +8710,8 @@
         let spSelectedImages = [], spHistoryClearedAt = null, spHistoryStateReady = false;
         let spAnnouncements = [], spAnnouncementsReadAt = null, spBroadcastMode = false, spAnnouncementsReadPending = false;
         let spAnnouncementsReady = false, spAnnouncementsError = '';
+        let spNewChatMode = false, spUsers = [], spUsersLoading = false, spUsersError = '', spUsersLoadPromise = null;
+        let spSelectedRecipients = new Set(), spUserSearch = '', spUserDropdownOpen = false;
         let spRenderVersion = 0;
         const SP_IMAGE_BUCKET = 'support-attachments';
         const SP_MAX_IMAGES = 4;
@@ -8826,7 +8828,8 @@
             spMsgs.forEach(m => (map[m.thread_user_id] = map[m.thread_user_id] || []).push(m));
             return Object.entries(map).map(([id, arr]) => ({
                 id, arr, last: arr[arr.length - 1],
-                label: (arr.find(x => x.sender_role === 'user') || {}).user_label || id.slice(0, 8),
+                label: (arr.find(x => x.sender_role === 'user') || {}).user_label ||
+                    (spUsers.find(user => user.user_id === id) || {}).user_label || id.slice(0, 8),
                 unread: arr.filter(x => x.sender_role === 'user' && !x.read_by_admin).length
             })).sort((a, b) => new Date(b.last.created_at) - new Date(a.last.created_at));
         }
@@ -8835,23 +8838,162 @@
             if (!spReady) { showToast('Support chat is not set up yet. Run support_chat.sql and support_chat_features.sql in Supabase, then reload.', { tone: 'error', duration: 8000 }); return; }
             document.getElementById('sp-modal').classList.remove('hidden');
             spBroadcastMode = false;
+            spNewChatMode = false;
             spActiveThread = spIsAdmin ? null : currentUserId;
             spRender();
+            if (spIsAdmin) {
+                spFetchUsers().then(() => {
+                    if (spModalOpen() && !spNewChatMode && !spActiveThread) spRender();
+                });
+            }
         }
         function spClose() { document.getElementById('sp-modal').classList.add('hidden'); }
         function spBack() {
             spClearSelectedImages();
             if (spBroadcastMode) document.getElementById('sp-input').value = '';
             spBroadcastMode = false;
+            spNewChatMode = false;
             spActiveThread = null;
+            spSelectedRecipients.clear();
+            spUserSearch = '';
+            spUserDropdownOpen = false;
             spRender();
         }
         function spOpenThread(id) {
             if (spActiveThread !== id || spBroadcastMode) spClearSelectedImages();
             if (spBroadcastMode) document.getElementById('sp-input').value = '';
             spBroadcastMode = false;
+            spNewChatMode = false;
             spActiveThread = id;
             spRender();
+        }
+        async function spFetchUsers() {
+            if (spUsersLoadPromise) return spUsersLoadPromise;
+            spUsersLoading = true;
+            spUsersError = '';
+            spUsersLoadPromise = (async () => {
+                try {
+                    const { data, error } = await _supabase.rpc('support_admin_list_users');
+                    if (error) throw error;
+                    spUsers = (data || []).filter(user => typeof user.user_id === 'string' &&
+                        /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(user.user_id));
+                    return true;
+                } catch (error) {
+                    spUsersError = error.message || 'Could not load users.';
+                    console.warn('Could not load support users:', spUsersError);
+                    return false;
+                } finally {
+                    spUsersLoading = false;
+                    spUsersLoadPromise = null;
+                }
+            })();
+            return spUsersLoadPromise;
+        }
+        async function spOpenNewChat() {
+            if (!spIsAdmin) return;
+            spClearSelectedImages();
+            document.getElementById('sp-input').value = '';
+            spActiveThread = null;
+            spBroadcastMode = false;
+            spNewChatMode = true;
+            spSelectedRecipients.clear();
+            spUserSearch = '';
+            spUserDropdownOpen = true;
+            spUsers = [];
+            spRender();
+            if (!(await spFetchUsers())) {
+                showToast(`Could not load users: ${spUsersError}. Run support_admin_messaging.sql in Supabase, then reload.`, { tone: 'error', duration: 10000 });
+            }
+            if (spNewChatMode) spRender();
+        }
+        function spNewChatRecipientsHtml() {
+            const body = document.getElementById('sp-body');
+            const query = spUserSearch.trim().toLowerCase();
+            const selectedUsers = spUsers.filter(user => spSelectedRecipients.has(user.user_id));
+            const availableUsers = spUsers.filter(user => !spSelectedRecipients.has(user.user_id));
+            const matchingUsers = availableUsers.filter(user =>
+                !query || `${user.user_label || ''} ${user.email || ''}`.toLowerCase().includes(query)
+            );
+            const allUsers = spUsers.length === 0;
+            body.innerHTML = `
+                <div class="space-y-3">
+                    <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400" for="sp-user-search">Recipients</label>
+                    ${selectedUsers.length ? `
+                        <div class="flex flex-wrap gap-2" aria-label="Selected recipients">
+                            ${selectedUsers.map(user => `
+                                <span class="inline-flex max-w-full items-center gap-2 rounded-full border border-indigo-300/60 bg-indigo-50 px-3 py-1.5 text-xs text-indigo-800 dark:border-indigo-500/30 dark:bg-indigo-950/40 dark:text-indigo-200">
+                                    <span class="min-w-0 truncate">${escapeHtml(user.user_label || user.email || 'User')}</span>
+                                    <button type="button" data-sp-remove-user="${escapeHtml(user.user_id)}" aria-label="Remove ${escapeHtml(user.user_label || user.email || 'user')}" class="shrink-0 rounded-full px-1 text-sm leading-none hover:bg-indigo-200/70 dark:hover:bg-indigo-800/70">&times;</button>
+                                </span>`).join('')}
+                        </div>` : ''}
+                    <div class="relative">
+                        <input id="sp-user-search" type="search" value="${escapeHtml(spUserSearch)}" aria-expanded="${spUserDropdownOpen}" aria-controls="sp-user-list" autocomplete="off" placeholder="Select or search users…" class="w-full rounded-xl border border-slate-200 bg-white/70 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500 dark:border-slate-700 dark:bg-slate-800/70">
+                        ${spUserDropdownOpen ? `
+                            <div id="sp-user-list" class="absolute z-20 mt-1 max-h-56 w-full overflow-y-auto rounded-xl border border-slate-200 bg-white p-1 shadow-xl dark:border-slate-700 dark:bg-slate-800" role="listbox" aria-label="Available users">
+                                ${spUsersLoading
+                                    ? '<p class="px-3 py-4 text-center text-sm text-slate-500">Loading users…</p>'
+                                    : spUsersError && allUsers
+                                        ? `<p class="px-3 py-4 text-center text-sm text-red-500">${escapeHtml(spUsersError)}</p>`
+                                        : allUsers
+                                            ? '<p class="px-3 py-4 text-center text-sm text-slate-500">No users found.</p>'
+                                            : matchingUsers.length
+                                                ? matchingUsers.map(user => `
+                                                    <button type="button" data-sp-select-user="${escapeHtml(user.user_id)}" role="option" class="flex w-full items-center justify-between gap-3 rounded-lg px-3 py-2 text-left hover:bg-indigo-50 dark:hover:bg-indigo-950/50">
+                                                        <span class="min-w-0">
+                                                            <span class="block truncate text-sm font-medium text-slate-800 dark:text-slate-100">${escapeHtml(user.user_label || 'User')}</span>
+                                                            <span class="block truncate text-xs text-slate-500">${escapeHtml(user.email || '')}</span>
+                                                        </span>
+                                                        <span class="text-xs text-indigo-600 dark:text-indigo-300">Add</span>
+                                                    </button>`).join('')
+                                                : '<p class="px-3 py-4 text-center text-sm text-slate-500">No matching users.</p>'}
+                            </div>` : ''}
+                    </div>
+                    <p class="text-xs text-slate-500">${spSelectedRecipients.size} recipient${spSelectedRecipients.size === 1 ? '' : 's'} selected. Each receives a private message in their own support chat.</p>
+                </div>`;
+            const search = document.getElementById('sp-user-search');
+            if (search) search.addEventListener('input', () => {
+                spUserSearch = search.value;
+                spUserDropdownOpen = true;
+                const cursor = search.selectionStart;
+                spNewChatRecipientsHtml();
+                const refreshed = document.getElementById('sp-user-search');
+                refreshed.focus();
+                refreshed.setSelectionRange(cursor, cursor);
+            });
+            if (search) {
+                search.addEventListener('focus', () => {
+                    if (spUserDropdownOpen) return;
+                    spUserDropdownOpen = true;
+                    spNewChatRecipientsHtml();
+                    document.getElementById('sp-user-search').focus();
+                });
+                search.addEventListener('keydown', event => {
+                    if (event.key === 'Escape') {
+                        spUserDropdownOpen = false;
+                        spNewChatRecipientsHtml();
+                    }
+                });
+            }
+            body.querySelectorAll('[data-sp-select-user]').forEach(button => button.addEventListener('click', () => {
+                spSelectedRecipients.add(button.dataset.spSelectUser);
+                spUserSearch = '';
+                spUserDropdownOpen = true;
+                spNewChatRecipientsHtml();
+                document.getElementById('sp-user-search').focus();
+                spUpdateNewChatSendButton();
+            }));
+            body.querySelectorAll('[data-sp-remove-user]').forEach(button => button.addEventListener('click', () => {
+                spSelectedRecipients.delete(button.dataset.spRemoveUser);
+                spNewChatRecipientsHtml();
+                spUpdateNewChatSendButton();
+            }));
+        }
+        function spUpdateNewChatSendButton() {
+            const button = document.getElementById('sp-send');
+            if (!spNewChatMode || spSending) return;
+            button.textContent = spSelectedRecipients.size ? `Send to ${spSelectedRecipients.size} user${spSelectedRecipients.size === 1 ? '' : 's'}` : 'Select recipients';
+            button.disabled = spSelectedRecipients.size === 0 ||
+                (!document.getElementById('sp-input').value.trim() && spSelectedImages.length === 0);
         }
         function spOpenBroadcast() {
             if (!spAnnouncementsReady) {
@@ -8861,6 +9003,7 @@
             spClearSelectedImages();
             document.getElementById('sp-input').value = '';
             spActiveThread = null;
+            spNewChatMode = false;
             spBroadcastMode = true;
             spRender();
         }
@@ -8893,16 +9036,19 @@
                 spSelectedImages.push({ file, previewUrl: URL.createObjectURL(file), storagePath: null });
             }
             spRenderSelectedImages();
+            spUpdateNewChatSendButton();
         }
         function spRemoveImage(index) {
             const [removed] = spSelectedImages.splice(index, 1);
             if (removed) URL.revokeObjectURL(removed.previewUrl);
             spRenderSelectedImages();
+            spUpdateNewChatSendButton();
         }
         function spClearSelectedImages() {
             spSelectedImages.forEach(item => URL.revokeObjectURL(item.previewUrl));
             spSelectedImages = [];
             spRenderSelectedImages();
+            spUpdateNewChatSendButton();
         }
         async function spClearHistory() {
             if (spIsAdmin) return;
@@ -9054,6 +9200,23 @@
             const imagePicker = document.getElementById('sp-image-picker');
             const input = document.getElementById('sp-input');
             const send = document.getElementById('sp-send');
+            if (spIsAdmin && spNewChatMode) {
+                title.textContent = 'New chat';
+                sub.textContent = 'Send a private message to selected users';
+                back.classList.remove('hidden');
+                clearHistory.classList.add('hidden');
+                composer.classList.remove('hidden');
+                kind.classList.add('hidden');
+                imagePicker.classList.remove('hidden');
+                document.getElementById('sp-attachments-preview').classList.toggle('hidden', spSelectedImages.length === 0);
+                input.placeholder = 'Write a message to selected users…';
+                body.scrollTop = 0;
+                spNewChatRecipientsHtml();
+                spUpdateNewChatSendButton();
+                input.oninput = spUpdateNewChatSendButton;
+                return;
+            }
+            input.oninput = null;
             if (spIsAdmin && spBroadcastMode) {
                 title.textContent = 'Announcements to all users';
                 sub.textContent = 'Every signed-in user can see these messages';
@@ -9078,7 +9241,8 @@
                 title.textContent = 'Admin Inbox'; sub.textContent = 'All user conversations'; back.classList.add('hidden'); composer.classList.add('hidden');
                 clearHistory.classList.add('hidden');
                 const th = spThreads();
-                body.innerHTML = `<button onclick="spOpenBroadcast()" class="sp-inbox-item sp-inbox-announcement mb-2 w-full rounded-xl border border-indigo-300/50 bg-indigo-50 px-3 py-3 text-left text-sm font-semibold text-indigo-700 hover:bg-indigo-100 dark:border-indigo-500/30 dark:bg-indigo-950/30 dark:text-indigo-200 dark:hover:bg-indigo-950/50">📢 Announce to all users<span class="mt-0.5 block text-xs font-normal opacity-75">Share updates and changes in one message</span></button>`
+                body.innerHTML = `<button onclick="spOpenNewChat()" class="sp-inbox-item mb-2 w-full rounded-xl border border-emerald-300/50 bg-emerald-50 px-3 py-3 text-left text-sm font-semibold text-emerald-700 hover:bg-emerald-100 dark:border-emerald-500/30 dark:bg-emerald-950/30 dark:text-emerald-200 dark:hover:bg-emerald-950/50">✉️ New chat<span class="mt-0.5 block text-xs font-normal opacity-75">Start a private chat with selected users</span></button>
+                    <button onclick="spOpenBroadcast()" class="sp-inbox-item sp-inbox-announcement mb-2 w-full rounded-xl border border-indigo-300/50 bg-indigo-50 px-3 py-3 text-left text-sm font-semibold text-indigo-700 hover:bg-indigo-100 dark:border-indigo-500/30 dark:bg-indigo-950/30 dark:text-indigo-200 dark:hover:bg-indigo-950/50">📢 Announce to all users<span class="mt-0.5 block text-xs font-normal opacity-75">Share updates and changes in one message</span></button>`
                     + (th.length ? th.map(t => `<button onclick="spOpenThread('${t.id}')" class="sp-inbox-item w-full text-left rounded-xl border border-slate-200 dark:border-slate-700 px-3 py-2 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition">
                     <div class="flex items-center justify-between gap-2"><span class="text-sm font-semibold truncate">${escapeHtml(t.label)}</span><span class="text-[10px] text-slate-500 shrink-0">${spFmt(t.last.created_at)}</span></div>
                     <div class="flex items-center justify-between gap-2 mt-0.5"><span class="text-xs text-slate-500 truncate">${t.last.sender_role === 'admin' ? 'You: ' : ''}${escapeHtml(t.last.body || (t.last.image_paths?.length ? '📷 Photo' : ''))}</span>${t.unread ? `<span class="rounded-full bg-red-500 px-1.5 py-0.5 text-[10px] font-bold text-white shrink-0">${t.unread}</span>` : ''}</div></button>`).join('')
@@ -9137,6 +9301,10 @@
         }
         let spSending = false;
         async function spSend() {
+            if (spIsAdmin && spNewChatMode) {
+                await spSendNewChat();
+                return;
+            }
             if (spIsAdmin && spBroadcastMode) {
                 await spSendAnnouncement();
                 return;
@@ -9173,6 +9341,76 @@
             } finally {
                 spSending = false;
                 document.getElementById('sp-send').disabled = false;
+            }
+        }
+        async function spSendNewChat() {
+            const input = document.getElementById('sp-input');
+            const text = input.value.trim();
+            const recipients = [...spSelectedRecipients];
+            if (!spIsAdmin || (!text && !spSelectedImages.length) || !recipients.length || spSending) return;
+            spSending = true;
+            const send = document.getElementById('sp-send');
+            send.disabled = true;
+            send.textContent = 'Sending…';
+            const sentRecipients = [];
+            try {
+                for (const recipient of recipients) {
+                    const imagePaths = [];
+                    try {
+                        for (const item of spSelectedImages) {
+                            const extension = item.file.type === 'image/jpeg' ? 'jpg' : item.file.type === 'image/png' ? 'png' : 'webp';
+                            const storagePath = `${recipient}/${newId()}.${extension}`;
+                            const { error: uploadError } = await _supabase.storage.from(SP_IMAGE_BUCKET)
+                                .upload(storagePath, item.file, { contentType: item.file.type, upsert: false });
+                            if (uploadError) throw uploadError;
+                            imagePaths.push(storagePath);
+                        }
+                        const row = {
+                            thread_user_id: recipient,
+                            sender_id: currentUserId,
+                            sender_role: 'admin',
+                            body: text,
+                            kind: null,
+                            user_label: null
+                        };
+                        if (imagePaths.length) row.image_paths = imagePaths;
+                        const { data, error } = await _supabase.from('support_messages').insert(row).select().single();
+                        if (error) throw error;
+                        if (!spMsgs.some(message => message.id === data.id)) spMsgs.push(data);
+                        sentRecipients.push(recipient);
+                    } catch (error) {
+                        if (imagePaths.length) {
+                            const { error: cleanupError } = await _supabase.storage.from(SP_IMAGE_BUCKET).remove(imagePaths);
+                            if (cleanupError) {
+                                console.warn('Could not remove images for an unsent private message:', cleanupError.message);
+                                throw new Error(`${error.message}; uploaded images could not be removed`);
+                            }
+                        }
+                        throw error;
+                    }
+                }
+                input.value = '';
+                spSelectedRecipients.clear();
+                spClearSelectedImages();
+                spNewChatMode = false;
+                spActiveThread = null;
+                await spLoad();
+                spRender();
+                showToast(`Private message sent to ${recipients.length} user${recipients.length === 1 ? '' : 's'}.`, { tone: 'success' });
+            } catch (error) {
+                sentRecipients.forEach(recipient => spSelectedRecipients.delete(recipient));
+                if (sentRecipients.length) {
+                    spNewChatRecipientsHtml();
+                    spUpdateNewChatSendButton();
+                    spChanged();
+                    showToast(`Message sent to ${sentRecipients.length} of ${recipients.length} users. Remaining recipients are still selected. ${error.message}`, { tone: 'error', duration: 10000 });
+                } else {
+                    showToast(`Message not sent: ${error.message}`, { tone: 'error', duration: 10000 });
+                }
+            } finally {
+                spSending = false;
+                if (spNewChatMode) spUpdateNewChatSendButton();
+                else send.disabled = false;
             }
         }
         async function spSendAnnouncement() {
