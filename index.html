@@ -1,0 +1,1041 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+    <title>DueDates</title>
+    <link rel="manifest" href="manifest.webmanifest">
+    <meta name="theme-color" content="#0f1219">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="DueDates">
+    <link rel="apple-touch-icon" href="apple-touch-icon.png">
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(e => console.warn('SW registration failed:', e)));
+        }
+    </script>
+    <!-- Tailwind CSS, Chart.js, SheetJS & Supabase JS -->
+    <script>
+        try {
+            if (localStorage.getItem('dd-theme') === 'dark') document.documentElement.classList.add('dark');
+        } catch (error) {
+            console.warn('Could not read saved theme:', error);
+        }
+    </script>
+    <link rel="stylesheet" href="vendor/fonts.css">
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="vendor/tailwind.css">
+    <script src="vendor/chart.umd.js"></script>
+    <script src="vendor/xlsx.full.min.js"></script>
+    <script src="vendor/supabase.js"></script>
+</head>
+<body class="bg-[#0a0c12] text-slate-200 min-h-screen">
+<!-- AMBIENT MESH LIGHTING -->
+<div id="ambient-mesh" aria-hidden="true"><span class="orb o1"></span><span class="orb o2"></span><span class="orb o3"></span><span class="orb o4"></span><span class="grain"></span></div>
+
+<!-- LOADING OVERLAY: shown until initData() resolves, avoids a blank flash while Supabase responds -->
+    <div id="app-loading-overlay" class="fixed inset-0 z-[70] flex flex-col items-center justify-center gap-3 bg-slate-50 dark:bg-slate-900">
+        <div class="w-10 h-10 border-4 border-indigo-200 dark:border-indigo-900 border-t-indigo-600 rounded-full animate-spin"></div>
+        <p class="text-xs text-slate-400 dark:text-slate-500">Loading your data…</p>
+    </div>
+
+    <!-- SIDEBAR -->
+    <aside id="app-sidebar" class="fixed inset-y-0 left-0 w-72 max-w-[calc(100vw-3rem)] flex flex-col overflow-y-auto bg-[#0b0d13] border-r border-[#171b28] z-40 transition-transform duration-300 ease-in-out">
+        <div class="px-6 pt-6 pb-6 flex items-center gap-3">
+            <div class="dd-logo-lg grid h-12 w-12 shrink-0 place-items-center" aria-hidden="true">
+                <svg class="h-full w-full drop-shadow-lg" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <rect x="8" y="12" width="43" height="40" rx="5" fill="#F1EEF0"/>
+                    <path d="M8 17a5 5 0 0 1 5-5h33a5 5 0 0 1 5 5v8H8v-8Z" fill="#FF7D86"/>
+                    <path d="M46 12h1a5 5 0 0 1 5 5v31a5 5 0 0 1-5 5h-1V12Z" fill="#DAD7DB" fill-opacity=".72"/>
+                    <path d="M18 9v8M29 9v8M40 9v8" stroke="#5B5360" stroke-width="2.5" stroke-linecap="round"/>
+                    <circle cx="17.5" cy="31" r="2.5" fill="#A39DA5"/>
+                    <circle cx="27" cy="31" r="2.5" fill="#A39DA5"/>
+                    <circle cx="36.5" cy="31" r="2.5" fill="#A39DA5"/>
+                    <circle cx="17.5" cy="40" r="2.5" fill="#A39DA5"/>
+                    <circle cx="27" cy="40" r="2.5" fill="#A39DA5"/>
+                    <path d="m34.5 38 5 5m0-5-5 5" stroke="#FF7D86" stroke-width="2.2" stroke-linecap="round"/>
+                    <circle cx="43" cy="43" r="12" fill="#FFDA72"/>
+                    <path d="M43 31a12 12 0 0 1 0 24" fill="#FFC94F"/>
+                    <path d="M43 37v8" stroke="#FF7D86" stroke-width="2.7" stroke-linecap="round"/>
+                    <circle cx="43" cy="49" r="1.5" fill="#FF7D86"/>
+                </svg>
+            </div>
+            <div class="dd-brand-text">
+                <p class="dd-wordmark text-[15px] font-bold text-white leading-tight">DueDates</p>
+                <p class="eyebrow">&amp; Spend Analyzer</p>
+            </div>
+        </div>
+        <!--
+        <div class="px-5">
+            <button onclick="openTxModal()" class="w-full flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-semibold py-2.5 rounded-xl transition shadow-lg shadow-indigo-900/40"><svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Log Transaction</button>
+        </div>
+        -->
+        <nav id="sidebar-nav" class="px-4 mt-8 space-y-1 border-b border-[#1d2230]">
+            <p class="eyebrow px-3 mb-2">Portfolio Hub</p>
+            <a href="#top" class="flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] text-white bg-white/[0.06] transition"><svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg> Dashboard</a>
+            <a href="#saved-cards-section" class="flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] text-slate-400 hover:text-white hover:bg-white/5 transition w-full text-left"><svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg> Cards</a>
+            <a href="#analytics-section" class="flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] text-slate-400 hover:text-white hover:bg-white/5 transition w-full text-left"><svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg> Analytics &amp; Rewards</a>
+            <a href="#history-section" class="flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] text-slate-400 hover:text-white hover:bg-white/5 transition w-full text-left"><svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg> Transactions</a>
+            
+            <p class="eyebrow px-3 mt-6 mb-2">Utilities</p>
+            <button onclick="openUtilityModal('recommender-modal')" class="flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] text-slate-400 hover:text-white hover:bg-white/5 transition w-full text-left"><svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3 1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8L12 3Z"/><path d="m19 16 .8 2.2L22 19l-2.2.8L19 22l-.8-2.2L16 19l2.2-.8L19 16Z"/></svg> Best Card Recommender</button>
+            <button onclick="openUtilityModal('import-modal')" class="flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] text-slate-400 hover:text-white hover:bg-white/5 transition w-full text-left"><svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 15.5A4.5 4.5 0 0 1 7.5 11a5.5 5.5 0 0 1 10.7 1.5A3.5 3.5 0 1 1 18 19H7a4 4 0 0 1-4-3.5Z"/><path d="M12 12v7M9 15l3-3 3 3"/></svg> Import Excel / CSV</button>
+            <!--
+            <a href="#import-section" class="flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] text-slate-400 hover:text-white hover:bg-white/5 transition w-full text-left"><svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg> Import / Export</a>
+            <button onclick="repairMissingCardLinks()" class="flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] text-slate-400 hover:text-white hover:bg-white/5 transition w-full text-left"><svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg> Fix Card Links</button>
+            <button onclick="clearAllData()" class="flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] text-red-400/90 hover:text-red-300 hover:bg-red-500/10 transition w-full text-left"><svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg> Reset Data</button>
+            -->
+            <button onclick="openCardModal()" class="flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] text-slate-400 hover:text-white hover:bg-white/5 transition w-full text-left"><svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg> Manage Cards</button>
+            <!--
+            <button id="manage-category-type-btn" onclick="openSettings()" class="flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] text-slate-400 hover:text-white hover:bg-white/5 transition w-full text-left"><svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1-1.8 1.8-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.6v.2h-2.5V20a1.7 1.7 0 0 0-1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1-1.8-1.8.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.6-1H6v-2.5h.2a1.7 1.7 0 0 0 1.6-1 1.7 1.7 0 0 0-.3-1.9l-.1-.1 1.8-1.8.1.1a1.7 1.7 0 0 0 1.9.3 1.7 1.7 0 0 0 1-1.6V5h2.5v.2a1.7 1.7 0 0 0 1 1.6 1.7 1.7 0 0 0 1.9-.3l.1-.1 1.8 1.8-.1.1a1.7 1.7 0 0 0-.3 1.9 1.7 1.7 0 0 0 1.6 1h.2v2.5h-.2a1.7 1.7 0 0 0-1.6 1Z"/></svg> Manage Category / Type</button>
+            -->
+        </nav>
+
+        
+        <div class="mt-auto p-5">
+            <div class="p-5 mb-3 rounded-xl border border-[#1d2230] bg-[#0f121a]">
+                <div class="flex items-center justify-between">
+                    <p class="eyebrow">Rewards MTD</p>
+                    <p id="mtd-return" class="mono text-[10px] text-indigo-300 font-semibold">+0.00% RET</p>
+                </div>
+                <p class="mono text-xl font-bold text-white mt-1.5"><span class="text-xs font-medium text-slate-500 mr-1">AED</span><span id="mtd-cashback">0.00</span></p>
+                <div class="mt-2.5 h-1.5 rounded-full bg-white/10 overflow-hidden"><div id="mtd-bar" class="h-full rounded-full bg-indigo-400 transition-all duration-500" style="width:0%"></div></div>
+            </div>
+            <div class="p-5 rounded-xl border border-[#1d2230] bg-[#0f121a]">
+                <div class="flex items-center justify-between">
+                    <p class="eyebrow">Rewards YTD</p>
+                    <p id="ytd-return" class="mono text-[10px] text-emerald-400 font-semibold">+0.00% RET</p>
+                </div>
+                <p class="mono text-xl font-bold text-white mt-1.5"><span class="text-xs font-medium text-slate-500 mr-1">AED</span><span id="ytd-cashback">0.00</span></p>
+                <div class="mt-2.5 h-1.5 rounded-full bg-white/10 overflow-hidden"><div id="ytd-bar" class="h-full rounded-full bg-emerald-400 transition-all duration-500" style="width:0%"></div></div>
+            </div>
+        </div>
+    </aside>
+    <div id="sidebar-backdrop" class="fixed inset-0 z-30 hidden bg-black/60 backdrop-blur-sm lg:hidden" onclick="setSidebarOpen(false)" aria-hidden="true"></div>
+
+    <div id="app-shell" class="lg:pl-72 min-h-screen">
+        <!-- TOP BAR -->
+        <div id="top"></div>
+        <header class="sticky top-0 z-30 bg-[#0a0c12]/85 backdrop-blur border-b border-[#171b28]">
+            <div class="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-2 px-4 sm:px-6 py-3 lg:grid-cols-[minmax(0,1fr)_minmax(180px,0.85fr)_auto] lg:gap-4">
+                <div class="col-start-1 row-start-1 flex min-w-0 items-center gap-3 lg:col-start-1 lg:hidden">
+                    <button id="sidebar-toggle" type="button" onclick="toggleSidebar()" aria-label="Open sidebar" aria-controls="app-sidebar" aria-expanded="false" class="grid h-10 w-10 shrink-0 place-items-center rounded-xl transition hover:bg-white/5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-indigo-400 lg:hidden">
+                        <svg class="h-9 w-9 drop-shadow-md" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                            <rect x="8" y="12" width="43" height="40" rx="5" fill="#F1EEF0"/>
+                            <path d="M8 17a5 5 0 0 1 5-5h33a5 5 0 0 1 5 5v8H8v-8Z" fill="#FF7D86"/>
+                            <path d="M46 12h1a5 5 0 0 1 5 5v31a5 5 0 0 1-5 5h-1V12Z" fill="#DAD7DB" fill-opacity=".72"/>
+                            <path d="M18 9v8M29 9v8M40 9v8" stroke="#5B5360" stroke-width="2.5" stroke-linecap="round"/>
+                            <circle cx="17.5" cy="31" r="2.5" fill="#A39DA5"/>
+                            <circle cx="27" cy="31" r="2.5" fill="#A39DA5"/>
+                            <circle cx="36.5" cy="31" r="2.5" fill="#A39DA5"/>
+                            <circle cx="17.5" cy="40" r="2.5" fill="#A39DA5"/>
+                            <circle cx="27" cy="40" r="2.5" fill="#A39DA5"/>
+                            <path d="m34.5 38 5 5m0-5-5 5" stroke="#FF7D86" stroke-width="2.2" stroke-linecap="round"/>
+                            <circle cx="43" cy="43" r="12" fill="#FFDA72"/>
+                            <path d="M43 31a12 12 0 0 1 0 24" fill="#FFC94F"/>
+                            <path d="M43 37v8" stroke="#FF7D86" stroke-width="2.7" stroke-linecap="round"/>
+                            <circle cx="43" cy="49" r="1.5" fill="#FF7D86"/>
+                        </svg>
+                    </button>
+                    <div class="min-w-0">
+                        <!--
+                        <h1 class="flex min-w-0 items-center gap-2 truncate text-[17px] font-semibold text-white">DueDates 
+
+                            <span id="sync-badge" class="mono hidden shrink-0 rounded border border-emerald-500/25 bg-emerald-500/10 px-1.5 py-0.5 text-[9px] font-semibold tracking-widest text-emerald-400 sm:inline-flex">LIVE SYNC</span>
+                        
+                        </h1>
+                        <p id="deck-subtitle" class="hidden truncate text-xs text-slate-500 sm:block mt-0.5">Real-time yield optimization across your registered cards</p>
+                        -->
+                        <div class="dd-brand-text">
+                            <p class="dd-wordmark text-[15px] font-bold text-white leading-tight">DueDates</p>
+                            <p class="eyebrow">&amp; Spend Analyzer</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-start-2 row-start-1 relative flex items-center justify-end gap-2 sm:gap-3 lg:col-start-3">
+                    <div class="hidden md:flex items-stretch gap-3 xl:gap-6 rounded-xl border border-[#1d2230] bg-[#0f121a] px-3 xl:px-4 py-1.5">
+                        <div><p class="eyebrow">Outstanding</p><p class="mono text-xs font-semibold text-indigo-300 mt-0.5">AED <span id="pill-outstanding">0.00</span></p></div>
+                        <div><p class="eyebrow">Pending Cashback</p><p class="mono text-xs font-semibold text-emerald-400 mt-0.5">AED <span id="pill-pending">0.00</span></p></div>
+                    </div>
+                    <div class="hidden sm:flex shrink-0 flex-col gap-1">
+                        <button id="privacy-mode-toggle" type="button" role="switch" aria-checked="false" aria-label="Privacy Mode" title="Toggle Privacy Mode" onclick="togglePrivacy()" class="flex items-center justify-between gap-2 rounded-xl border border-[#1d2230] bg-[#0f121a] px-2.5 py-1.5 text-xs font-medium text-slate-300 transition hover:bg-white/5">
+                            <span>Privacy</span>
+                            <span id="privacy-mode-track" class="relative inline-flex h-[18px] w-8 items-center rounded-full bg-slate-600 transition-colors">
+                                <span id="privacy-mode-thumb" class="absolute left-0.5 top-0.5 h-3.5 w-3.5 rounded-full bg-white shadow transition-transform"></span>
+                            </span>
+                        </button>
+                        <button id="theme-mode-toggle" type="button" role="switch" aria-checked="true" aria-label="Dark theme" title="Switch to light theme" onclick="toggleTheme()" class="flex items-center justify-between gap-2 rounded-xl border border-[#1d2230] bg-[#0f121a] px-2.5 py-1.5 text-xs font-medium text-slate-300 transition hover:bg-white/5">
+                            <span id="theme-mode-label">Dark</span>
+                            <span id="theme-mode-track" class="relative inline-flex h-[18px] w-8 items-center rounded-full bg-indigo-500 transition-colors">
+                                <span id="theme-mode-thumb" class="absolute left-0.5 top-0.5 h-3.5 w-3.5 translate-x-3.5 rounded-full bg-white shadow transition-transform"></span>
+                            </span>
+                        </button>
+                    </div>
+                    <div class="relative ml-0 flex items-center gap-2 md:ml-3">
+                        <button onclick="toggleHeaderMenu()" id="header-menu-btn" class="flex items-center gap-2.5 rounded-xl px-2 py-1.5 hover:bg-white/5 transition" aria-label="Account menu">
+                            <span class="relative">
+                                <span id="user-avatar" class="w-8 h-8 rounded-full bg-indigo-500/25 text-indigo-200 grid place-items-center text-xs font-bold">U</span>
+                                <span id="sp-avatar-badge" style="color:white" class="hidden absolute -right-1 -top-1 min-w-4 h-4 rounded-full bg-red-500 px-1 text-[10px] leading-4 text-center font-bold" aria-live="polite"></span>
+                            </span>
+                            <span class="text-left leading-tight">
+                                <span id="user-name-label" class="block text-xs font-semibold text-white">Account
+                                </span>
+                                <span id="user-sub-label" class="block eyebrow">Local mode</span>
+                            </span>
+                        </button>
+                        <div id="header-menu-dropdown" class="hidden absolute right-0 w-56 bg-white dark:bg-[#0f121a] text-slate-800 dark:text-slate-200 rounded-xl shadow-2xl border border-slate-100 dark:border-slate-700 py-2 z-50">
+                            <button id="dd-m-privacy" type="button" onclick="togglePrivacy()" title="Toggle privacy mode" class="flex sm:hidden w-full items-center justify-between gap-3 px-4 py-2 text-sm rounded-lg hover:bg-white/5 transition"><span>🔒 Privacy mode</span><span class="dd-mswitch" aria-hidden="true"></span></button>
+                            <button id="dd-m-theme" type="button" onclick="toggleTheme()" title="Toggle dark / light theme" class="flex sm:hidden w-full items-center justify-between gap-3 px-4 py-2 text-sm rounded-lg hover:bg-white/5 transition"><span><span class="dd-lbl-dark">🌙 Dark theme</span><span class="dd-lbl-light">☀️ Light theme</span></span><span class="dd-mswitch" aria-hidden="true"></span></button>
+                            <div class="block sm:hidden my-1 border-t border-slate-100 dark:border-slate-700"></div>
+                            <button onclick="exportBackup()" class="w-full text-left px-4 py-2 text-sm rounded-lg hover:bg-white/5 transition">📤 Export Backup</button>
+                            <label for="backup-file-input" class="block w-full text-left px-4 py-2 rounded-lg text-sm hover:bg-white/5 transition cursor-pointer">📥 Import Backup</label>
+                            <button onclick="exportDueDatesIcs()" class="w-full text-left px-4 py-2 text-sm rounded-lg hover:bg-white/5 transition">📅 Export Due Dates</button>
+                            <button onclick="enableDueReminders()" class="w-full text-left px-4 py-2 text-sm rounded-lg hover:bg-white/5 transition">🔔 Enable Due Reminders</button>
+                            <button onclick="repairMissingCardLinks()" class="w-full text-left px-4 py-2 rounded-lg text-sm hover:bg-white/5 transition">🔗 Fix Card Links</button> 
+                            <button onclick="ddInsights()" class="w-full text-left px-4 py-2 text-sm rounded-lg hover:bg-white/5 transition">📊 Insights</button>
+                            <button onclick="document.getElementById('header-menu-dropdown').classList.add('hidden'); ddOpenWithdrawalPlanner()" class="w-full rounded-lg text-left px-4 py-2 text-sm hover:bg-white/5 transition">💸 Withdrawal Planner</button>
+                            <button id="sp-menu-btn" onclick="spOpen()" class="hidden w-full text-left px-4 py-2 text-sm rounded-lg hover:bg-white/5 transition"><span id="sp-menu-label">💬 Support &amp; Feedback</span><span id="sp-badge" style="color:white" class="hidden ml-2 rounded-full bg-red-500 px-1.5 py-0.5 text-[10px] font-bold">0</span></button>
+                            <button onclick="clearAllData()" class="flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] text-red-400/90 hover:text-red-300 hover:bg-red-500/10 transition w-full text-left"><svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg> Reset Data</button>
+                            <button id="change-pw-btn" onclick="openChangePassword()" style="text-align:center;" class="hidden w-full text-left px-4 py-2 text-sm hover:text-white hover:bg-yellow-500/90 bg-yellow-500/10 text-yellow-400/90 transition">Change Password</button>
+                            <button id="sign-out-btn" onclick="signOut()" style="text-align:center;" class="hidden w-full text-left px-4 py-2 text-sm hover:text-white hover:bg-red-500/90 bg-red-500/10 text-red-400/90 transition border-t border-slate-100 dark:border-slate-700 ">Sign Out</button>
+                            <p id="user-email-label" style="text-align:center;" class="hidden px-4 py-1.5 text-xs text-slate-400 dark:text-slate-500 truncate"></p>
+                        </div>
+                    </div>
+                </div>
+                <!--
+                <div class="col-span-2 row-start-2 flex min-w-0 items-center gap-2 lg:col-span-1 lg:col-start-2 lg:row-start-1">
+                    <div class="relative min-w-0 flex-1">
+                        <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500"><svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></span>
+                        <input id="top-search" type="text" oninput="onTopSearch(this.value)" placeholder="Search transactions by description…" class="w-full pl-9 pr-3 py-2 rounded-xl text-sm bg-[#0f121a] border border-[#1d2230] text-slate-200 placeholder-slate-500 outline-none focus:border-indigo-500/60">
+                    </div>
+                    <button onclick="openTxModal()" aria-label="Log transaction" title="Log transaction" class="shrink-0 flex items-center gap-1 rounded-lg bg-indigo-600 px-2 py-2 text-xs font-semibold text-white transition hover:bg-indigo-500 sm:px-3 lg:hidden"><svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg><span class="hidden sm:inline">Log</span></button>
+                </div>
+                -->
+            </div>
+        </header>
+
+        <main class="px-4 sm:px-6 py-6 pb-16 space-y-6 max-w-[1800px] mx-auto">
+
+            <!-- Deck header -->
+            <section class="hidden panel px-5 py-4 flex flex-wrap items-center justify-between gap-4">
+                
+              <div class="flex items-center gap-3">
+                    <div class="logo-glow w-10 h-10 rounded-xl bg-indigo-500/15 text-indigo-300 grid place-items-center"><svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg></div>
+                    <div>
+                        <h1 class="text-[17px] font-semibold text-white flex items-center gap-2">Portfolio Intelligence Deck <span id="sync-badge" class="mono text-[9px] tracking-widest font-semibold text-emerald-400 bg-emerald-500/10 border border-emerald-500/25 px-1.5 py-0.5 rounded">LIVE SYNC</span></h1>
+                        <p id="deck-subtitle" class="text-xs text-slate-500 mt-0.5">Real-time yield optimization across your registered cards</p>
+                    </div>
+                </div>
+                
+                <div class="flex flex-wrap items-center gap-2">
+                    
+                    <button onclick="repairMissingCardLinks()" title="Fixes transactions saved before card_id was tracked by matching them to a card by name" class="flex items-center gap-1.5 text-xs text-slate-300 bg-white/5 hover:bg-white/10 border border-[#1d2230] px-3 py-2 rounded-lg transition"><svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg> Fix Card Links</button>
+                    <button onclick="exportBackup()" class="flex items-center gap-1.5 text-xs text-slate-300 bg-white/5 hover:bg-white/10 border border-[#1d2230] px-3 py-2 rounded-lg transition"><svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Export Backup</button>
+                    <label for="backup-file-input" class="flex items-center gap-1.5 text-xs text-slate-300 bg-white/5 hover:bg-white/10 border border-[#1d2230] px-3 py-2 rounded-lg transition cursor-pointer"><svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg> Import Backup<input type="file" id="backup-file-input" accept="application/json" class="hidden"></label>
+                    <button onclick="clearAllData()" title="Reset Data" aria-label="Reset Data" class="text-slate-400 hover:text-red-300 bg-white/5 hover:bg-red-500/10 border border-[#1d2230] p-2 rounded-lg transition"><svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg></button>
+                    
+                </div>
+                
+            </section>
+
+            <div id="no-cards-banner" class="hidden bg-indigo-500/10 border border-indigo-500/25 rounded-2xl px-4 py-3 text-xs text-indigo-200">
+                👋 Welcome! Click <b>+ Manage</b> under Saved Cards to add your first card and unlock the dashboard, charts and best-card recommender.
+            </div>
+
+            <section id="saved-cards-section" class="panel p-5 scroll-mt-20">
+                <div class="saved-cards-header flex items-start justify-between gap-3  border-b border-[#1d2230]">
+                    <div>
+                        <div class="saved-cards-title-row flex items-center gap-3">
+                            <h2 class="saved-cards-title flex items-center gap-2 text-[15px] font-semibold text-white"><span class="text-emerald-400"><svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg></span> Saved Cards</h2>
+                            <button id="saved-cards-visibility-toggle" type="button" role="switch" aria-checked="true" aria-label="Hide saved cards" title="Hide saved cards" onclick="toggleSavedCardsVisibility()" class="saved-cards-toggle" aria-controls="cards-list" aria-expanded="true">
+                                <span>Show</span>
+                                <span class="saved-cards-toggle-track" aria-hidden="true"><span class="saved-cards-toggle-thumb"></span></span>
+                            </button>
+                        </div>
+                        <p id="saved-card-count" class="text-xs text-slate-500 mt-1">0 cards saved</p>
+                        <p class="text-xs text-slate-500 mt-1">Active limits, outstanding balance &amp; statement deadlines.</p>
+                    </div>
+                    <!-- <button onclick="openCardModal()" class="eyebrow !text-emerald-400 bg-emerald-500/10 hover:bg-emerald-500/20 px-2.5 py-1.5 rounded-md transition whitespace-nowrap">+ Manage</button> -->
+              <!--  </div> -->
+               
+                <div class="saved-cards-totals flex flex-wrap items-start justify-end gap-4 pb-4">
+                    <div id="total-limit" class="text-right"></div>
+                    <div id="total-outstanding" class="text-right"></div>
+                </div>
+                
+              </div>
+              <!--
+                <div class="flex items-start justify-end gap-3 p-4">
+                    <button onclick="openCardModal()" class="eyebrow !text-emerald-400 bg-emerald-500/10 hover:bg-emerald-500/20 px-2.5 py-1.5 rounded-md transition whitespace-nowrap">+ Manage</button>
+                </div>
+                -->
+                <div id="disabled-toggle-row" class="flex justify-end pt-3 pb-1"></div>
+                <div id="cards-list" style="padding-top: 8px;;" class="grid grid-cols-1 sm:grid-cols-2  max-[1499px]:col-span-1 min-[1500px]:grid-cols-4 gap-4"></div>
+            </section>
+
+            <!-- ACTIVE INSTALLMENTS (EMI) -->
+            <section id="emi-section" class="panel hidden p-5 sm:p-6 scroll-mt-20">
+                <div class="flex items-center justify-between gap-3">
+                    <h3 class="emi-head-title"><span class="text-indigo-300"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="15" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4M8 14.5h3"/></svg></span>Installment Plans (EMI)</h3>
+                    <span id="emi-count" class="th-count">0 plans</span>
+                </div>
+                <div id="emi-list" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 mt-4"></div>
+            </section>
+
+            <!-- BEST CARD RECOMMENDER MODAL claude
+            <div id="recommender-modal" class="fixed inset-0 z-[60] hidden items-center justify-center bg-black/60 backdrop-blur-sm p-4" onclick="if(event.target===this) closeUtilityModal('recommender-modal')">
+            <section id="recommender-section" role="dialog" aria-modal="true" aria-labelledby="recommender-title" class="panel p-5 sm:p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto min-w-0 flex flex-col">
+                <div class="flex flex-wrap items-start justify-between gap-4 w-full min-w-0">
+                    <div class="flex items-center gap-4  min-w-0 flex-1">
+                        <div class="rec-ico">   
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3 1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8L12 3Z"/><path d="m19 16 .8 2.2L22 19l-2.2.8L19 22l-.8-2.2L16 19l2.2-.8L19 16Z"/></svg>
+                        </div>
+                            <div>    
+                                <h2 id="recommender-title" class="rec-title">Best Card Recommender</h2>
+                            <p class="rec-desc">Pick a spend category to route it to your highest-earning card before checkout</p>
+                        </div>
+
+                            <button type="button" onclick="closeUtilityModal('recommender-modal')" class="shrink-0 flex items-center justify-center w-8 h-8 text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white text-2xl leading-none rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition-colors cursor-pointer" aria-label="Close recommender dialog">&times;</button>
+                    </div>
+
+                -->                    
+                    <!--
+                    <div class="flex items-right gap-3">
+                        
+                        <span class="rec-router"><i></i>Algorithmic Router</span>
+                    
+                        <button type="button" onclick="closeUtilityModal('recommender-modal')" class="text-slate-400 hover:text-white text-xl leading-none" aria-label="Close recommender dialog">&times;</button>
+                     </div> -->
+                <!--    
+                </div>
+                <div id="rec-category-pills" class="flex flex-wrap gap-3 mt-5"></div>
+                <select id="rec-category" onchange="recommendBestCard()" class="hidden"></select>
+                <div id="recommendation-result" class="mt-auto pt-4"></div>
+            </section>
+            </div>
+        -->
+
+        <!-- BEST CARD RECOMMENDER MODAL -->
+<div id="recommender-modal" class="fixed inset-0 z-[60] hidden items-center justify-center bg-black/60 backdrop-blur-sm p-4" onclick="if(event.target===this) closeUtilityModal('recommender-modal')">
+    <section id="recommender-section" role="dialog" aria-modal="true" aria-labelledby="recommender-title" class="panel p-5 sm:p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto min-w-0 flex flex-col">
+        <!-- HEADER -->
+        <div class="flex items-start justify-between gap-4 w-full min-w-0">
+            <!-- LEFT: ICON + TITLE + DESCRIPTION -->
+            <div class="flex items-center gap-4 min-w-0 flex-1">
+                <div class="rec-ico shrink-0">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"> <path d="m12 3 1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8L12 3Z"/> <path d="m19 16 .8 2.2L22 19l-2.2.8L19 22l-.8-2.2L16 19l2.2-.8L19 16Z"/> </svg>
+                </div>
+                <div class="min-w-0 flex-1">
+                    <h2 id="recommender-title" class="rec-title"> Best Card Recommender </h2>
+                    <p class="rec-desc"> Pick a spend category to route it to your highest-earning card before checkout </p>
+                </div>
+            </div>
+
+            <!-- RIGHT: CLOSE BUTTON -->
+            <button
+                type="button" onclick="closeUtilityModal('recommender-modal')" class="shrink-0 flex items-center justify-center w-8 h-8 text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white text-2xl leading-none rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition-colors cursor-pointer" aria-label="Close recommender dialog"> &times;
+            </button>
+        </div>
+
+        <!-- CATEGORY PILLS -->
+        <div id="rec-category-pills"
+            class="flex flex-wrap gap-3 mt-5">
+        </div>
+
+        <!-- HIDDEN CATEGORY SELECT -->
+        <select id="rec-category" onchange="recommendBestCard()" class="hidden"> </select>
+
+        <!-- RECOMMENDATION RESULT -->
+        <div id="recommendation-result" class="mt-auto pt-4">
+        </div>
+
+    </section>
+</div>
+
+            <!-- EXCEL / CSV IMPORT MODAL -->
+            <div id="import-modal" class="fixed inset-0 z-[60] hidden items-center justify-center bg-black/60 backdrop-blur-sm p-4" onclick="if(event.target===this) closeUtilityModal('import-modal')">
+                    <section id="import-section" role="dialog" aria-modal="true" aria-labelledby="import-title" class="panel p-5 w-full max-w-xl max-h-[90vh] overflow-y-auto min-w-0">
+                        <div class="flex items-start justify-between gap-4">
+                            <div>
+                        <h2 id="import-title" class="flex items-center gap-2 text-[15px] font-semibold text-white"><span class="text-amber-400"><svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 15.5A4.5 4.5 0 0 1 7.5 11a5.5 5.5 0 0 1 10.7 1.5A3.5 3.5 0 1 1 18 19H7a4 4 0 0 1-4-3.5Z"/><path d="M12 12v7M9 15l3-3 3 3"/></svg></span> Import Excel / CSV Data</h2>
+                            </div>
+                            <button type="button" onclick="closeUtilityModal('import-modal')" class="text-slate-400 hover:text-white text-xl leading-none" aria-label="Close import dialog">&times;</button>
+                        </div>
+                        <p class="text-xs text-slate-500 mt-1 mb-5">Upload your existing spreadsheet to automatically import history and card links.</p>
+                        <div id="excel-dropzone" class="rounded-xl bg-[#1a1e2a] px-4 py-7 text-center transition hover:bg-[#202535]" ondragover="event.preventDefault()" ondrop="handleExcelDrop(event)">
+                            <div class="mx-auto mb-3 grid h-11 w-11 place-items-center rounded-full bg-[#151925] text-slate-500"><svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 15.5A4.5 4.5 0 0 1 7.5 11a5.5 5.5 0 0 1 10.7 1.5A3.5 3.5 0 1 1 18 19H7a4 4 0 0 1-4-3.5Z"/><path d="M12 12v7M9 15l3-3 3 3"/></svg></div>
+                            <p class="text-sm font-semibold text-white">Drag &amp; drop spreadsheet here</p>
+                            <p class="mono mt-1 text-[11px] tracking-wider text-slate-500">Supports .CSV, .XLSX, .XLS formats</p>
+                            <div class="mt-3 flex flex-wrap items-center justify-center gap-2">
+                                <label for="excel-file-input" class="inline-flex cursor-pointer items-center gap-2 rounded-lg bg-[#272c3a] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#303649]"><svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M12 12v6M9.5 15.5 12 18l2.5-2.5"/></svg> Choose File</label>
+                                <button type="button" onclick="downloadExcelTemplate()" class="inline-flex items-center gap-2 rounded-lg border border-[#3b4252] bg-[#151925] px-4 py-2 text-sm font-semibold text-emerald-300 transition hover:bg-[#202535]"><svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5M12 15V3"/></svg> Download Excel Template</button>
+                            </div>
+                            <p class="mt-2 text-[11px] text-slate-500">Required columns: Card and Amount. The workbook includes a field guide.</p>
+                            <div id="import-file-chip" class="mx-auto mt-4 hidden max-w-full items-center justify-between gap-3 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-left">
+                                <div class="flex min-w-0 items-center gap-2">
+                                    <svg class="h-4 w-4 shrink-0 text-emerald-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                                    <span id="import-file-name" class="truncate text-xs font-semibold text-emerald-100"></span>
+                                    <span id="import-file-size" class="mono shrink-0 text-[10px] text-emerald-300/70"></span>
+                                </div>
+                                <button type="button" onclick="clearPendingImportFile()" class="shrink-0 text-lg leading-none text-slate-400 hover:text-white" aria-label="Remove selected file" title="Remove file">&times;</button>
+                            </div>
+                            <input type="file" id="excel-file-input" accept=".xlsx, .xls, .csv" class="hidden"/>
+                        </div>
+                        <button id="import-manual-btn" onclick="openTxModal()" class="mt-4 w-full flex items-center justify-center gap-2 rounded-lg bg-[#252a38] px-4 py-2.5 text-xs font-semibold text-emerald-300 transition hover:bg-[#2c3242] w-full flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-semibold py-2.5 rounded-xl transition shadow-lg shadow-indigo-900/40"><svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg> Add Transaction Manually</button>
+                        <button id="import-upload-btn" type="button" onclick="startExcelImport()" class="mt-4 hidden w-full items-center justify-center gap-2 rounded-xl bg-indigo-600 py-2.5 text-sm font-semibold text-white shadow-lg shadow-indigo-900/40 transition hover:bg-indigo-500"><svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg> Upload</button>
+                    </section>
+            </div>
+
+            <script src="ui.js"></script>
+
+            <div class="grid grid-cols-1 xl:grid-cols-12 gap-6 items-start">
+
+                <!-- LEFT: recommender, filters, charts, tables -->
+                <div class="xl:col-span-12 space-y-6 min-w-0">
+
+                    <!-- Financial performance report -->
+                    <section id="analytics-section" class="panel p-6 sm:p-8 scroll-mt-20 space-y-7 shadow-[0_0_28px_rgba(99,102,241,0.14)]">
+                        <div id="financial-performance-report"></div>
+                    </section>
+
+                    <!-- CARD, CATEGORY & MONTH FILTERS — its own section so it never competes with the charts for space -->
+                <section class="panel">
+                    <div class="bg-white dark:bg-slate-800 p-6 rounded-xl border border-slate-200 dark:border-slate-600 shadow-sm space-y-3">
+                    <h3 class="text-sm font-bold text-slate-800 dark:text-slate-200">Filters</h3>
+                    <div class="flex flex-wrap items-center gap-2" id="card-filter-container"></div>
+                    <div id="category-filter-wrapper" class="hidden flex flex-wrap items-center gap-2 pt-2 border-t border-dashed border-slate-100 dark:border-slate-700"></div>
+                    <div id="month-filter-container" class="flex flex-wrap items-center gap-2 pt-2 border-t border-dashed border-slate-100 dark:border-slate-700"></div>
+                </div>
+                </section>
+
+                    
+
+                    <!-- Aggregated Summary Table (Non-Monthly Breakdown) -->
+                <section class="panel">
+                    <div class=" bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-600 shadow-sm overflow-hidden">
+                    <div class="sm-head">
+                        <h3 id="summary-table-title" class="sm-title">Summary Table</h3>
+                        <span id="active-filter-label" class="sm-badge">Filter: All Cards</span>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="tx-table">
+                            <thead>
+                                <tr id="summary-table-header"></tr>
+                            </thead>
+                            <tbody id="monthly-table-body"></tbody>
+                        </table>
+                    </div>
+                    <p id="summary-cashback-note" class="sm-note hidden"></p>
+                </div>
+                </section>
+
+                <!-- History Table -->
+                 <section class="panel">
+                <div id="history-section" class="scroll-mt-20 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-600 shadow-sm overflow-hidden">
+                    <div class="th-head">
+                        <div class="flex flex-wrap items-start justify-between gap-4">
+                            <div>
+                                <div class="flex items-center gap-3 flex-wrap">
+                                    <h3 class="th-title"><span class="text-emerald-400"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3h14v18l-3-2-2 2-2-2-2 2-2-2-3 2V3Z"/><path d="M9 8h6M9 12h6"/></svg></span>Transaction History</h3>
+                                    <span id="tx-count" class="th-count">0 entries</span>
+                                </div>
+                                <p class="th-sub">Real-time settlement log with automated cashback attribution</p>
+                            </div>
+                            <div class="flex items-center gap-2.5">
+                                <button onclick="exportFilteredCsv()" class="th-btn">
+                                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11M7.5 10.5 12 15l4.5-4.5M5 19h14"/></svg>Export Filtered CSV
+                                </button>
+                                <button onclick="openTxModal()" class="th-btn primary">
+                                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>Log Entry
+                                </button>
+                            </div>
+                        </div>
+                        <!-- second line: card filter, type filter, category filter and search -->
+                        <div class="th-bar">
+                            <div id="history-card-container" class="th-field"></div>
+                            <div id="type-filter-container" class="th-field"></div>
+                            <div id="history-category-container" class="th-field"></div>
+                            <label class="th-field th-search th-trigger">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fbbf24" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.5 4.5"/></svg>
+                                <input type="text" id="tx-search-input" oninput="setSearchQuery(this.value)" placeholder="Search description…" autocomplete="off">
+                            </label>
+                        </div>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="tx-table">
+                            <thead>
+                                <tr>
+                                    <th class="tx-th sortable" onclick="toggleTxSort('date')">Date <span id="sort-arrow-date"></span></th>
+                                    <th class="tx-th sortable" onclick="toggleTxSort('card')">Card <span id="sort-arrow-card"></span></th>
+                                    <th class="tx-th">Type</th>
+                                    <th class="tx-th">Description</th>
+                                    <th class="tx-th">Category</th>
+                                    <th class="tx-th right sortable" onclick="toggleTxSort('amount')">Amount <span id="sort-arrow-amount"></span></th>
+                                    <th class="tx-th right">Fee</th>
+                                    <th class="tx-th right sortable" onclick="toggleTxSort('cashback')">Cashback <span id="sort-arrow-cashback"></span></th>
+                                    <th class="tx-th right sortable" onclick="toggleTxSort('net')">Net Rewards <span id="sort-arrow-net"></span></th>
+                                    <th class="tx-th center">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tx-table-body"></tbody>
+                        </table>
+                    </div>
+                    <div id="tx-pagination" class="px-6 py-3 border-t border-slate-100 dark:border-slate-700 flex items-center justify-between gap-3 text-xs text-slate-500 dark:text-slate-400"></div>
+                </div>
+                </section>
+
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- CARD ADD / EDIT MODAL -->
+    <div id="card-modal" class="fixed inset-0 z-50 hidden flex items-start sm:items-center justify-center bg-slate-950/65 backdrop-blur-md p-3 sm:p-5 overflow-y-auto">
+                        <div class="w-full max-w-lg max-h-[94vh] overflow-y-auto my-auto rounded-3xl border border-white/70 bg-white p-5 shadow-[0_24px_80px_rgba(15,23,42,.35)] dark:border-slate-700 dark:bg-slate-900 sm:p-6">
+                    <div class="-mx-5 -mt-5 mb-5 flex items-center justify-between border-b border-indigo-100/80 bg-gradient-to-r from-indigo-50 via-white to-violet-50/70 px-5 py-4 dark:border-slate-700 dark:from-slate-800 dark:via-slate-800 dark:to-indigo-950/50 sm:-mx-6 sm:-mt-6 sm:px-6 sm:py-5">
+                        <div class="flex min-w-0 items-center gap-3">
+                            <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-500 to-violet-600 text-xl text-white shadow-lg shadow-indigo-500/20">💳</span>
+                            <div class="min-w-0">
+                                <h2 id="card-form-title" class="truncate text-base font-bold text-slate-900 dark:text-slate-100">Add / Manage Cards</h2>
+                                <p class="mt-0.5 text-xs text-slate-500 dark:text-slate-400">Personalize your card and reward settings</p>
+                            </div>
+                        </div>
+                        <button type="button" onclick="cancelEditCard()" class="ml-3 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-slate-500 transition hover:bg-white hover:text-slate-800 hover:shadow-sm dark:text-slate-400 dark:hover:bg-slate-700 dark:hover:text-white" aria-label="Close">✕</button>
+                    </div>
+                    <form id="card-form" class="space-y-4">
+                        <input type="hidden" id="editing-card-id" value="">
+                        <div class="card-field">
+                            <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase mb-1">Card Name</label>
+                            <input type="text" id="card-name" placeholder="e.g., ADCB - 365" required class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-sm bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 border-slate-200 dark:border-slate-600 placeholder-slate-400 dark:placeholder-slate-500">
+                        </div>
+                        <div class="card-field">
+                            <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase mb-1">Available Limit</label>
+                            <input type="number" step="any" min="0" id="card-limit" placeholder="e.g., 15000" required class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-sm bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 border-slate-200 dark:border-slate-600 placeholder-slate-400 dark:placeholder-slate-500">
+                        </div>
+                        <div class="card-field">
+                            <div class="grid grid-cols-2 gap-2">
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase mb-1">Statement Day</label>
+                                    <input type="number" step="1" min="1" max="31" id="card-statement-day" placeholder="e.g., 5" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-sm bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 border-slate-200 dark:border-slate-600 placeholder-slate-400 dark:placeholder-slate-500">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase mb-1">Payment Day</label>
+                                    <input type="number" step="1" min="1" max="31" id="card-payment-day" placeholder="e.g., 25" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-sm bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 border-slate-200 dark:border-slate-600 placeholder-slate-400 dark:placeholder-slate-500">
+                                </div>
+                            </div>
+                            <p class="text-[10px] text-slate-400 dark:text-slate-500 mt-1">Day of the month (1–31). The card turns orange 5 days before the payment day and red on it.</p>
+                        </div>
+
+                         <!--Card Fees & Cashback Caps -->
+                        <details id="card-rules-section" class="card-option-section p-4">
+                            <summary class="cursor-pointer text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase">Fees &amp; cashback caps</summary>
+                            <div class="grid grid-cols-2 gap-2 mt-3">
+                                <fieldset class="col-span-2 rounded-xl border border-slate-200 p-3 dark:border-slate-700">
+                                    <legend class="px-1 text-[11px] font-medium text-slate-600 dark:text-slate-400">Annual Fee</legend>
+                                    <div class="flex flex-wrap gap-4">
+                                        <label class="flex items-center gap-2 text-[11px] font-medium text-slate-600 dark:text-slate-400">
+                                            <input id="cr-annual-fee-free" type="radio" name="cr-annual-fee-type" value="free" checked onchange="toggleAnnualFeeFields()" class="h-4 w-4 border-slate-300 text-indigo-600 focus:ring-indigo-500">
+                                            Free for Life
+                                        </label>
+                                        <label class="flex items-center gap-2 text-[11px] font-medium text-slate-600 dark:text-slate-400">
+                                            <input id="cr-annual-fee-paid" type="radio" name="cr-annual-fee-type" value="paid" onchange="toggleAnnualFeeFields()" class="h-4 w-4 border-slate-300 text-indigo-600 focus:ring-indigo-500">
+                                            Annual Fee
+                                        </label>
+                                    </div>
+                                    <div id="cr-annual-fee-fields" class="mt-3 grid grid-cols-2 gap-2" style="display: none;" hidden>
+                                        <div><label for="cr-fee" class="mb-1 block text-[11px] font-medium text-slate-600 dark:text-slate-400">Annual Fee</label><input type="number" step="any" min="0.01" id="cr-fee" placeholder="e.g. 500" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-sm bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 border-slate-200 dark:border-slate-600 placeholder-slate-400 dark:placeholder-slate-500"></div>
+                                        <div><label for="cr-renewal" class="mb-1 block text-[11px] font-medium text-slate-600 dark:text-slate-400">Fee renewal month (1-12)</label><input type="number" step="1" min="1" max="12" id="cr-renewal" placeholder="e.g. 3" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-sm bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 border-slate-200 dark:border-slate-600 placeholder-slate-400 dark:placeholder-slate-500"></div>
+                                        <div class="col-span-2"><label for="cr-waiver" class="mb-1 block text-[11px] font-medium text-slate-600 dark:text-slate-400">Fee waived at yearly spend</label><input type="number" id="cr-waiver" placeholder="e.g. 30000" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-sm bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 border-slate-200 dark:border-slate-600 placeholder-slate-400 dark:placeholder-slate-500"></div>
+                                    </div>
+                                </fieldset>
+                                <div class="col-span-2"><label class="block text-[11px] font-medium text-slate-600 dark:text-slate-400 mb-1">Minimum monthly spend</label><input type="number" id="cr-minSpend" placeholder="e.g. 3000" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-sm bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 border-slate-200 dark:border-slate-600 placeholder-slate-400 dark:placeholder-slate-500"></div>
+                                <fieldset class="col-span-2 rounded-xl border border-slate-200 p-3 dark:border-slate-700">
+                                    <legend class="px-1 text-[11px] font-medium text-slate-600 dark:text-slate-400">Cashback credit timing</legend>
+                                    <div class="flex flex-wrap gap-x-4 gap-y-2">
+                                        <label class="flex items-center gap-2 text-[11px] font-medium text-slate-600 dark:text-slate-400">
+                                            <input type="radio" name="card-cashback-mode" value="monthly" checked onchange="toggleCardCashbackCreditDay()" class="h-4 w-4 border-slate-300 text-indigo-600 focus:ring-indigo-500">
+                                            Monthly credit day
+                                        </label>
+                                        <label class="flex items-center gap-2 text-[11px] font-medium text-slate-600 dark:text-slate-400">
+                                            <input type="radio" name="card-cashback-mode" value="next_day" onchange="toggleCardCashbackCreditDay()" class="h-4 w-4 border-slate-300 text-indigo-600 focus:ring-indigo-500">
+                                            Day after each purchase
+                                        </label>
+                                    </div>
+                                    <div id="card-cashback-credit-day-field" class="mt-3">
+                                        <label for="card-cashback-credit-day" class="mb-1 block text-[11px] font-medium text-slate-600 dark:text-slate-400">Credit day (1-31)</label>
+                                        <input type="number" step="1" min="1" max="31" id="card-cashback-credit-day" value="1" required class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-sm bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 border-slate-200 dark:border-slate-600 placeholder-slate-400 dark:placeholder-slate-500">
+                                        <p class="mt-1 text-[10px] text-slate-500 dark:text-slate-500">Cashback from purchases made during each calendar month is credited on this day in the following month. If that month is shorter, credit is on its last day.</p>
+                                    </div>
+                                </fieldset>
+                                <div class="col-span-2 rounded-xl border border-slate-200 p-3 dark:border-slate-700">
+                                    <label class="flex items-start gap-2 text-[11px] font-medium text-slate-600 dark:text-slate-400">
+                                        <input id="cr-limit-cashback-spend" type="checkbox" checked class="mt-0.5 h-4 w-4 shrink-0 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500">
+                                        <span>Limit cashback-eligible spending to the card limit each month <span class="block mt-1 font-normal text-slate-500 dark:text-slate-500">Repayments do not restore this monthly cashback allowance. Uncheck to keep earning cashback as you spend, subject to your cashback caps.</span></span>
+                                    </label>
+                                </div>
+                                <div data-cap-control class="col-span-2 rounded-xl border border-slate-200 p-3 dark:border-slate-700">
+                                    <label class="flex items-center gap-2 text-[11px] font-medium text-slate-600 dark:text-slate-400">
+                                        <input id="cr-cap-all-enabled" type="checkbox" onchange="toggleCardCapInput(this)" class="h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500">
+                                        Monthly maximum cashback cap across all categories
+                                    </label>
+                                    <div data-cap-input-wrapper class="mt-2 rounded-lg border border-slate-200 p-1 transition dark:border-slate-700">
+                                        <input type="number" step="any" min="0.01" id="cr-cap-all" aria-label="Monthly maximum cashback cap across all categories in AED" placeholder="e.g. 1000" disabled required class="w-full rounded-md bg-transparent px-3 py-2 text-sm text-slate-900 outline-none placeholder:text-slate-400 dark:text-slate-100">
+                                    </div>
+                                </div>
+                            </div>
+                        </details>
+                        
+                        <!--Card Category Rates & Rules -->
+                        <details id="card-rates-section" open class="card-option-section rounded-xl border border-slate-200 bg-gradient-to-br from-white to-indigo-50/50 p-4 shadow-sm dark:border-slate-700 dark:from-slate-800/80 dark:to-indigo-950/20">
+                            <summary class="cursor-pointer list-none text-sm font-bold tracking-wide text-slate-700 dark:text-slate-200 uppercase">
+                                    Cashback categories
+                            </summary>
+                            <p class="mb-3 mt-2 pl-9 text-xs leading-relaxed text-slate-500 dark:text-slate-400">Set the cashback percentage and optional monthly cashback cap for each category.</p>
+                            <select id="card-rate-category-select" onchange="handleCardRateCategorySelection()" class="mb-3 w-full rounded-xl border border-indigo-200 bg-white px-3 py-2.5 text-sm text-slate-800 shadow-sm outline-none transition focus:border-indigo-400 focus:ring-4 focus:ring-indigo-500/10 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100" aria-label="Select a cashback category" hidden></select>
+                            <div id="rate-inputs-container" class="grid grid-cols-1 gap-2.5 text-xs">
+                                <!-- Selected card categories and cashback rates are rendered here. -->
+                            </div>
+                        </details>
+                        
+                        <!--Card Badge & Logo -->
+                        <details id="card-badge-section" open class="card-option-section p-4">
+                            <summary class="cursor-pointer text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase">Card Badge &amp; Logo</summary>
+                        <!--
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase mb-2">Card Badge &amp; Logo</label>
+                        -->
+                            <div class="grid grid-cols-2 gap-3">
+                                <div>
+                                    <span class="text-[11px] text-slate-500 dark:text-slate-400">Network logo</span>
+                                    <select id="card-network" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-sm bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 border-slate-200 dark:border-slate-600 placeholder-slate-400 dark:placeholder-slate-500">
+                                        <option value="">Auto (from card name)</option>
+                                        <option value="visa">Visa</option>
+                                        <option value="mastercard">Mastercard</option>
+                                        <option value="amex">American Express</option>
+                                        <option value="rupay">RuPay</option>
+                                        <option value="diners">Diners Club</option>
+                                        <option value="none">None</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <span class="text-[11px] text-slate-500 dark:text-slate-400">Network level</span>
+                                    <input type="text" id="card-network-variant" maxlength="20" placeholder="e.g., Infinite" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-sm bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 border-slate-200 dark:border-slate-600 placeholder-slate-400 dark:placeholder-slate-500">
+                                </div>
+                                <div>
+                                    <span class="text-[11px] text-slate-500 dark:text-slate-400">Tier badge</span>
+                                    <input type="text" id="card-tier" maxlength="16" placeholder="e.g., Preferred, Gold" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-sm bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 border-slate-200 dark:border-slate-600 placeholder-slate-400 dark:placeholder-slate-500">
+                                </div>
+                                <div>
+                                    <span class="text-[11px] text-slate-500 dark:text-slate-400">Last 4 digits</span>
+                                    <input type="text" id="card-last4" inputmode="numeric" maxlength="4" placeholder="e.g., 4892" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-sm bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 border-slate-200 dark:border-slate-600 placeholder-slate-400 dark:placeholder-slate-500">
+                                </div>
+                            </div>
+                            <p class="text-[10px] text-slate-400 dark:text-slate-500 mt-1">Optional. Blank fields are read from the card name where possible. Only the last 4 digits are stored, never the full number.</p>
+                        <!--
+                        </div>
+                        -->
+                        </details>
+
+                        <!--Card Color Picker & Preview -->
+                        <details id="card-color-section" open class="card-option-section p-4">
+                            <summary class="cursor-pointer text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase">Card Color</summary>
+                        <!--
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase mb-2">Card Color</label>
+                            -->
+                            <div id="card-color-picker" class="cp-grid"></div>
+                            <div id="card-color-preview"></div>
+                            <input type="hidden" id="card-color-gradient" value="">
+                        <!--
+                        </div>
+                        -->
+                        </details>
+
+                        <div class="flex gap-2">
+                            <button type="submit" id="card-submit-btn" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 rounded-lg transition text-sm">Save Card</button>
+                            <button type="button" id="cancel-edit-btn" onclick="cancelEditCard()" class="hidden bg-slate-200 dark:bg-slate-600 hover:bg-slate-300 text-slate-700 dark:text-slate-300 font-medium px-3 py-2 rounded-lg transition text-sm">Cancel</button>
+                        </div>
+                    </form>
+                </div>
+    </div>
+
+
+    <!-- TRANSACTION MODAL POPUP -->
+    <div id="tx-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4">
+        <div class="w-full max-w-xl overflow-hidden transform transition-all">
+            <div class="flex items-center justify-between border-b border-slate-100 px-6 py-4 dark:border-slate-700">
+                <div class="flex min-w-0 items-center gap-3">
+                    <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600 text-lg text-white shadow-lg shadow-indigo-500/20">↗</span>
+                    <div class="min-w-0">
+                        <h2 id="exp-form-title" class="flex items-center gap-2 text-base font-bold text-slate-900 dark:text-slate-100">
+                            Log New Transaction
+                        </h2>
+                        <p id="tx-form-subtitle">Record a purchase, payment, or reward</p>
+                    </div>
+                </div>
+                <button type="button" onclick="closeTxModal()" aria-label="Close transaction form" class="ml-3 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-slate-500 transition hover:bg-white hover:text-slate-800 dark:text-slate-400 dark:hover:bg-slate-700 dark:hover:text-white">&times;</button>
+            </div>
+            
+            <form id="expense-form" class="p-6 space-y-4">
+                <input type="hidden" id="editing-tx-id" value="">
+                
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase mb-1">Date</label>
+                        <input type="date" id="exp-date" required class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-sm bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 border-slate-200 dark:border-slate-600 placeholder-slate-400 dark:placeholder-slate-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase mb-1">Type</label>
+                        <select id="exp-type" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-sm bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 border-slate-200 dark:border-slate-600">
+                            <option value="Purchase">Purchase</option>
+                            <option value="Cash Withdrawal">Cash Withdrawal</option>
+                            <option value="Repaid">Repaid</option>
+                            <option value="Cashback">Cashback</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase mb-1">Card Used</label>
+                    <select id="exp-card" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-sm bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 border-slate-200 dark:border-slate-600" required></select>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase mb-1">Description</label>
+                    <input type="text" id="exp-desc" placeholder="e.g. Visa Fee" required class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-sm bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 border-slate-200 dark:border-slate-600 placeholder-slate-400 dark:placeholder-slate-500">
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label id="exp-amount-label" class="block text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase mb-1">Amount</label>
+                        <input type="number" step="0.01" min="0.01" id="exp-amount" placeholder="0.00" required class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-sm bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 border-slate-200 dark:border-slate-600 placeholder-slate-400 dark:placeholder-slate-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase mb-1">Category (Optional)</label>
+                        <select id="exp-category" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-sm bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 border-slate-200 dark:border-slate-600">
+                        </select>
+                    </div>
+                </div>
+                <p id="exp-immediate-cashback-note" class="hidden -mt-2 text-[11px] text-emerald-600 dark:text-emerald-400" aria-live="polite">This cashback is credited immediately and reduces the card's outstanding balance, regardless of its cashback schedule.</p>
+
+                <!-- EMI / Installment conversion — only offered for Purchase entries -->
+                <div id="exp-emi-wrapper" class="hidden">
+                    <label class="flex items-center gap-2 text-xs font-medium text-slate-700 dark:text-slate-300 cursor-pointer">
+                        <input type="checkbox" id="exp-is-emi" class="rounded border-slate-300 dark:border-slate-600">
+                        Convert this purchase to installments (EMI)
+                    </label>
+                    <div id="exp-emi-details" class="hidden mt-2 p-3 rounded-lg bg-indigo-50 dark:bg-indigo-950 space-y-3">
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase mb-1">Tenure</label>
+                                <select id="exp-emi-tenure" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-sm bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 border-slate-200 dark:border-slate-600">
+                                    <option value="3">3 months</option>
+                                    <option value="6">6 months</option>
+                                    <option value="9">9 months</option>
+                                    <option value="12" selected>12 months</option>
+                                    <option value="18">18 months</option>
+                                    <option value="24">24 months</option>
+                                    <option value="custom">Custom…</option>
+                                </select>
+                            </div>
+                            <div id="exp-emi-custom-wrapper" class="hidden">
+                                <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase mb-1">Months</label>
+                                <input type="number" step="1" min="1" max="60" id="exp-emi-custom-months" placeholder="e.g., 15" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-sm bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 border-slate-200 dark:border-slate-600 placeholder-slate-400 dark:placeholder-slate-500">
+                            </div>
+                        </div>
+
+                        <!-- Charge Type Selection -->
+                        <div class="pt-1 border-t border-indigo-200 dark:border-indigo-800">
+                            <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase mb-2">EMI Charge Type</label>
+                            <div class="flex gap-3 flex-wrap">
+                                <label class="flex items-center gap-2 text-xs cursor-pointer">
+                                    <input type="radio" id="exp-emi-charge-none" name="emi-charge-type" value="none" checked class="rounded border-slate-300 dark:border-slate-600">
+                                    <span class="text-slate-700 dark:text-slate-300">No Charge</span>
+                                </label>
+                                <label class="flex items-center gap-2 text-xs cursor-pointer">
+                                    <input type="radio" id="exp-emi-charge-fee" name="emi-charge-type" value="fee" class="rounded border-slate-300 dark:border-slate-600">
+                                    <span class="text-slate-700 dark:text-slate-300">Processing Fee</span>
+                                </label>
+                                <label class="flex items-center gap-2 text-xs cursor-pointer">
+                                    <input type="radio" id="exp-emi-charge-interest" name="emi-charge-type" value="interest" class="rounded border-slate-300 dark:border-slate-600">
+                                    <span class="text-slate-700 dark:text-slate-300">Interest Rate</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Charge Percentage Input -->
+                        <div id="exp-emi-charge-input-wrapper" class="hidden">
+                            <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase mb-1" id="exp-emi-charge-label">Charge</label>
+                            <input type="number" step="0.01" min="0" id="exp-emi-charge-percentage" placeholder="e.g., 200" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-sm bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 border-slate-200 dark:border-slate-600 placeholder-slate-400 dark:placeholder-slate-500">
+                            <p id="exp-emi-charge-note" class="text-[10px] text-slate-500 dark:text-slate-400 mt-1"></p>
+                        </div>
+
+                        <p id="exp-emi-preview" class="text-[11px] text-indigo-700 dark:text-indigo-300 font-medium whitespace-pre-line"></p>
+                        <p class="text-[10px] text-slate-500 dark:text-slate-400">The full purchase amount still counts against your limit today, same as your bank does it. This just tracks the monthly installment so you know what's left to pay off.</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase mb-1">Service Fee</label>
+                        <input type="number" step="0.01" id="exp-service" placeholder="0.00" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-sm bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 border-slate-200 dark:border-slate-600 placeholder-slate-400 dark:placeholder-slate-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase mb-1">Cashback</label>
+                        <input type="number" step="0.01" id="exp-cashback" placeholder="0.00" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-sm bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 border-slate-200 dark:border-slate-600 placeholder-slate-400 dark:placeholder-slate-500">
+                    </div>
+                </div>
+
+                <div class="flex gap-2 pt-2">
+                    <button type="submit" id="tx-submit-btn" class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-medium py-2 rounded-lg transition text-sm">Log Entry</button>
+                    <button type="button" onclick="closeTxModal()" class="bg-slate-200 dark:bg-slate-600 hover:bg-slate-300 text-slate-700 dark:text-slate-300 font-medium px-4 py-2 rounded-lg transition text-sm">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- TOAST NOTIFICATIONS: transient success/undo messages, replacing alert() for non-blocking feedback -->
+    <div id="toast-container" class="fixed right-4 z-[90] flex flex-col-reverse gap-2 items-end pointer-events-none" style="bottom: calc(5.5rem + env(safe-area-inset-bottom, 0px));"></div>
+
+    <!-- FLOATING ACTION BUTTON: quick "Log Transaction" (sits under every modal / the sidebar backdrop) -->
+
+    <button id="log-fab" type="button" onclick="openTxModal()" aria-label="Log transaction" title="Log transaction">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+    </button>
+
+    <!-- CONFIRM MODAL: styled replacement for window.confirm(), used for destructive actions -->
+    <div id="confirm-modal" class="fixed inset-0 z-[95] hidden flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4">
+        <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-xl border border-slate-100 dark:border-slate-700 w-full max-w-sm overflow-hidden">
+            <div class="p-6">
+                <p id="confirm-modal-title" class="text-base font-bold text-slate-900 dark:text-slate-100 mb-2"></p>
+                <p id="confirm-modal-message" class="text-sm text-slate-600 dark:text-slate-400"></p>
+            </div>
+            <div class="px-6 py-4 bg-slate-50 dark:bg-slate-900 border-t border-slate-100 dark:border-slate-700 flex justify-end gap-2">
+                <button id="confirm-modal-cancel" class="bg-slate-200 dark:bg-slate-600 hover:bg-slate-300 text-slate-700 dark:text-slate-300 font-medium px-4 py-2 rounded-lg transition text-sm">Cancel</button>
+                <button id="confirm-modal-ok" class="bg-red-600 hover:bg-red-700 text-white font-medium px-4 py-2 rounded-lg transition text-sm">Confirm</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- SETTINGS MODAL -->
+    <!-- SUPPORT CHAT (users <-> admin) -->
+    <div id="sp-modal" class="fixed inset-0 z-[88] hidden flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-3 sm:p-5">
+        <div class="sp-glass-window text-slate-800 dark:text-slate-200 rounded-2xl w-full max-w-lg flex flex-col" style="height:min(640px,88dvh)">
+            <div class="sp-chat-header flex items-center justify-between gap-3 px-4 py-3 border-b">
+                <div class="flex min-w-0 items-center gap-3">
+                    <span class="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-white/20 bg-white/10 text-lg shadow-inner" aria-hidden="true">💬</span>
+                    <div class="min-w-0">
+                        <h3 id="sp-title" class="text-sm font-bold truncate">Support &amp; Feedback</h3>
+                        <p id="sp-sub" class="text-[11px] truncate"></p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button id="sp-clear-history" onclick="spClearHistory()" class="hidden text-xs px-2 py-1 rounded-lg border border-red-300 text-red-600 dark:border-red-900 dark:text-red-300 hover:bg-red-50 dark:hover:bg-red-950/30">Clear history</button>
+                    <button id="sp-back" onclick="spBack()" class="hidden text-xs px-2 py-1 rounded-lg border border-slate-300 dark:border-slate-600">← Inbox</button>
+                    <button onclick="spClose()" class="grid h-9 w-9 shrink-0 place-items-center rounded-full hover:bg-blue-500/10  text-xl leading-none transition" aria-label="Close">&times;</button>
+                </div>
+            </div>
+            <div id="sp-body" class="sp-chat-body flex-1 overflow-y-auto p-4 space-y-2"></div>
+            <div id="sp-composer" class="sp-chat-composer border-t p-3 space-y-2">
+                <select id="sp-kind" class="w-full px-3 py-1.5 border rounded-lg text-xs bg-white dark:bg-slate-700 border-slate-200 dark:border-slate-600">
+                    <option value="doubt">❓ Doubt / question</option>
+                    <option value="suggestion">💡 Suggestion</option>
+                    <option value="other">💬 Other</option>
+                </select>
+                <div id="sp-attachments-preview" class="hidden flex flex-wrap gap-2"></div>
+                <div class="flex gap-2">
+                    <textarea id="sp-input" rows="2" maxlength="4000" placeholder="Type your message…" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();spSend();}" class="flex-1 px-3 py-2 border rounded-lg text-sm outline-none focus:ring-2 focus:ring-indigo-500 bg-white dark:bg-slate-700 border-slate-200 dark:border-slate-600 resize-none"></textarea>
+                    <div class="flex flex-col gap-1">
+                        <label id="sp-image-picker" class="cursor-pointer rounded-lg border border-slate-300 dark:border-slate-600 px-2 py-1.5 text-center text-xs hover:bg-slate-50 dark:hover:bg-slate-700" title="Attach up to 4 images (JPEG, PNG, or WebP; 5 MB each)">
+                            <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 5h-4L8.5 7H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3L14 5Z"/><circle cx="12" cy="13" r="3.5"/></svg><span class="sr-only">Attach images</span>
+                            <input id="sp-image-input" type="file" accept="image/jpeg,image/png,image/webp" multiple class="hidden" onchange="spChooseImages(event)">
+                        </label>
+                        <button id="sp-send" onclick="spSend()" class="flex-1 px-4 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium transition">Send</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="settings-modal" class="fixed inset-0 z-[85] hidden flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
+        <div class="w-full max-w-xl overflow-hidden rounded-3xl border border-[#1d2230] bg-[#0f121a] shadow-2xl">
+            <div class="flex items-center justify-between border-b border-[#1d2230] px-5 py-5 sm:px-7">
+                <div>
+                    <h2 class="text-base font-semibold text-white">Add Category / Type</h2>
+                    <p class="mt-1 text-sm text-slate-500">Add options used by your transactions.</p>
+                </div>
+                <button type="button" onclick="closeSettings()" class="ml-3 grid h-10 w-10 shrink-0 place-items-center rounded-xl text-slate-500 transition hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-700 dark:hover:text-white" aria-label="Close settings">&times;</button>
+            </div>
+            <div class="space-y-6 p-5 sm:p-7">
+                <div>
+                    <label for="new-transaction-type" class="mb-2 block text-xs font-semibold uppercase text-slate-400">New Transaction Type</label>
+                    <div class="flex gap-2.5">
+                        <input id="new-transaction-type" type="text" placeholder="e.g. Refund" class="min-w-0 flex-1 rounded-xl border border-[#1d2230] bg-[#0b0d13] px-4 py-2.5 text-sm text-white outline-none focus:border-indigo-500">
+                        <button type="button" onclick="addCustomTransactionType()" class="rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-indigo-500">Add Type</button>
+                    </div>
+                </div>
+                <div>
+                    <label for="new-category" class="mb-2 block text-xs font-semibold uppercase text-slate-400">New Category</label>
+                    <div class="flex gap-2.5">
+                        <input id="new-category" type="text" placeholder="e.g. Pharmacy" class="min-w-0 flex-1 rounded-xl border border-[#1d2230] bg-[#0b0d13] px-4 py-2.5 text-sm text-white outline-none focus:border-indigo-500">
+                        <button type="button" onclick="addCustomCategory()" class="rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-emerald-500">Add Category</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- CHANGE PASSWORD MODAL (signed-in users) -->
+    <div id="change-pw-modal" class="fixed inset-0 z-[55] hidden flex items-center justify-center bg-slate-950/65 backdrop-blur-md p-4">
+        <form id="change-pw-form" class="w-full space-y-4">
+            <div class="cp-header">
+                <span class="cp-mark" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 1 1 8 0v3"/><path d="m9 15 2 2 4-4"/></svg>
+                </span>
+                <div>
+                    <h3 class="cp-heading">Change password</h3>
+                    <p class="cp-description">Verify your current password and secure your account with a new one.</p>
+                </div>
+            </div>
+            <div class="cp-form-body space-y-4">
+                <div>
+                    <label for="cp-current" class="cp-label">Current password</label>
+                    <input type="password" id="cp-current" autocomplete="current-password" required class="cp-input">
+                </div>
+                <div>
+                    <label for="cp-new" class="cp-label">New password</label>
+                    <input type="password" id="cp-new" autocomplete="new-password" required minlength="6" class="cp-input">
+                </div>
+                <div>
+                    <label for="cp-confirm" class="cp-label">Confirm new password</label>
+                    <input type="password" id="cp-confirm" autocomplete="new-password" required minlength="6" class="cp-input">
+                </div>
+                <p class="cp-password-hint"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg>Use at least 6 characters for your new password</p>
+                <p id="cp-error" class="text-xs text-red-600 hidden" role="alert"></p>
+                <p id="cp-info" class="text-xs text-emerald-600 hidden" role="status"></p>
+                <div class="cp-actions">
+                    <button type="submit" id="cp-save-btn" class="cp-action flex-1">Update Password</button>
+                    <button type="button" onclick="closeChangePassword()" class="cp-action cp-cancel-btn flex-1">Cancel</button>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <!-- LOGIN GATE (only shown when using Supabase and no session exists) -->
+    <div id="auth-gate" class="fixed inset-0 z-[60] hidden flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
+        <div class="auth-panel w-full overflow-hidden">
+            <div class="auth-panel-header">
+                <span class="auth-mark" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 19 6v5c0 4.5-2.9 7.8-7 10-4.1-2.2-7-5.5-7-10V6l7-3Z"/><path d="m9 12 2 2 4-4"/></svg>
+                </span>
+                <div>
+                    <h2 class="auth-title" id="auth-title">Sign in to your Cashback Tracker</h2>
+                    <p class="auth-subtitle" id="auth-subtitle">Your cards and transactions are private to your account.</p>
+                </div>
+            </div>
+            <form id="auth-form" class="auth-form space-y-4">
+                <div id="auth-email-wrap">
+                    <label for="auth-email" class="auth-label">Email or username</label>
+                    <input type="text" id="auth-email" autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false" required class="auth-input">
+                </div>
+                <div id="auth-password-wrap">
+                    <label for="auth-password" class="auth-label">Password</label>
+                    <input type="password" id="auth-password" autocomplete="current-password" required minlength="6" class="auth-input">
+                    <div class="text-right mt-2">
+                        <button type="button" id="auth-forgot-link" class="auth-link">Forgot password?</button>
+                    </div>
+                </div>
+                <div id="auth-recovery-fields" class="hidden space-y-4">
+                    <div>
+                        <label for="auth-new-password" class="auth-label">New password</label>
+                        <input type="password" id="auth-new-password" autocomplete="new-password" minlength="6" class="auth-input">
+                    </div>
+                    <div>
+                        <label for="auth-confirm-password" class="auth-label">Confirm new password</label>
+                        <input type="password" id="auth-confirm-password" autocomplete="new-password" minlength="6" class="auth-input">
+                    </div>
+                </div>
+                <p id="auth-error" class="text-xs text-red-600 hidden"></p>
+                <p id="auth-info" class="text-xs text-emerald-600 hidden"></p>
+                <div class="auth-actions" id="auth-actions-signin">
+                    <button type="submit" id="auth-signin-btn" class="auth-button flex-1">Sign In</button>
+                    <button type="button" id="auth-signup-btn" class="auth-button flex-1">Create Account</button>
+                </div>
+                <div class="auth-actions hidden" id="auth-actions-forgot">
+                    <button type="submit" id="auth-reset-btn" class="auth-button flex-1">Send Reset Link</button>
+                    <button type="button" id="auth-back-btn" class="auth-button flex-1">Back to Sign In</button>
+                </div>
+                <div class="auth-actions hidden" id="auth-actions-recovery">
+                    <button type="submit" id="auth-update-btn" class="auth-button flex-1">Update Password</button>
+                </div>
+                <p class="auth-private-note"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 1 1 8 0v3"/></svg>Your account data stays private and secure</p>
+            </form>
+        </div>
+        <!-- CREATE ACCOUNT POPUP -->
+        <div id="signup-modal" class="fixed inset-0 z-[5] hidden flex items-start sm:items-center justify-center bg-slate-900/70 backdrop-blur-md p-4 overflow-y-auto" onclick="if(event.target===this)closeSignup()">
+            <div class="auth-panel w-full overflow-hidden my-auto" role="dialog" aria-modal="true" aria-labelledby="su-title">
+                <div class="auth-panel-header">
+                    <span class="auth-mark" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 19a6 6 0 0 0-12 0"/><circle cx="9" cy="8" r="4"/><path d="M19 8v6M16 11h6"/></svg>
+                    </span>
+                    <div class="min-w-0">
+                        <h2 class="auth-title" id="su-title">Create your account</h2>
+                        <p class="auth-subtitle">Free, private, and takes under a minute.</p>
+                    </div>
+                    <button type="button" onclick="closeSignup()" aria-label="Close" style="margin-left:auto;font-size:1.5rem;line-height:1;opacity:.55;background:none;border:0;cursor:pointer;color:inherit">&times;</button>
+                </div>
+                <form id="signup-form" class="auth-form space-y-4" novalidate>
+                    <div>
+                        <label for="su-username" class="auth-label">Username</label>
+                        <input type="text" id="su-username" autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false" maxlength="20" oninput="suCheckUsername()" class="auth-input">
+                        <p id="su-user-status" style="margin-top:.4rem;font-size:.7rem;color:#64748b">3–20 characters: letters, numbers, dot or underscore. You can sign in with it instead of your email.</p>
+                    </div>
+                    <div>
+                        <label for="su-email" class="auth-label">Email</label>
+                        <input type="email" id="su-email" autocomplete="email" class="auth-input">
+                    </div>
+                    <div>
+                        <label for="su-password" class="auth-label">Password</label>
+                        <div style="position:relative">
+                            <input type="password" id="su-password" autocomplete="new-password" oninput="suStrength(this.value)" class="auth-input" style="padding-right:3.4rem">
+                            <button type="button" onclick="suToggle('su-password', this)" class="auth-link" style="position:absolute;right:.9rem;top:50%;transform:translateY(-50%)">Show</button>
+                        </div>
+                        <div id="su-meter" class="hidden" style="margin-top:.55rem">
+                            <div style="display:flex;gap:4px">
+                                <span class="su-seg" style="flex:1;height:4px;border-radius:4px;background:rgba(148,163,184,.35)"></span>
+                                <span class="su-seg" style="flex:1;height:4px;border-radius:4px;background:rgba(148,163,184,.35)"></span>
+                                <span class="su-seg" style="flex:1;height:4px;border-radius:4px;background:rgba(148,163,184,.35)"></span>
+                                <span class="su-seg" style="flex:1;height:4px;border-radius:4px;background:rgba(148,163,184,.35)"></span>
+                            </div>
+                            <p id="su-meter-label" style="margin-top:.3rem;font-size:.7rem;color:#64748b"></p>
+                        </div>
+                        <p style="margin-top:.4rem;font-size:.7rem;color:#64748b">At least 8 characters. Mix letters, numbers and symbols for a stronger password.</p>
+                    </div>
+                    <div>
+                        <label for="su-confirm" class="auth-label">Confirm password</label>
+                        <input type="password" id="su-confirm" autocomplete="new-password" class="auth-input">
+                    </div>
+                    <p id="su-error" class="text-xs text-red-600 hidden"></p>
+                    <button type="submit" id="su-submit" class="auth-button" style="width:100%">Create Account</button>
+                    <p style="text-align:center;font-size:.78rem;color:#64748b">Already have an account? <button type="button" class="auth-link" onclick="closeSignup()">Sign in</button></p>
+                </form>
+                <div id="signup-success" class="auth-form hidden" style="text-align:center">
+                    <div style="font-size:2.4rem">✉️</div>
+                    <h3 class="auth-title" style="margin-top:.5rem">Check your inbox</h3>
+                    <p class="auth-subtitle" style="margin-top:.4rem">We sent a confirmation link to <strong id="su-sent-email"></strong>. Open it to activate your account, then sign in.</p>
+                    <div class="auth-actions" style="margin-top:1.25rem">
+                        <button type="button" id="su-resend" class="auth-button flex-1" onclick="suResend()">Resend email</button>
+                        <button type="button" class="auth-button flex-1" onclick="closeSignup()">Back to Sign In</button>
+                    </div>
+                    <p id="su-resend-info" class="text-xs text-emerald-600 hidden" style="margin-top:.7rem"></p>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="offline.js"></script>
+    <script src="app.js"></script>
+
+    <script src="effects.js"></script>
+</body>
+</html>
