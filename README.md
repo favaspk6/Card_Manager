@@ -1,419 +1,95 @@
 # DueDates — Credit Card Cashback & Spend Analyzer
 
-DueDates is a single-file web app (`index.html`) for tracking credit and debit cards, logging transactions, working out cashback, and never missing a statement or payment date. It runs entirely in the browser, signs users in with email and password, and stores each user's data privately in their own Supabase account.
-
-> Currency throughout the app is **AED**.
-
----
-
-## Contents
-
-1. [Quick start](#1-quick-start)
-2. [Signing in](#2-signing-in)
-3. [Screen layout and navigation](#3-screen-layout-and-navigation)
-4. [Header and account menu](#4-header-and-account-menu)
-5. [Dashboard metrics](#5-dashboard-metrics)
-6. [Saved Cards](#6-saved-cards)
-7. [Adding and managing cards](#7-adding-and-managing-cards)
-8. [Logging transactions](#8-logging-transactions)
-9. [Installment plans (EMI)](#9-installment-plans-emi)
-10. [Transaction History](#10-transaction-history)
-11. [Analytics and Rewards](#11-analytics-and-rewards)
-12. [Best Card Recommender](#12-best-card-recommender)
-13. [Insights and Forecast](#13-insights-and-forecast)
-14. [Withdrawal Planner](#14-withdrawal-planner)
-15. [Import, export and backup](#15-import-export-and-backup)
-16. [Due dates, calendar and reminders](#16-due-dates-calendar-and-reminders)
-17. [Manage Category / Type](#17-manage-category--type)
-18. [Privacy mode, theme and layout](#18-privacy-mode-theme-and-layout)
-19. [How the numbers are calculated](#19-how-the-numbers-are-calculated)
-20. [Where your data is stored](#20-where-your-data-is-stored)
-21. [Setup and hosting](#21-setup-and-hosting)
-22. [Troubleshooting](#22-troubleshooting)
-
----
-
-## 1. Quick start
-
-1. Open the app and **Create Account** (or **Sign In**).
-2. Open **Manage Cards** and add your first card: name, limit, statement day, payment day and cashback rates.
-3. Tap **Log Transaction** (sidebar button or the floating button) to record purchases, cash withdrawals, repayments and received cashback.
-4. Watch the dashboard, the card tiles and the analytics update. Use **Best Card Recommender** before you pay and **Withdrawal Planner** before you take cash.
-
-If you already track spending in a spreadsheet, use **Import Excel / CSV** (see [section 15](#15-import-export-and-backup)) to bring it in.
-
----
-
-## 2. Signing in
-
-The sign-in screen protects all data; nothing loads until you are authenticated.
-
-| Option | What it does |
-|---|---|
-| **Sign In** | Email and password sign-in. |
-| **Create Account** | Registers a new account with the same email and password fields. |
-| **Forgot password?** | Switches to a reset form. Enter your email and choose **Send Reset Link**; **Back to Sign In** returns. |
-| **Set new password** | Opening the emailed link shows *New password* and *Confirm new password* with **Update Password**. |
-| **Change password** | Available later from the account menu (current, new, confirm). |
-| **Sign Out** | Ends the session from the account menu. |
-
-Your cards and transactions are private to your account.
-
----
-
-## 3. Screen layout and navigation
-
-### Sidebar
-Branding (DueDates, "& Spend Analyzer") sits at the top, followed by:
-
-- **Log Transaction** — opens the transaction form.
-- **Portfolio Hub:** **Dashboard**, **Cards**, **Analytics & Rewards**, **Transactions** (jump links to each section).
-- **Utilities:** **Best Card Recommender**, **Import Excel / CSV**, **Import / Export**, **Fix Card Links**, **Reset Data**.
-- **Manage Cards** and **Manage Category / Type**.
-- **Rewards MTD** and **Rewards YTD** mini-meters showing cashback earned, return %, and a progress bar.
-
-On large screens the sidebar is docked and can be collapsed with the toggle in the header. On phones and tablets it slides in over the page and closes when you tap outside it or its close button.
-
-### Header
-Sidebar toggle, the **Portfolio Intelligence Deck** title with a **LIVE SYNC** badge, **Outstanding** and **Pending cashback** pills, the privacy and theme toggles, the account button, and (on small screens) the desktop-layout button. A **search box** at the top filters the page by text.
-
-### Floating button
-A floating **Log** button is always available for quick transaction entry.
-
-### Toasts and confirmations
-Short messages appear for successes and errors, and destructive actions (delete, reset) ask for confirmation first.
-
----
-
-## 4. Header and account menu
-
-Tap the avatar to open the account menu:
-
-| Item | Description |
-|---|---|
-| 🔒 **Privacy mode** | Phones only. Hides sensitive amounts. See [section 18](#18-privacy-mode-theme-and-layout). |
-| 🌙 / ☀️ **Dark / Light theme** | Phones only. Switches theme. |
-| 📤 **Export Backup** | Downloads all cards and transactions as JSON. |
-| 📥 **Import Backup** | Restores from a backup JSON file. |
-| 📅 **Export Due Dates** | Downloads a calendar (`.ics`) with recurring statement and payment events. |
-| 🔔 **Enable Due Reminders** | Turns on browser notifications for upcoming payments. |
-| 🔗 **Fix Card Links** | Re-links transactions that lost their card. |
-| 📊 **Insights** | Opens Insights and Forecast. |
-| 💸 **Withdrawal Planner** | Opens the cash-withdrawal estimator. |
-| **Reset Data** | Permanently clears all stored cards and transactions. |
-| **Change Password** | Opens the password dialog. |
-| **Sign Out** | Signs you out. |
-
-On tablets and desktops the Privacy and Theme toggles sit directly in the header instead of the menu.
-
----
-
-## 5. Dashboard metrics
-
-Five headline tiles summarise the transactions currently in view (they respect the active filters):
-
-| Tile | Meaning |
-|---|---|
-| **Total Spend** | Purchases plus cash withdrawals. |
-| **Cashback Earned** | Total cashback. |
-| **Net Rewards Earned** | Cashback minus service fees and charges. |
-| **Effective Return** | Cashback divided by spend. |
-| **Left on the Table** | Cashback you would have earned had each purchase used the best card for its category. |
-
-Doughnut and monthly charts below break spend and rewards down further.
-
----
-
-## 6. Saved Cards
-
-The **Saved Cards** panel lists every card as a tile, with a count, a **Total Card Limit** and a **Total Outstanding** (with pending cashback shown separately). Credit and debit cards appear in separate groups.
-
-### What each tile shows
-- Card name, network logo (Visa, Mastercard and so on), tier badge and last four digits.
-- **Outstanding**, **Limit**, and a utilisation bar.
-- Statement day and a **Due in N days** chip.
-- A coloured card face, chosen per card.
-
-### Payment alerts
-The tile shows normal colours until **5 days before the payment day**, turns **orange/yellow** from then, and **red on the payment day**.
-
-### Buttons on each tile
-| Button | Action |
-|---|---|
-| **Mark paid** | Prompts for the amount paid (pre-filled with today's outstanding) and records a *Repaid* transaction. A partial payment is noted automatically. |
-| **More / Less** | Expands the details: remaining limit, spend this month, **How it's calculated**, pending cashback, installment plans, and card rule status. |
-| **⋮ (three dots)** | Menu with **Edit**, **Disable / Enable** and **Delete**. |
-
-### Expanded details
-- **Remaining limit** and **Spend this month** (with percentage of limit; turns red near the limit).
-- **How it's calculated** — purchases, cash withdrawals, fees (if included), repaid, cashback already credited, giving *Outstanding today*.
-- Pending cashback credit for the coming month.
-- Active installment plans.
-- Rule status: **cap left** per category, **minimum monthly spend** progress, **annual fee waiver** progress, and a warning when the fee exceeds cashback earned this year.
-
-### Disabling cards
-**Disable** hides a card without deleting anything: **all its transactions are kept**. A toggle row lets you include or exclude disabled cards from the card list and the card filters. **Enable** brings it back. **Delete** removes the card (with confirmation).
-
-### Other options
-- **Default card** — one card can be the default used when logging transactions.
-- **Show / hide Saved Cards** — a visibility toggle collapses the panel; the choice is remembered.
-
----
-
-## 7. Adding and managing cards
-
-Open **Manage Cards** (sidebar), **+ Manage** in the panel, or choose **Edit** from a card's ⋮ menu.
-
-### Basics
-- **Card type** — Credit or Debit. Debit cards need no cashback data and are listed separately.
-- **Card Name** — for example `ADCB - 365`.
-- **Available Limit** — your credit limit in AED.
-- **Statement Day** and **Payment Day** — day of the month (1–31), stored per card.
-
-### Rules (optional)
-- **Annual fee**, **Fee renewal month** (1–12), **Fee waived at yearly spend**.
-- **Minimum monthly spend** for cashback eligibility.
-- **Overall monthly cashback cap** (enable it, then enter the amount).
-
-### Cashback rates and caps
-Set a percentage and an optional monthly cap for each category: **Dining, Grocery, Travel, Gas/Fuel, Online Shopping, Govt, All Other Spend** (and any custom categories you add).
-
-### Card badge and logo
-**Network logo** (Auto from the card name, Visa, Mastercard, American Express, RuPay, Diners Club, None), **Network level** (for example Infinite), **Tier badge** (for example Preferred, Gold), and **Last 4 digits**. Only the last four digits are ever stored, never the full card number.
-
-### Card colour
-Pick a preset finish (Titanium, Midnight Black, Platinum Silver, Royal Gold, Rose Gold, Copper and more), or use the colour picker for a custom colour with a live gradient preview.
-
-Use **Save** to create or update, and **Cancel** to leave edit mode.
-
----
-
-## 8. Logging transactions
-
-Open **Log Transaction** (sidebar or floating button). The same form edits existing entries.
-
-| Field | Notes |
-|---|---|
-| **Date** | Defaults to today. |
-| **Type** | **Purchase**, **Cash Withdrawal**, **Repaid**, **Cashback**, plus any custom types you add. The last type you used is remembered. |
-| **Description** | Free text, for example "Visa Fee". |
-| **Amount** | The label changes with the type. |
-| **Category (Optional)** | Used for cashback rates, analytics and recommendations. |
-| **Service Fee** | Any fee or charge on the transaction. |
-| **Cashback** | The cashback earned on it. |
-| **Card Used** | The last card you used is remembered. |
-
-Purchases can also be turned into an installment plan — see the next section.
-
----
-
-## 9. Installment plans (EMI)
-
-When logging a purchase you can mark it as an **EMI**:
-
-- **Tenure** — 3, 6, 9, 12, 18 or 24 months, or **Custom** months.
-- **EMI Charge Type** — **No Charge**, **Processing Fee** or **Interest Rate**, with the amount or percentage.
-- A live **preview** shows the monthly installment.
-
-The full purchase still counts against your limit on the day, the same as your bank treats it; the plan only tracks the monthly installment so you know what is left to pay off.
-
-The **Installment Plans (EMI)** panel groups plans into **Active** and **Expired** with a plan count. Each active plan has a **Log payment** button that records an installment. Plans also appear inside the card's expanded details.
-
----
-
-## 10. Transaction History
-
-A searchable, sortable ledger with automated cashback attribution.
-
-### Table columns
-Date, Card, Type, Description, Category, Amount, Fee, Cashback, Net Rewards, and a row action menu.
-
-### Searching and filtering
-- **Search description** box (and the global search in the header).
-- **Card**, **Type** and **Category** filters.
-- The shared **Filters** panel in Analytics also applies (cards, categories, months).
-
-### Sorting and paging
-Click the **Date**, **Card**, **Amount**, **Cashback** and **Net Rewards** headers to sort (arrows show direction). Results are paged **25 per page** with a pager and an entries count.
-
-### Row actions
-**Edit**, **Duplicate** (copies an entry so you can adjust it) and **Delete** (with confirmation).
-
----
-
-## 11. Analytics and Rewards
-
-### Filters
-Narrow everything below by **Card**, **Category** and **Month** (multi-select). The active filter is shown as a label such as "Filter: All Cards".
-
-### Financial Performance report
-A segmented control chooses the view (including **Last Month**). It shows **Gross Purchases**, **Total Repaid**, **Service Fees**, **Cashback Earned**, **Net Rewards** and the "capital disposition" breakdown of purchases, cash drawdowns, repayments and fee avoidance.
-
-### Cashback by Category
-A ranked list of cashback per category with a **Yield Ranked** view.
-
-### Summary Table
-A month-by-month table of the filtered data with a footnote explaining cashback timing.
-
----
-
-## 12. Best Card Recommender
-
-Open from the sidebar. Choose a **spend category** (quick pills or a dropdown) and the app ranks your active cards by their cashback rate for it, taking caps into account, so you can route each purchase to your highest-earning card before checkout.
-
----
-
-## 13. Insights and Forecast
-
-Open from the account menu. **Portfolio overview** cards show purchase spend and cashback for the year, **Top cashback card**, **Available credit**, **Outstanding**, **Portfolio utilization**, **Month-end cashback**, and **Categories by spend**. Sections below:
-
-- **Credit health — Utilization & payoff.** Set a target utilisation and see the payment each card needs to reach it.
-- **Month-end projection — Spend & cashback forecast.** Extends current daily spend and cashback across the rest of the month.
-- **Cashback tracking — Reconciliation.** Compare last month's expected cashback with what the bank actually paid (Card, Expected, Received, Difference).
-- **Year in review.** Your cashback and spending highlights for the year.
-
----
-
-## 14. Withdrawal Planner
-
-Open from the account menu. It estimates a cash withdrawal and the cashback it would earn.
-
-### Single-card estimate
-1. Choose a **Card** (credit cards with at least one category at **3% or higher**).
-2. Choose a **Cashback category** and edit its **Charge %** (the withdrawal fee; saved per category on your device).
-3. Read the results: **Total credit card limit**, **Current month spend**, **Available to withdraw**, **Estimated withdrawal amount**, **Amount charged to card**, **Cashback rate**, **Cashback earned this month**, **Cashback cap remaining**, **Estimated cashback after caps**, **Withdrawal charge estimate** and **Estimated cashback received**.
-
-The estimated withdrawal is calculated from the cashback cap still remaining for the category, limited by what is available on the card. If no cap is set, it is based on the available limit. Default charge percentages: Dining 3%, Grocery 2.25%, Travel 3%, Gas/Fuel 3%, Online Shopping 3%, Govt 3%, All Other Spend 3%.
-
-### Select cards (multi-card plan)
-The **☑️ Select cards** button at the bottom right opens a popup with one row per card:
-
-- A **checkbox** per card, plus **Select all cards**.
-- A **category** dropdown per card (defaults to the planner's choice or the card's highest-rate category).
-- **Est. withdrawal** and **Charged to card** for each card.
-- **Round estimate** radios — **Exact**, **Round 10**, **Round 100** — shown only for ticked cards. Rounding goes *down*, so the plan never exceeds the cap or the available amount, and the charged amount is recalculated. The choice is remembered per card.
-- Totals for the selected cards: **Total withdrawal** and **Total charged to cards**.
-- **📋 Copy selection** copies one line per selected card:
+DueDates is a single-page web app backed by Supabase. This build is an installable
+Progressive Web App (PWA): after the first online visit it opens and works with no
+internet, and any changes made offline sync automatically when you reconnect.
+
+## Folder structure
 
 ```
-ADCB - TRAVELLER - Travel - 14550 - 15000
-ADCB - 365 - Grocery - 9090 - 9299.23
+index.html              Page markup only
+styles.css              Application styles
+app.js                  Main application logic
+offline.js              Offline layer (read cache, write queue, session handling)
+ui.js                   Modal / sidebar helpers
+effects.js              Cursor glow and scroll-lock effects
+sw.js                   Service worker (caches the app so it loads offline)
+manifest.webmanifest    Install metadata (name, colours, icons)
+icon-192.png            App icon
+icon-512.png            App icon
+apple-touch-icon.png    iPhone/iPad home-screen icon (180x180)
+vendor/
+  tailwind.css          Pre-built Tailwind CSS (replaces the Tailwind CDN)
+  fonts.css             @font-face rules for the bundled fonts
+  fonts/                Inter, Plus Jakarta Sans, JetBrains Mono (.woff2)
+  chart.umd.js          Chart.js
+  xlsx.full.min.js      SheetJS (Excel import/export)
+  supabase.js           Supabase JS client
 ```
 
-The format is `Card - Category - Estimated withdrawal - Charged to card`, as plain numbers with no separators. Close the popup with ✕, Esc, or by tapping outside it.
+**All file names must be lowercase.** GitHub Pages is case-sensitive, so `App.js`
+and `app.js` are different files. Windows hides this problem; Pages does not.
 
----
+## How offline works
 
-## 15. Import, export and backup
-
-### Import Excel / CSV
-Open **Import Excel / CSV**, then drag and drop or browse for a `.csv`, `.xlsx` or `.xls` file. Use **Download template** (a workbook with a *Transactions* sheet and a *Field Guide* sheet) or **Manual entry** if you prefer to type.
-
-Columns (header row must be unchanged; the first worksheet is read):
-
-| Column | Required | Notes |
-|---|---|---|
-| **Date** | No | Use `YYYY-MM-DD`. |
-| **Card** | **Yes** | Card name. Unknown names create a new card. |
-| **Type** | No | Purchase, Cash Withdrawal, Repaid, Cashback, or your own type. New types are added to the app and database. Defaults to Purchase. |
-| **Description** | No | `Desc` is also accepted. |
-| **Category** | No | New categories are added to the app and database. |
-| **Amount** | **Yes** | Numeric. |
-| **Service Charge** | No | `Service Fee` is also accepted. |
-| **Cashback** | No | Defaults to 0. *Repaid* rows always use 0. |
-| **Notes** | No | Optional. |
-
-Rows missing a card name or a valid amount are skipped, and a summary reports what was added and skipped.
-
-### Backups
-- **Export Backup** downloads `cashback-tracker-backup-YYYY-MM-DD.json` containing your cards and transactions.
-- **Import Backup** restores from such a file.
-
-### Fix Card Links
-Re-attaches transactions that have a card name but no linked card, matching by name. Reports how many were linked and how many could not be matched (renamed or deleted cards).
-
-### Reset Data
-Permanently deletes every card and transaction for the signed-in user and clears local settings. It asks for confirmation and cannot be undone — export a backup first.
-
----
-
-## 16. Due dates, calendar and reminders
-
-- **Due chips** on each tile count the days to the next payment day, with the orange and red alerts described in [section 6](#6-saved-cards).
-- **Export Due Dates** creates `card-due-dates.ics` with **monthly recurring** events for each card's statement date and payment due date. Payment events include alarms **3 days before, 1 day before and on the day**. Import the file into Google, Apple or Outlook calendars.
-- **Enable Due Reminders** asks for browser notification permission. When allowed, the app shows a notification (at most once a day) listing cards with payments due in the next 3 days. Reminders appear **while the app is open**.
-
----
-
-## 17. Manage Category / Type
-
-Open **Manage Category / Type** (sidebar) to add your own **Transaction Types** and **Categories**. New entries become available in the transaction form, card rates, filters and imports. They are saved to your account's shared options so they persist across devices.
-
----
-
-## 18. Privacy mode, theme and layout
-
-- **Privacy mode** hides sensitive figures so you can use the app in public. It is a toggle in the header (or the account menu on phones).
-- **Theme** switches between **Dark** and **Light**; the choice is remembered on the device.
-- **Responsive layout** — text, logos and spacing scale smoothly from phones to tablets to large screens; dialogs scroll instead of clipping; tables scroll sideways inside their own box.
-- **Desktop layout** — on phones a header button forces the full desktop view, useful for wide tables. Turn it off to return to the phone layout.
-- **Sidebar** collapses on desktop and slides in over the page on small screens.
-- **Glass-style dialogs** — the multi-card withdrawal popup uses a frosted glass look in both themes.
-
----
-
-## 19. How the numbers are calculated
-
-- **Outstanding today** = purchases + cash withdrawals − repayments − cashback *already credited* (cashback earned before the current month). Service fees are tracked separately and **not** included by default.
-- **Cashback timing:** cashback earned in a month is credited on the **next month's statement**, so current-month cashback does **not** reduce today's outstanding balance. It appears as **pending cashback** instead.
-- **Net rewards** = cashback − service fees and charges.
-- **Effective return** = cashback ÷ spend.
-- **Cashback caps** apply per category and as an optional overall monthly cap; the tightest remaining cap limits what a transaction or withdrawal can earn.
-- **Withdrawal amounts:** charged amount = withdrawal ÷ (1 − charge %). Estimated cashback is based on the charged amount and the category rate, limited by the remaining caps.
-- **Available to withdraw** = card limit − current-month purchases and withdrawals.
-
----
-
-## 20. Where your data is stored
-
-### Cloud (Supabase, per signed-in user)
-Cards, transactions and your custom categories and types are stored in your Supabase project (tables such as `cards`, `transactions` and `shared_options`, with reconciliation and rule tables alongside). Row Level Security should restrict every row to its owner.
-
-### On the device (browser `localStorage`)
-Preferences and per-device settings, including the theme, privacy setting, desktop-layout choice, default card, last used card and type, saved-cards and disabled-cards visibility, per-card rules and caps, withdrawal charge percentages, per-card rounding choices, and due-notification flags.
-
-Clearing browser data removes device settings but not your cloud data. **Reset Data** removes both.
-
----
-
-## 21. Setup and hosting
-
-DueDates is one static HTML file; there is nothing to build.
-
-1. **Create a Supabase project** and enable email and password authentication.
-2. **Create the tables** the app reads and writes (`cards`, `transactions`, `shared_options`, and the rule and reconciliation tables), each with a `user_id` column.
-3. **Enable Row Level Security** with policies limiting each table to `user_id = auth.uid()`.
-4. In `index.html`, set `SUPABASE_URL` and `SUPABASE_ANON_KEY` to your project's values. The anon key is a publishable key and is safe in the page only when RLS is on.
-5. **Host the file** on any static host (GitHub Pages, Netlify, Cloudflare Pages) or open it locally.
-
-If the Supabase values are left as placeholders, the app runs without a backend.
-
-**Libraries loaded from CDNs:** Tailwind CSS, Chart.js, SheetJS (spreadsheet import/export) and the Supabase JS client. An internet connection is needed on first load.
-
----
-
-## 22. Troubleshooting
-
-| Problem | What to try |
+| Part | Behaviour offline |
 |---|---|
-| Transactions show no card or filters look empty | Use **Fix Card Links** from the menu. |
-| Imported rows are missing | Rows without a **Card** or a valid **Amount** are skipped; check the summary message. |
-| Reminders never appear | Reminders show only while the app is open and only after notification permission is granted. |
-| The phone view looks like a shrunken desktop | Turn off the **desktop layout** button in the header. |
-| Settings reset after clearing the browser | Device settings are stored locally; cloud data is unaffected. |
-| Changes don't appear after an update | Hard refresh the page (Ctrl+Shift+R, or Cmd+Shift+R on Mac). |
-| Wrong data was cleared | **Reset Data** is permanent. Restore from an **Export Backup** file if you have one. |
+| App shell, libraries, fonts | Cached by `sw.js` on the first online visit |
+| Reading data | Every successful Supabase read is saved in the browser (IndexedDB) and shown when offline |
+| Adding / editing / deleting cards and transactions | Applied immediately in the app and queued; synced automatically when you are back online |
+| Login | If you were signed in on this device, the app opens using the stored session |
+| Status | A small pill in the bottom-left shows "Offline" and how many changes are waiting to sync |
 
----
+### Limits
 
-*DueDates — know your limits, your due dates and your cashback.*
+- The **first visit and signing in need internet** (login, signup and password reset use Supabase servers).
+- Support chat, uploaded photos and admin features need internet and are not queued.
+- Card rules, cashback reconciliation and custom categories sync later but do not appear in the app until you reconnect.
+- If the same record is edited on two devices while offline, the last sync wins.
+- If Supabase rejects a queued change on reconnect (for example a permissions error), it is dropped and logged in the browser console.
+
+## Deploy on GitHub Pages
+
+1. Create a **public** repository (Pages on private repos needs a paid plan).
+2. Upload everything in this folder to the **repo root**, including the `vendor/` folder and its `fonts/` subfolder. Keep every name lowercase.
+3. **Settings → Pages → Build and deployment**: Source = *Deploy from a branch*, Branch = `main`, folder = `/ (root)`, then Save.
+4. After 1–2 minutes the site is live at `https://YOUR-USERNAME.github.io/REPO-NAME/`.
+5. In Supabase, go to **Authentication → URL Configuration**. Set **Site URL** to the Pages address and add it under **Redirect URLs** (needed for password-reset links).
+
+Service workers only run over HTTPS (or `localhost`). Opening `index.html` directly from disk will show the app but will not install or cache it.
+
+## Install on a device
+
+1. Open the site while online, sign in, and let the data load. Reload once.
+2. **Android / desktop Chrome or Edge:** use the browser's *Install app* option.
+   **iPhone / iPad Safari:** *Share → Add to Home Screen*.
+3. Test: turn on airplane mode and open the app.
+
+## Updating the app
+
+1. Edit the files and commit them.
+2. **Bump `VERSION` in `sw.js`** (for example `dd-v4` → `dd-v5`) in the same commit. Without this, installed devices keep serving the old cached files.
+3. Devices pick up the new version the next time they open the app online; it may need one extra reload to show.
+
+If you change any CSS class names in the HTML/JS, rebuild `vendor/tailwind.css` (Tailwind v3 CLI, `darkMode: 'class'`, content = `index.html` and the `.js` files), otherwise new utility classes will be missing.
+
+## Changing the icon
+
+iOS saves the icon when the shortcut is created and never updates it afterwards. To change it:
+replace the three icon PNGs (square, solid background, artwork kept inside the centre), bump `VERSION` in `sw.js`, then delete the old shortcut and add it again. Your data lives in Supabase, so nothing is lost by re-adding. Open the old shortcut online once before deleting it so any unsynced offline changes are sent first.
+
+## Troubleshooting
+
+| Symptom | Fix |
+|---|---|
+| Stuck on "Loading your data…" | Open F12 → Console / Network. Look for 404s: usually a wrongly capitalised or missing file, or a missing `vendor/` folder |
+| Old version keeps showing | F12 → Application → Service Workers → Unregister, then Storage → Clear site data; reload twice. Also confirm `VERSION` was bumped |
+| Works locally but not on Pages | Almost always file-name case or a missing file (see above) |
+| Password reset link goes to the wrong place | Check Site URL / Redirect URLs in Supabase |
+| Offline changes did not sync | Open the app online and signed in; sync runs on load and when the connection returns. Check the Console for "Offline change rejected" |
+
+## Security notes
+
+- The Supabase URL and publishable (anon) key are visible in the page source. That is normal for browser apps and safe **only if Row Level Security is enabled on every table**.
+- Never put a `service_role` key in these files.
+- Cached data lives in the browser on that device. Signing out clears the cached data, but use a screen lock on shared devices.
