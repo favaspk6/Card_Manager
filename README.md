@@ -1,4 +1,4 @@
-# DueDates — offline-capable web app (PWA)
+# DueDates — Credit Card Cashback & Spend Analyzer
 
 DueDates is a single-page web app backed by Supabase. This build is an installable
 Progressive Web App (PWA): after the first online visit it opens and works with no
@@ -65,43 +65,10 @@ Service workers only run over HTTPS (or `localhost`). Opening `index.html` direc
    **iPhone / iPad Safari:** *Share → Add to Home Screen*.
 3. Test: turn on airplane mode and open the app.
 
-## Debit cards
-
-Cards can be **Credit** or **Debit** (choose in *Add / Manage Cards*).
-
-- A debit card has a **balance** instead of a limit, and no statement or payment day.
-- Balance = opening balance − purchases − cash withdrawals (− fees, if enabled) + deposits + cashback credited.
-- Enter the money in the account today as the card's **Current Balance** when you create the card.
-- **Add money** on the card tile logs a deposit (stored as a `Repaid` transaction, so reports keep working; the transaction form shows it as "Deposit / top-up").
-- Saving a purchase or withdrawal larger than the balance asks for confirmation. Overdrawn cards show an "Overdrawn" badge.
-- The Saved Cards list shows Credit cards and Debit cards under separate headings.
-- Fee and cashback settings (Fees & cashback caps, category cashback rates, and the transaction form's Service Fee and Cashback fields) are hidden for debit cards, and any values are ignored on save.
-- Debit cards are left out of the credit totals (Total Card Limit / Total Outstanding) and credit-only planners. Their combined balance is shown under Total Card Limit.
-
-**One-time Supabase step** (so the card type syncs across devices). Run in the SQL editor:
-
-```sql
-alter table cards add column if not exists card_type text not null default 'credit' check (card_type in ('credit', 'debit'));
-```
-
-Until it is run, the app still works: it remembers debit cards on that device only and shows a reminder with this SQL when you save one.
-
-## Transaction types: "feels like"
-
-A custom transaction type behaves like a built-in one, so its amount lands in the right section of balances, outstanding, charts and reports.
-
-- When you add a type (Settings, or *+ Add new type...* in the transaction form) you must pick one radio button under **Feels like**: **Purchase** or **Repaid**. Nothing is pre-selected, and the type is not added until you choose.
-  Example: **Annual Fee -> Purchase**, **Deposit -> Repaid**.
-- Already configured types are not listed in the settings window; their choice is kept.
-- Types without a saved choice (made before this existed, or created by a CSV import) are stored and shown but not counted.
-- EMI plans stay limited to the real **Purchase** type.
-
-Database: `shared_options.behaves_like` (already in `duedates_full_setup.sql`; for an existing database run `duedates_update_debit_and_types.sql` once).
-
 ## Updating the app
 
 1. Edit the files and commit them.
-2. **Bump `VERSION` in `sw.js`** (for example `dd-v13` → `dd-v14`) in the same commit. Without this, installed devices keep serving the old cached files.
+2. **Bump `VERSION` in `sw.js`** (for example `dd-v4` → `dd-v5`) in the same commit. Without this, installed devices keep serving the old cached files.
 3. Devices pick up the new version the next time they open the app online; it may need one extra reload to show.
 
 If you change any CSS class names in the HTML/JS, rebuild `vendor/tailwind.css` (Tailwind v3 CLI, `darkMode: 'class'`, content = `index.html` and the `.js` files), otherwise new utility classes will be missing.

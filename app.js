@@ -7,8 +7,8 @@
             Chart.defaults.font.family = "'Inter', ui-sans-serif, system-ui, sans-serif";
         }
 
-        const SUPABASE_URL = 'https://ngkmqtqzmvkfzvwegflf.supabase.co';
-        const SUPABASE_ANON_KEY = 'sb_publishable_RXdmwR8oCdgfOak4SbPqPA_ASVAH4hx';
+        const SUPABASE_URL = 'https://eghvqigfmcohvlstnajw.supabase.co';
+        const SUPABASE_ANON_KEY = 'sb_publishable_SB6dXxf5bfzdpKL69IOMqQ_F9ETe580';
         // Password-reset links land back on this page with the result in the URL hash.
         // Read it NOW, before supabase-js processes it, so boot() knows we arrived from a reset email.
         let recoveryPending = /type=recovery/.test(window.location.hash);
@@ -44,23 +44,6 @@
         }
         function writeLocalDisabledIds() {
             try { localStorage.setItem('cb_disabled_cards', JSON.stringify(cards.filter(c => c.disabled).map(c => String(c.id)))); } catch (e) { /* private mode */ }
-        }
-        // ---- DEBIT CARDS ----
-        // A card is 'credit' (default) or 'debit'. For a debit card, availableLimit holds the OPENING BALANCE
-        // and balance = opening balance - purchases - withdrawals - fees + deposits ('Repaid' rows) + cashback credited.
-        const isDebit = c => !!c && c.cardType === 'debit'; // same field the withdrawal planner / forecast already check
-        function readLocalDebitIds() {
-            try { return new Set(JSON.parse(localStorage.getItem('cb_debit_cards') || '[]').map(String)); } catch (e) { return new Set(); }
-        }
-        function writeLocalDebitIds() { // backup for databases that don't have the card_type column yet (this device only)
-            try { localStorage.setItem('cb_debit_cards', JSON.stringify(cards.filter(isDebit).map(c => String(c.id)))); } catch (e) { /* private mode */ }
-        }
-        function debitBalance(c, asOf, ignoreTxId) {
-            const ignoredIds = new Set((Array.isArray(ignoreTxId) ? ignoreTxId : [ignoreTxId])
-                .filter(id => id !== undefined && id !== null && id !== '')
-                .map(String));
-            const list = cardTxList(c).filter(t => !ignoredIds.has(String(t.id)));
-            return (Number(c.availableLimit) || 0) - calculateOutstanding(list, asOf || localDateKey(), c).outstanding;
         }
         // Card names that should appear in the card filters (chips + history dropdown).
         function filterableCardNames() {
@@ -108,32 +91,25 @@
         let selectedCategories = []; // empty array = "All Categories"; otherwise one or more category names
         let selectedMonths = []; // empty array = "All Months"; otherwise one or more 'YYYY-MM' keys, e.g. last 2 months
         let searchQuery = '';
-        const TRANSFER_OUT_TYPE = 'Transfer Out';
-        const TRANSFER_IN_TYPE = 'Transfer In';
-        const TRANSFER_NOTE_PREFIX = 'Transfer group: ';
-        const TYPE_FILTER_OPTIONS = ['Purchase', 'Cash Withdrawal', 'Repaid', 'Cashback', TRANSFER_OUT_TYPE, TRANSFER_IN_TYPE];
+        const TYPE_FILTER_OPTIONS = ['Purchase', 'Cash Withdrawal', 'Repaid', 'Cashback']; // same list as the Type dropdown in the transaction form
         let activeTypeFilter = 'ALL'; // 'ALL' or one of TYPE_FILTER_OPTIONS
-        let transactionEntryKind = '';
         let financialPeriod = 'month';
         let currentReportTransactions = [];
         const customTransactionTypes = [];
-        // "Feels like": every transaction type behaves like one of four built-in kinds. Custom types
-        // (e.g. 'Annual Fee' -> Purchase, 'Deposit' -> Repaid) are mapped here; 'None' = record only.
-        const TX_KINDS = ['Purchase', 'Cash Withdrawal', 'Repaid', 'Cashback'];
-        const customTypeBehavior = {};
-        function txKind(type) {
-            if (TX_KINDS.includes(type)) return type;
-            const k = customTypeBehavior[type];
-            return TX_KINDS.includes(k) ? k : null;
+
+        // "Feels like" behaviour of each custom transaction type: 'purchase' or 'repaid'.
+        // Built-ins: Purchase counts as a purchase, Repaid as a repayment. A custom type such as
+        // "Annual Fee" (purchase) or "Deposit" (repaid) is counted in that section everywhere.
+        const TYPE_BEHAVIOR = {};
+        function typeBehavior(type) {
+            if (type === 'Purchase') return 'purchase';
+            if (type === 'Repaid') return 'repaid';
+            return TYPE_BEHAVIOR[String(type || '').toLowerCase()] || null;
         }
-        const isSpendKind = type => { const k = txKind(type); return k === 'Purchase' || k === 'Cash Withdrawal'; };
-        const transferGroupId = transaction => {
-            const match = String(transaction && transaction.notes || '').match(/(?:^|\n)Transfer group: ([^\r\n]+)/);
-            return match ? match[1] : '';
-        };
-        const isTransferType = type => type === TRANSFER_OUT_TYPE || type === TRANSFER_IN_TYPE;
-        function persistTypeBehaviors() {
-            try { localStorage.setItem('cb_custom_type_behaviors', JSON.stringify(customTypeBehavior)); } catch (e) { /* private mode */ }
+        function isPurchaseType(type) { return typeBehavior(type) === 'purchase'; }
+        function isRepaidType(type) { return typeBehavior(type) === 'repaid'; }
+        function saveTypeBehaviorsLocal() {
+            localStorage.setItem('cb_type_behaviors', JSON.stringify(TYPE_BEHAVIOR));
         }
 
         // ---- HISTORY TABLE: sort, pagination, bulk-select ----
@@ -710,16 +686,8 @@
 
             const label = ids.length === 1 ? 'Transaction will be deleted in 5 seconds' : `${ids.length} transactions will be deleted in 5 seconds`;
             const timer = setTimeout(async () => {
-                const deleted = ids.length > 1
-                    ? await deleteTransactionsFromDB(ids)
-                    : await deleteTransactionFromDB(ids[0]);
-                if (deleted === false) {
-                    ids.forEach(id => hiddenTxIds.delete(id));
-                    ids.forEach(id => pendingDeleteTimers.delete(id));
-                    render();
-                    return;
-                }
                 for (const id of ids) {
+                    await deleteTransactionFromDB(id);
                     hiddenTxIds.delete(id);
                     pendingDeleteTimers.delete(id);
                 }
@@ -752,7 +720,7 @@
             return Number.isInteger(day) && day >= 1 && day <= 31 ? day : 1;
         }
         function isImmediateCashbackTransaction(tx) {
-            return txKind(tx.type) === 'Cashback' || tx.category === 'Cashback';
+            return tx.type === 'Cashback' || tx.category === 'Cashback';
         }
         function cashbackCreditDate(tx, card = resolveCardForTransaction(tx)) {
             const date = tx.date || '';
@@ -776,7 +744,7 @@
             return !!creditDate && creditDate <= asOfDate;
         }
         function calculateOutstanding(txList, asOfDate = localDateKey(), card = null) {
-            const r = { purchases: 0, withdrawals: 0, fees: 0, repaid: 0, transferOut: 0, transferIn: 0, cashbackCredited: 0, cashbackPending: 0, cashbackPendingByDate: {} };
+            const r = { purchases: 0, withdrawals: 0, fees: 0, repaid: 0, cashbackCredited: 0, cashbackPending: 0, cashbackPendingByDate: {} };
 
             txList.forEach(t => {
                 const date = t.date || '';
@@ -787,11 +755,9 @@
                 const fee = parseFloat(t.serviceCharge) || 0;
 
                 const immediateCashback = isImmediateCashbackTransaction(t);
-                if (!immediateCashback && txKind(t.type) === 'Purchase') r.purchases += amount;
-                else if (!immediateCashback && txKind(t.type) === 'Cash Withdrawal') r.withdrawals += amount;
-                else if (!immediateCashback && txKind(t.type) === 'Repaid') r.repaid += amount;
-                else if (t.type === TRANSFER_OUT_TYPE) r.transferOut += amount;
-                else if (t.type === TRANSFER_IN_TYPE) r.transferIn += amount;
+                if (!immediateCashback && isPurchaseType(t.type)) r.purchases += amount;
+                else if (!immediateCashback && t.type === 'Cash Withdrawal') r.withdrawals += amount;
+                else if (!immediateCashback && isRepaidType(t.type)) r.repaid += amount;
                 r.fees += fee;
 
                 if (immediateCashback) {
@@ -808,8 +774,8 @@
                 }
             });
 
-            r.outstanding = r.purchases + r.withdrawals + r.transferOut + (INCLUDE_FEES_IN_OUTSTANDING ? r.fees : 0)
-                          - r.repaid - r.transferIn - r.cashbackCredited;
+            r.outstanding = r.purchases + r.withdrawals + (INCLUDE_FEES_IN_OUTSTANDING ? r.fees : 0)
+                          - r.repaid - r.cashbackCredited;
             r.afterPending = r.outstanding - r.cashbackPending;
             return r;
         }
@@ -1095,130 +1061,27 @@
                 RATE_CATEGORIES.map(cat => `<option value="${cat}">${cat}</option>`).join('');
             renderRecommendationCategoryPills();
 
-            populateTransactionCategorySelect();
-        }
-
-        function populateTransactionCategorySelect(preferredCategory) {
-            const select = document.getElementById('exp-category');
-            if (!select) return;
-            const previousValue = preferredCategory !== undefined
-                ? preferredCategory
-                : (select.value || select.dataset.previousValue || '');
-            const options = ['<option value="">None / Default</option>'];
-            RATE_CATEGORIES.forEach(category => {
-                options.push(`<option value="${escapeHtml(category)}">${escapeHtml(category)}</option>`);
-            });
-            TX_ONLY_CATEGORIES.forEach(category => {
-                options.push(`<option value="${escapeHtml(category)}">${escapeHtml(category)}</option>`);
-            });
-            options.push('<option value="__add_new_category__">+ Add new category...</option>');
-            select.innerHTML = options.join('');
-            if (previousValue && [...select.options].some(option => option.value === previousValue)) {
-                select.value = previousValue;
-            } else {
-                select.value = '';
-            }
-            select.dataset.previousValue = select.value;
+            document.getElementById('exp-category').innerHTML =
+                `<option value="">None / Default</option>` +
+                RATE_CATEGORIES.map(cat => `<option value="${cat}">${cat}</option>`).join('') +
+                TX_ONLY_CATEGORIES.map(cat => `<option value="${cat}">${cat}</option>`).join('') +
+                '<option value="__add_new_category__">+ Add new category...</option>';
         }
 
         function populateTransactionTypes() {
             const select = document.getElementById('exp-type');
             if (!select) return;
             const selected = select.value;
-            const types = transactionEntryKind === 'income'
-                ? TYPE_FILTER_OPTIONS.filter(type => ['Repaid', 'Cashback'].includes(txKind(type)))
-                : transactionEntryKind === 'expense'
-                    ? TYPE_FILTER_OPTIONS.filter(type => !isTransferType(type) && (isSpendKind(type) || !txKind(type)))
-                    : [];
-            const hasTransactionType = ['income', 'expense'].includes(transactionEntryKind);
-            select.innerHTML = hasTransactionType
-                ? `<option value="">Select type...</option>${types.map(type => `<option value="${escapeHtml(type)}">${escapeHtml(type)}</option>`).join('')}<option value="__add_new_type__">+ Add new type...</option>`
-                : '<option value="">Choose transaction kind first</option>';
-            select.disabled = !hasTransactionType;
-            select.required = hasTransactionType;
-            if (types.some(type => type === selected)) select.value = selected;
-            else select.value = transactionEntryKind === 'income' ? 'Repaid' : transactionEntryKind === 'expense' ? 'Purchase' : '';
-        }
-
-        function groupedCardOptions(cardList) {
-            return ['Debit', 'Credit'].map(type => {
-                const group = cardList.filter(card => (isDebit(card) ? 'Debit' : 'Credit') === type);
-                return group.length
-                    ? `<optgroup label="${type}">${group.map(card => `<option value="${escapeHtml(card.id)}">${escapeHtml(card.name)}</option>`).join('')}</optgroup>`
-                    : '';
-            }).join('');
-        }
-
-        function populateTransferCardSelects(sourceId = '', destinationId = '', allowInactive = false) {
-            const sourceSelect = document.getElementById('exp-transfer-source');
-            const destinationSelect = document.getElementById('exp-transfer-destination');
-            if (!sourceSelect || !destinationSelect) return;
-            const sourceCards = activeCards();
-            const destinationCards = activeCards();
-            [sourceId, destinationId].forEach((id, index) => {
-                if (!id) return;
-                const card = cards.find(c => String(c.id) === String(id));
-                const list = index === 0 ? sourceCards : destinationCards;
-                if (card && !list.some(c => String(c.id) === String(card.id)) && allowInactive) list.push(card);
-            });
-            sourceSelect.innerHTML = `<option value="">Select source card...</option>${groupedCardOptions(sourceCards)}`;
-            sourceSelect.disabled = sourceCards.length === 0;
-            const availableDestinations = destinationCards.filter(card => String(card.id) !== String(sourceId));
-            destinationSelect.innerHTML = `<option value="">Select destination card...</option>${groupedCardOptions(availableDestinations)}`;
-            destinationSelect.disabled = availableDestinations.length === 0;
-            sourceSelect.required = transactionEntryKind === 'transfer';
-            destinationSelect.required = transactionEntryKind === 'transfer';
-            sourceSelect.value = sourceCards.some(card => String(card.id) === String(sourceId)) ? String(sourceId) : '';
-            destinationSelect.value = availableDestinations.some(card => String(card.id) === String(destinationId)) ? String(destinationId) : '';
-        }
-
-        function setTransactionEntryKind(kind) {
-            transactionEntryKind = ['income', 'expense', 'transfer'].includes(kind) ? kind : '';
-            const isTransfer = transactionEntryKind === 'transfer';
-            const isEntry = transactionEntryKind === 'income' || transactionEntryKind === 'expense';
-            if (!document.getElementById('editing-tx-id').value) {
-                document.getElementById('tx-submit-btn').textContent = isTransfer ? 'Log Transfer' : 'Log Entry';
-            }
-            document.querySelectorAll('input[name="entry-kind"]').forEach(input => {
-                input.checked = input.value === transactionEntryKind;
-            });
-            document.getElementById('exp-date-type-row').classList.toggle('grid-cols-1', isTransfer);
-            document.getElementById('exp-date-type-row').classList.toggle('grid-cols-2', !isTransfer);
-            document.getElementById('exp-type-wrapper').classList.toggle('hidden', isTransfer);
-            document.getElementById('exp-card-wrapper').classList.toggle('hidden', isTransfer);
-            document.getElementById('exp-transfer-cards').classList.toggle('hidden', !isTransfer);
-            document.getElementById('exp-card').required = isEntry;
-            document.getElementById('exp-category-wrapper').classList.toggle('hidden', isTransfer);
-            document.getElementById('exp-amount-category-row').classList.toggle('grid-cols-1', isTransfer);
-            document.getElementById('exp-amount-category-row').classList.toggle('grid-cols-2', !isTransfer);
-            document.getElementById('exp-fee-cashback-row').classList.toggle('hidden', isTransfer);
-            document.getElementById('exp-emi-wrapper').classList.toggle('hidden', isTransfer);
-            if (isTransfer) {
-                document.getElementById('exp-service').value = '0';
-                document.getElementById('exp-cashback').value = '0';
-                document.getElementById('exp-is-emi').checked = false;
-                document.getElementById('exp-emi-details').classList.add('hidden');
-            }
-            populateTransactionTypes();
-            const selectedType = document.getElementById('exp-type').value;
-            if (isEntry && selectedType) syncCategoryState(selectedType);
-            if (isTransfer) {
-                populateTransferCardSelects(
-                    document.getElementById('exp-transfer-source').value,
-                    document.getElementById('exp-transfer-destination').value,
-                    !!document.getElementById('editing-tx-id').value
-                );
-            }
-            syncRepaidLabel();
-        }
-
-        function entryKindForType(type) {
-            if (isTransferType(type)) return 'transfer';
-            return ['Repaid', 'Cashback'].includes(txKind(type)) ? 'income' : 'expense';
+            select.innerHTML = TYPE_FILTER_OPTIONS.map(type => `<option value="${type}">${type}</option>`).join('') +
+                '<option value="__add_new_type__">+ Add new type...</option>';
+            if (TYPE_FILTER_OPTIONS.includes(selected)) select.value = selected;
         }
 
         // Merge a list of saved types/categories into the live in-memory lists.
-        function applyCustomSettings(savedTypes, savedCategories) {
+        function applyCustomSettings(savedTypes, savedCategories, savedBehaviors) {
+            Object.entries(savedBehaviors || {}).forEach(([name, b]) => {
+                if (b === 'purchase' || b === 'repaid') TYPE_BEHAVIOR[String(name).toLowerCase()] = b;
+            });
             (savedTypes || []).filter(t => typeof t === 'string' && t.trim()).forEach(type => {
                 if (!customTransactionTypes.includes(type)) customTransactionTypes.push(type);
                 if (!TYPE_FILTER_OPTIONS.includes(type)) TYPE_FILTER_OPTIONS.push(type);
@@ -1245,12 +1108,10 @@
 
         async function loadCustomSettings() {
             try {
-                Object.assign(customTypeBehavior, JSON.parse(localStorage.getItem('cb_custom_type_behaviors') || '{}'));
-            } catch (error) { /* ignore */ }
-            try {
                 applyCustomSettings(
                     JSON.parse(localStorage.getItem('cb_custom_transaction_types') || '[]'),
-                    JSON.parse(localStorage.getItem('cb_custom_categories') || '[]')
+                    JSON.parse(localStorage.getItem('cb_custom_categories') || '[]'),
+                    JSON.parse(localStorage.getItem('cb_type_behaviors') || '{}')
                 );
             } catch (error) {
                 console.warn('Could not read cached custom settings:', error);
@@ -1258,20 +1119,25 @@
             if (_supabase && currentUserId) {
                 let { data, error } = await _supabase
                     .from('shared_options')
-                    .select('kind, name, behaves_like')
+                    .select('kind, name, behavior')
                     .order('created_at', { ascending: true });
-                if (error && /behaves_like/.test(error.message || '')) { // column not added yet: fall back to the old query
-                    ({ data, error } = await _supabase.from('shared_options').select('kind, name').order('created_at', { ascending: true }));
+                if (error) { // "behavior" column not added yet: load without it
+                    ({ data, error } = await _supabase
+                        .from('shared_options')
+                        .select('kind, name')
+                        .order('created_at', { ascending: true }));
                 }
                 if (error) {
                     console.warn('Could not load shared_options from Supabase (table missing?):', error.message);
                 } else if (data) {
+                    const dbBehaviors = {};
+                    data.filter(r => r.kind === 'transaction_type' && r.behavior).forEach(r => { dbBehaviors[r.name] = r.behavior; });
                     applyCustomSettings(
                         data.filter(r => r.kind === 'transaction_type').map(r => r.name),
-                        data.filter(r => r.kind === 'category').map(r => r.name)
+                        data.filter(r => r.kind === 'category').map(r => r.name),
+                        dbBehaviors
                     );
-                    data.filter(r => r.kind === 'transaction_type' && r.behaves_like).forEach(r => { customTypeBehavior[r.name] = r.behaves_like; });
-                    persistTypeBehaviors();
+                    saveTypeBehaviorsLocal();
                     localStorage.setItem('cb_custom_transaction_types', JSON.stringify(customTransactionTypes));
                     localStorage.setItem('cb_custom_categories', JSON.stringify(customCategories));
                 }
@@ -1280,37 +1146,19 @@
 
         // Insert ONE shared option. A duplicate (same kind + name, any case) is treated as success.
         let warnedMissingSettingsTable = false;
-        let warnedMissingBehaviorColumn = false;
-        async function saveSharedOption(kind, name, behavesLike) {
+        async function saveSharedOption(kind, name, behavior) {
             localStorage.setItem('cb_custom_transaction_types', JSON.stringify(customTransactionTypes));
             localStorage.setItem('cb_custom_categories', JSON.stringify(customCategories));
+            saveTypeBehaviorsLocal();
             if (!_supabase || !currentUserId) return true;
-            // Check exact names case-insensitively before inserting, without treating % or _
-            // in a category name as SQL wildcard characters.
-            try {
-                const existing = await _supabase
-                    .from('shared_options')
-                    .select('id, name')
-                    .eq('kind', kind);
-                if (!existing.error && existing.data && existing.data.some(option =>
-                    String(option.name || '').trim().toLowerCase() === name.trim().toLowerCase()
-                )) return true;
-            } catch (error) {
-                console.warn('Could not check existing shared option:', error);
-            }
             const row = { kind, name, created_by: currentUserId };
-            if (kind === 'transaction_type' && behavesLike) row.behaves_like = behavesLike;
+            if (kind === 'transaction_type' && behavior) row.behavior = behavior;
             let { error } = await _supabase.from('shared_options').insert(row);
-            if (error && 'behaves_like' in row && /behaves_like/.test(error.message || '')) {
-                delete row.behaves_like; // column missing: save the type itself, keep the behaviour on this device
-                if (!warnedMissingBehaviorColumn) {
-                    warnedMissingBehaviorColumn = true;
-                    alert('The type was saved, but its "Feels like" setting is only remembered on this device until you run this once in the Supabase SQL editor:\n\n' +
-                          "alter table public.shared_options add column if not exists behaves_like text check (behaves_like in ('Purchase','Cash Withdrawal','Repaid','Cashback','None'));\n" +
-                          "create policy shared_options_update on public.shared_options for update to authenticated using (created_by = auth.uid() or public.is_admin()) with check (created_by = auth.uid() or public.is_admin());\n" +
-                          "grant update on public.shared_options to authenticated;");
-                }
+            if (error && row.behavior && error.code !== '23505') {
+                // "behavior" column missing: save the type without it (behaviour stays on this device)
+                delete row.behavior;
                 ({ error } = await _supabase.from('shared_options').insert(row));
+                if (!error) console.warn('shared_options has no "behavior" column yet. Run shared_options_behavior.sql in Supabase so a type\'s Purchase/Repaid behaviour is shared across devices.');
             }
             if (error && error.code !== '23505') {
                 console.error('Saving shared option failed:', error);
@@ -1323,52 +1171,6 @@
             return true;
         }
 
-        async function syncUsedSharedOptions(categories, types) {
-            const categoryNames = [...new Set((categories || []).map(name => String(name || '').trim()).filter(Boolean))];
-            const typeNames = [...new Set((types || []).map(name => String(name || '').trim()).filter(Boolean))];
-            const existingCategories = new Map([...RATE_CATEGORIES, ...TX_ONLY_CATEGORIES].map(name => [name.toLowerCase(), name]));
-            const existingTypes = new Map(TYPE_FILTER_OPTIONS.map(name => [name.toLowerCase(), name]));
-            const newCategories = [];
-            const newTypes = [];
-
-            categoryNames.forEach(name => {
-                const key = name.toLowerCase();
-                if (!existingCategories.has(key)) {
-                    existingCategories.set(key, name);
-                    newCategories.push(name);
-                }
-            });
-            typeNames.forEach(name => {
-                const key = name.toLowerCase();
-                if (!existingTypes.has(key)) {
-                    existingTypes.set(key, name);
-                    newTypes.push(name);
-                }
-            });
-
-            if (newCategories.length || newTypes.length) applyCustomSettings(newTypes, newCategories);
-
-            let failures = 0;
-            for (const name of categoryNames) {
-                try {
-                    if ((await saveSharedOption('category', name)) === false) failures++;
-                } catch (error) {
-                    console.error(`Could not sync category "${name}" to shared_options:`, error);
-                    failures++;
-                }
-            }
-            for (const name of typeNames) {
-                try {
-                    if ((await saveSharedOption('transaction_type', name)) === false) failures++;
-                } catch (error) {
-                    console.error(`Could not sync transaction type "${name}" to shared_options:`, error);
-                    failures++;
-                }
-            }
-            if (newCategories.length || newTypes.length) refreshOptionUI();
-            return { categories: newCategories.length, types: newTypes.length, failures };
-        }
-
         // Live updates: when any user adds an option, everyone else gets it without a refresh.
         // (Needs Realtime enabled for the table — the SQL script does this. Harmless if it isn't.)
         let sharedOptionsChannel = null;
@@ -1378,15 +1180,8 @@
                 .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'shared_options' }, payload => {
                     const r = payload.new || {};
                     if (r.kind === 'category') applyCustomSettings([], [r.name]);
-                    else if (r.kind === 'transaction_type') { applyCustomSettings([r.name], []); if (r.behaves_like) { customTypeBehavior[r.name] = r.behaves_like; persistTypeBehaviors(); } }
+                    else if (r.kind === 'transaction_type') { applyCustomSettings([r.name], [], r.behavior ? { [r.name]: r.behavior } : null); saveTypeBehaviorsLocal(); }
                     refreshOptionUI();
-                })
-                .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'shared_options' }, payload => {
-                    const r = payload.new || {};
-                    if (r.kind === 'transaction_type' && r.behaves_like) {
-                        customTypeBehavior[r.name] = r.behaves_like; persistTypeBehaviors();
-                        refreshOptionUI(); render();
-                    }
                 })
                 .subscribe();
         }
@@ -1413,7 +1208,7 @@
 
         async function openTransactionSettings(kind) {
             const select = document.getElementById(kind === 'type' ? 'exp-type' : 'exp-category');
-            const defaultValue = kind === 'type' ? (transactionEntryKind === 'income' ? 'Repaid' : 'Purchase') : '';
+            const defaultValue = kind === 'type' ? 'Purchase' : '';
             transactionSettingsReturn = { kind, previousValue: select.dataset.previousValue || defaultValue };
             document.getElementById('tx-modal').classList.add('hidden');
             await openSettings();
@@ -1425,9 +1220,6 @@
             document.getElementById('settings-modal').classList.add('hidden');
             document.getElementById('tx-modal').classList.remove('hidden');
             const select = document.getElementById(kind === 'type' ? 'exp-type' : 'exp-category');
-            if (kind === 'type' && transactionEntryKind !== entryKindForType(value)) {
-                setTransactionEntryKind(entryKindForType(value));
-            }
             select.value = value;
             select.dataset.previousValue = value;
             if (kind === 'type') syncCategoryState(value);
@@ -1449,6 +1241,18 @@
             }
         }
 
+        // Used when an import brings in a type the app does not know yet: the person must say
+        // whether it feels like a Purchase or like a Repaid entry (Cancel leaves it unclassified).
+        function askTypeBehavior(typeName, message) {
+            for (;;) {
+                const answer = window.prompt(message || `New transaction type "${typeName}".\n\nDoes it feel like a Purchase or like Repaid?\nType P for Purchase or R for Repaid.`, 'P');
+                if (answer === null) return null;
+                const a = answer.trim().toLowerCase();
+                if (a === 'p' || a === 'purchase') return 'purchase';
+                if (a === 'r' || a === 'repaid') return 'repaid';
+            }
+        }
+
         function addCustomTransactionType() {
             const input = document.getElementById('new-transaction-type');
             const value = input.value.trim();
@@ -1457,24 +1261,20 @@
                 showToast('That transaction type already exists.');
                 return;
             }
-            const chosen = document.querySelector('input[name="new-type-behavior"]:checked');
-            if (!chosen) {
-                showToast('Choose what this type feels like: Purchase or Repaid.', { tone: 'error', duration: 4500 });
-                const group = document.getElementById('new-transaction-type-behavior-group');
-                if (group) group.scrollIntoView({ block: 'nearest' });
+            const behavior = document.querySelector('input[name="new-type-feels-like"]:checked')?.value;
+            if (behavior !== 'purchase' && behavior !== 'repaid') {
+                showToast('Choose what this type feels like: Purchase or Repaid.', { tone: 'error' });
                 return;
             }
-            const behavior = chosen.value;
+            TYPE_BEHAVIOR[value.toLowerCase()] = behavior;
             TYPE_FILTER_OPTIONS.push(value);
             customTransactionTypes.push(value);
-            customTypeBehavior[value] = behavior;
-            persistTypeBehaviors();
             saveSharedOption('transaction_type', value, behavior);
+            document.querySelectorAll('input[name="new-type-feels-like"]').forEach(r => { r.checked = false; });
             populateTransactionTypes();
             renderTypeFilter();
             input.value = '';
-            chosen.checked = false; // next type starts with nothing selected
-            showToast(`Added transaction type: ${value} (feels like ${behavior === 'None' ? 'nothing — record only' : behavior})`, { tone: 'success' });
+            showToast(`Added transaction type: ${value}`, { tone: 'success' });
             returnToTransactionSettingsSelection('type', value);
         }
 
@@ -1602,57 +1402,8 @@
         // With Row Level Security enabled on 'cards' and 'transactions' (see the
         // accompanying SQL), each signed-in user can only read/write rows where
         // user_id = auth.uid(). Nothing loads from Supabase until a session exists.
-        // Credit / debit switch in the card form: debit cards have a balance instead of a limit and no statement/payment day.
-        function toggleCardType() {
-            const debit = (document.querySelector('input[name="card-type"]:checked') || {}).value === 'debit';
-            const label = document.getElementById('card-limit-label');
-            const input = document.getElementById('card-limit');
-            const dates = document.getElementById('card-dates-field');
-            if (label) label.textContent = debit ? 'Current Balance' : 'Available Limit';
-            if (input) input.placeholder = debit ? 'e.g., 5000 (balance in the account today)' : 'e.g., 15000';
-            if (dates) dates.classList.toggle('hidden', debit);
-            // Debit cards have no fees or cashback: hide those sections and disable their inputs
-            // (disabled inputs are skipped by form validation, so hidden 'required' fields can't block saving).
-            ['card-rules-section', 'card-rates-section'].forEach(id => {
-                const section = document.getElementById(id);
-                if (!section) return;
-                section.style.display = debit ? 'none' : '';
-                section.querySelectorAll('input, select, textarea, button').forEach(el => {
-                    if (debit) {
-                        if (!el.disabled) { el.disabled = true; el.dataset.ddDebitOff = '1'; }
-                    } else if (el.dataset.ddDebitOff) {
-                        el.disabled = false; delete el.dataset.ddDebitOff;
-                    }
-                });
-            });
-        }
-        // In the transaction form, 'Repaid' reads as 'Deposit / top-up' while a debit card is selected (stored value stays 'Repaid').
-        function syncRepaidLabel() {
-            const sel = document.getElementById('exp-card');
-            const opt = document.querySelector('#exp-type option[value="Repaid"]');
-            if (!sel || !opt) return;
-            const debit = isDebit(cards.find(c => String(c.id) === String(sel.value)));
-            opt.textContent = debit ? 'Deposit / top-up' : 'Repaid';
-            const row = document.getElementById('exp-fee-cashback-row');
-            if (row) {
-                row.style.display = debit ? 'none' : '';
-                if (debit) {
-                    document.getElementById('exp-service').value = '';
-                    document.getElementById('exp-cashback').value = '0.00';
-                }
-            }
-        }
-        ['exp-card'].forEach(id => {
-            const el = document.getElementById(id);
-            if (el) el.addEventListener('change', syncRepaidLabel);
-        });
-        ['mousedown', 'touchstart', 'focus'].forEach(ev => { const el = document.getElementById('exp-type'); if (el) el.addEventListener(ev, syncRepaidLabel); });
-
         function openCardModal() {
             if (!document.getElementById('editing-card-id').value) {
-                const credit = document.querySelector('input[name="card-type"][value="credit"]');
-                if (credit) credit.checked = true;
-                toggleCardType();
                 renderRateInputs({}, '', {});
                 ddFillRulesForm(null);
             }
@@ -1735,10 +1486,10 @@
                 const cashback = parseFloat(t.cashback) || 0;
                 const amount = parseFloat(t.amount) || 0;
                 cb += cashback;
-                if (txKind(t.type) === 'Purchase' || txKind(t.type) === 'Cash Withdrawal') spend += amount;
+                if (isPurchaseType(t.type) || t.type === 'Cash Withdrawal') spend += amount;
                 if ((t.date || '').startsWith(currentMonth)) {
                     mtdCb += cashback;
-                    if (txKind(t.type) === 'Purchase' || txKind(t.type) === 'Cash Withdrawal') mtdSpend += amount;
+                    if (isPurchaseType(t.type) || t.type === 'Cash Withdrawal') mtdSpend += amount;
                 }
             });
             const ret = spend > 0 ? (cb / spend) * 100 : 0;
@@ -2149,10 +1900,8 @@
                 
                 if (!cardError && dbCards) {
                     const localDisabled = readLocalDisabledIds();
-                    const localDebit = readLocalDebitIds();
                     cards = dbCards.map(c => ({
                         id: String(c.id),
-                        cardType: (c.card_type === 'debit' || c.card_type === 'credit') ? c.card_type : (localDebit.has(String(c.id)) ? 'debit' : 'credit'),
                         name: c.name,
                         availableLimit: c.available_limit,
                         rates: c.rates || {},
@@ -2201,13 +1950,6 @@
                 transactions = JSON.parse(localStorage.getItem('cb_transactions')) || [];
             }
             await loadCustomSettings();
-            const optionSync = await syncUsedSharedOptions(
-                transactions.map(transaction => transaction.category),
-                transactions.map(transaction => transaction.type)
-            );
-            if (_supabase && currentUserId && optionSync.failures > 0) {
-                showToast(`${optionSync.failures} category/type option(s) from saved transactions could not be synced to Supabase.`, { tone: 'error', duration: 10000 });
-            }
             subscribeSharedOptions();
             populateTransactionTypes();
             renderTypeFilter();
@@ -2215,6 +1957,36 @@
             renderRateInputs({});
             renderColorPicker();
             render();
+            setTimeout(classifyExistingTypes, 400); // after the first paint
+        }
+
+        // One-time clean-up for types created before "Feels like" existed: for every custom type
+        // that has transactions but no Purchase/Repaid choice, ask once and save the answer to the
+        // database (shared_options). The transactions themselves follow automatically.
+        let classifyExistingAsked = false;
+        async function classifyExistingTypes() {
+            if (classifyExistingAsked) return;
+            classifyExistingAsked = true;
+            const pending = customTransactionTypes.filter(t => !typeBehavior(t) && transactions.some(x => x.type === t));
+            if (!pending.length) return;
+            let failed = false, changed = false;
+            for (const name of pending) {
+                const b = askTypeBehavior(name, `Existing transaction type "${name}" has transactions but is not classified yet.\n\nShould it count as a Purchase or as Repaid?\nType P for Purchase or R for Repaid (Cancel to decide later).`);
+                if (!b) continue;
+                TYPE_BEHAVIOR[name.toLowerCase()] = b;
+                changed = true;
+                if (_supabase && currentUserId) {
+                    const { error } = await _supabase.from('shared_options')
+                        .update({ behavior: b }).eq('kind', 'transaction_type').eq('name', name);
+                    if (error) { failed = true; console.warn('Could not save type behaviour to Supabase:', error.message); }
+                }
+            }
+            if (!changed) return;
+            saveTypeBehaviorsLocal();
+            render();
+            showToast(failed ? 'Types classified on this device only. Run shared_options_behavior.sql in Supabase, then reload, to save them to the database.'
+                             : 'Existing transaction types classified and saved.',
+                      { tone: failed ? 'error' : 'success', duration: failed ? 10000 : 4000 });
         }
 
         async function saveData() {
@@ -2230,9 +2002,7 @@
         let warnedMissingIdentityColumns = false;
         let warnedMissingDisabledColumn = false;
         let warnedMissingCashbackCreditColumns = false;
-        let warnedMissingCardTypeColumn = false;
         async function _saveCardToDBImpl(c) {
-            writeLocalDebitIds();
             if (_supabase) {
                 const base = {
                     id: String(c.id),
@@ -2255,7 +2025,6 @@
                     card_network_variant: c.netVariant || null,
                     card_tier: c.tier || null,
                     card_last4: c.last4 || null,
-                    card_type: isDebit(c) ? 'debit' : 'credit',
                     is_disabled: !!c.disabled,
                     cashback_credit_mode: cardCashbackMode(c),
                     cashback_credit_day: cardCashbackCreditDay(c)
@@ -2298,15 +2067,6 @@
                                   "alter table cards add column if not exists cashback_credit_mode text not null default 'monthly' check (cashback_credit_mode in ('monthly', 'next_day'));\n" +
                                   'alter table cards add column if not exists cashback_credit_day smallint not null default 1 check (cashback_credit_day between 1 and 31);\n\n' +
                                   "do $$ begin if exists (select 1 from information_schema.columns where table_schema = 'public' and table_name = 'cards' and column_name = 'cashback_next_month') then execute 'update public.cards set cashback_credit_mode = ''next_day'' where cashback_next_month = false'; end if; end $$;");
-                        }
-                        continue;
-                    }
-                    if (/card_type/.test(msg) && 'card_type' in payload) {
-                        delete payload.card_type;
-                        if (!warnedMissingCardTypeColumn && isDebit(c)) {
-                            warnedMissingCardTypeColumn = true;
-                            alert('Card saved, but its type (debit) could not be stored in Supabase yet, so it will only be remembered on this device.\n\nRun this once in the Supabase SQL editor, then save the card again:\n\n' +
-                                  "alter table cards add column if not exists card_type text not null default 'credit' check (card_type in ('credit', 'debit'));");
                         }
                         continue;
                     }
@@ -2453,27 +2213,11 @@
                 if (error) {
                     console.error('Deleting transaction failed:', error);
                     showToast(`Delete failed on Supabase: ${error.message}`, { tone: 'error', duration: 10000 });
-                    return false;
+                    return;
                 }
             }
             transactions = transactions.filter(t => t.id !== String(id));
             saveData();
-            return true;
-        }
-
-        async function deleteTransactionsFromDB(ids) {
-            const idSet = new Set(ids.map(String));
-            if (_supabase) {
-                const { error } = await _supabase.from('transactions').delete().in('id', [...idSet]);
-                if (error) {
-                    console.error('Deleting transactions failed:', error);
-                    showToast(`Delete failed on Supabase: ${error.message}`, { tone: 'error', duration: 10000 });
-                    return false;
-                }
-            }
-            transactions = transactions.filter(tx => !idSet.has(String(tx.id)));
-            saveData();
-            return true;
         }
 
         function calculateDynamicCashback() {
@@ -2483,18 +2227,18 @@
             const cardId = document.getElementById('exp-card').value;
             const cashbackInput = document.getElementById('exp-cashback');
 
-            if (txKind(type) === 'Cashback' || category === 'Cashback' || isDebit(cards.find(c => c.id === cardId))) {
+            if (type === 'Cashback' || category === 'Cashback') {
                 cashbackInput.value = '0.00';
                 return;
             }
 
             // Force cashback to 0.00 for Repaid entries regardless of category selection
-            if (txKind(type) === 'Repaid') {
+            if (isRepaidType(type)) {
                 cashbackInput.value = '0.00';
                 return;
             }
 
-            if (isSpendKind(type)) {
+            if (isPurchaseType(type) || type === 'Cash Withdrawal') {
                 if (!category) {
                     // "None / Default" — no category means no rate to apply, so no cashback.
                     // Pick an actual category if this purchase should earn something.
@@ -2506,11 +2250,11 @@
                     const rate = selectedCard.rates[category] !== undefined ? selectedCard.rates[category] : (selectedCard.rates['All Other Spend'] || 0);
                     let eligibleSpend = amount;
                     const cardRules = ddRule(selectedCard);
-                    if (cardRules.limitCashbackSpendToMonthlyLimit !== false && !isDebit(selectedCard)) {
+                    if (cardRules.limitCashbackSpendToMonthlyLimit !== false) {
                         const month = (document.getElementById('exp-date').value || localDateKey()).slice(0, 7);
                         const editingId = document.getElementById('editing-tx-id').value;
                         const monthTx = cardTxList(selectedCard).filter(t => t.id !== editingId && (t.date || '').startsWith(month));
-                        const spent = ddSum(monthTx.filter(t => txKind(t.type) === 'Purchase' || txKind(t.type) === 'Cash Withdrawal'), t => t.amount);
+                        const spent = ddSum(monthTx.filter(t => isPurchaseType(t.type) || t.type === 'Cash Withdrawal'), t => t.amount);
                         eligibleSpend = Math.min(amount, Math.max(0, ddNum(selectedCard.availableLimit) - spent));
                     }
                     let cashbackValue = eligibleSpend * (rate / 100);
@@ -2535,16 +2279,6 @@
             }
         }
 
-        document.querySelectorAll('input[name="entry-kind"]').forEach(input => {
-            input.addEventListener('change', event => setTransactionEntryKind(event.target.value));
-        });
-        document.getElementById('exp-transfer-source').addEventListener('change', () => {
-            populateTransferCardSelects(
-                document.getElementById('exp-transfer-source').value,
-                document.getElementById('exp-transfer-destination').value,
-                !!document.getElementById('editing-tx-id').value
-            );
-        });
         ['exp-amount', 'exp-category', 'exp-card', 'exp-date'].forEach(id => {
             document.getElementById(id).addEventListener('input', calculateDynamicCashback);
             document.getElementById(id).addEventListener('change', calculateDynamicCashback);
@@ -2560,7 +2294,6 @@
             }
             event.target.dataset.previousValue = event.target.value;
             if (event.target.value === 'Cashback' && document.getElementById('exp-type').value !== 'Cashback') {
-                if (transactionEntryKind !== 'income') setTransactionEntryKind('income');
                 document.getElementById('exp-type').value = 'Cashback';
                 syncCategoryState('Cashback');
             }
@@ -2582,23 +2315,26 @@
                 dateField.value = new Date().toISOString().slice(0, 10);
             }
 
-            // For a genuinely new entry (not editing/duplicating), preselect the last-used card.
+            // For a genuinely new entry (not editing/duplicating, which already set their own
+            // values), start from whatever card & type were used last time to cut repeat typing.
             if (prefillLast) {
                 try {
                     const lastCardId = localStorage.getItem('lastUsedCardId');
+                    const lastType = localStorage.getItem('lastUsedType');
                     const cardSelect = document.getElementById('exp-card');
                     // the card chosen with "Set as Default" wins; otherwise the last-used card
                     const preferredCardId = [getDefaultCardId(), lastCardId].find(id => id && [...cardSelect.options].some(o => o.value === id));
                     if (preferredCardId) {
                         cardSelect.value = preferredCardId;
                     }
+                    if (lastType) {
+                        const typeSelect = document.getElementById('exp-type');
+                        typeSelect.value = lastType;
+                        syncCategoryState(lastType);
+                    }
                 } catch (err) { /* localStorage may be unavailable (e.g. private mode) — safe to skip */ }
             }
 
-            populateTransactionCategorySelect();
-            setTransactionEntryKind(transactionEntryKind);
-            syncRepaidLabel();
-            calculateDynamicCashback();
             // Description is the next thing that needs typing (date/type/card already have
             // sensible defaults), so put the cursor there.
             setTimeout(() => document.getElementById('exp-desc').focus(), 50);
@@ -2611,9 +2347,7 @@
 
         function cancelEditTransaction() {
             document.getElementById('editing-tx-id').value = "";
-            document.getElementById('editing-transfer-peer-id').value = "";
             document.getElementById('expense-form').reset();
-            setTransactionEntryKind('');
             document.getElementById('exp-form-title').innerHTML = `<span>➕</span> Log New Transaction`;
             document.getElementById('tx-form-subtitle').textContent = 'Record a purchase, payment, or reward';
             document.getElementById('tx-submit-btn').textContent = "Log Entry";
@@ -2621,7 +2355,6 @@
             document.getElementById('exp-emi-custom-wrapper').classList.add('hidden');
             document.getElementById('exp-emi-charge-input-wrapper').classList.add('hidden');
             document.getElementById('exp-emi-preview').textContent = '';
-            populateTransactionCategorySelect('');
             syncCategoryState(document.getElementById('exp-type').value);
         }
 
@@ -2642,7 +2375,7 @@
             // day) has no spend amount of its own, so don't force one to be entered.
             const amountInput = document.getElementById('exp-amount');
             const amountLabel = document.getElementById('exp-amount-label');
-            if (txKind(typeVal) === 'Cashback') {
+            if (typeVal === 'Cashback') {
                 amountInput.required = false;
                 amountInput.min = '0';
                 amountInput.placeholder = '0.00 (optional)';
@@ -2670,7 +2403,7 @@
         }
 
         function updateImmediateCashbackNote() {
-            const isCashback = txKind(document.getElementById('exp-type').value) === 'Cashback' ||
+            const isCashback = document.getElementById('exp-type').value === 'Cashback' ||
                 document.getElementById('exp-category').value === 'Cashback';
             document.getElementById('exp-immediate-cashback-note').classList.toggle('hidden', !isCashback);
         }
@@ -2836,7 +2569,7 @@
                 ['Column', 'Required', 'Details'],
                 ['Date', 'No', 'Transaction date; use YYYY-MM-DD.'],
                 ['Card', 'Yes', 'Card name. Required for every transaction.'],
-                ['Type', 'No', 'Purchase, Cash Withdrawal, Repaid, Cashback, or your own type. A new type is added to the app (and database) on import. Defaults to Purchase.'],
+                ['Type', 'No', 'Purchase, Cash Withdrawal, Repaid, Cashback, or your own type. A new type is added to the app (and database) on import; you are asked whether it feels like a Purchase or Repaid. Defaults to Purchase.'],
                 ['Description', 'No', 'Transaction description. The importer also accepts the header Desc.'],
                 ['Category', 'No', 'Use any category. A category the app does not have yet is added to the app (and database) on import.'],
                 ['Amount', 'Yes', 'Numeric transaction amount. Required for every transaction.'],
@@ -2941,7 +2674,6 @@
                 const categoryLookup = new Map([...RATE_CATEGORIES, ...TX_ONLY_CATEGORIES].map(c => [c.toLowerCase(), c]));
                 const typeLookup = new Map(TYPE_FILTER_OPTIONS.map(t => [t.toLowerCase(), t]));
                 const newCategories = [], newTypes = []; // brand-new names found in this file
-                const usedCategories = [], usedTypes = [];
                 let imported = 0, skipped = 0, dbFailed = 0;
 
                 for (let i = 0; i < rawData.length; i++) {
@@ -2957,7 +2689,7 @@
                         const amount = parseFloat(row['Amount']);
                         const serviceCharge = parseFloat(row['Service Charge']) || parseFloat(row['Service Fee']) || 0;
                         const cashbackRaw = row['Cashback'];
-                        const cashback = (txKind(type) === 'Repaid' || cashbackRaw === '-' || cashbackRaw === '' || cashbackRaw === undefined) ? 0 : parseFloat(cashbackRaw);
+                        let cashback = (isRepaidType(type) || cashbackRaw === '-' || cashbackRaw === '' || cashbackRaw === undefined) ? 0 : parseFloat(cashbackRaw);
                         const notes = row['Notes'] || '';
 
                         // A row with no card name and no usable amount is not salvageable — skip it
@@ -2972,13 +2704,14 @@
                         if (!typeLookup.has(type.toLowerCase())) {
                             typeLookup.set(type.toLowerCase(), type);
                             newTypes.push(type);
+                            const b = askTypeBehavior(type);
+                            if (b) TYPE_BEHAVIOR[type.toLowerCase()] = b;
+                            if (isRepaidType(type)) cashback = 0;
                         }
                         if (category && !categoryLookup.has(category.toLowerCase())) {
                             categoryLookup.set(category.toLowerCase(), category);
                             newCategories.push(category);
                         }
-                        if (category) usedCategories.push(category);
-                        usedTypes.push(type);
 
                         let rowFailed = false;
                         let matchedCard = cards.find(c => c.name.trim().toLowerCase() === cardName.toLowerCase());
@@ -3008,15 +2741,19 @@
                     }
                 }
 
-                // Sync every category/type used by imported rows to shared_options.
-                // Existing names are matched case-insensitively, so they are not inserted again.
-                const syncResult = await syncUsedSharedOptions(usedCategories, usedTypes);
-                const optionsFailed = syncResult.failures;
+                // Create the new categories / types: in-memory lists + dropdowns + Supabase shared_options.
+                let optionsFailed = 0;
+                if (newCategories.length || newTypes.length) {
+                    applyCustomSettings(newTypes, newCategories);
+                    for (const name of newCategories) if ((await saveSharedOption('category', name)) === false) optionsFailed++;
+                    for (const name of newTypes) if ((await saveSharedOption('transaction_type', name, typeBehavior(name))) === false) optionsFailed++;
+                    refreshOptionUI();
+                }
 
                 let summary = `Imported ${imported} of ${rawData.length} rows.`;
                 if (newCategories.length) summary += `\nAdded ${newCategories.length} new categor${newCategories.length === 1 ? 'y' : 'ies'}: ${newCategories.join(', ')}.`;
                 if (newTypes.length) summary += `\nAdded ${newTypes.length} new type${newTypes.length === 1 ? '' : 's'}: ${newTypes.join(', ')}.`;
-                if (optionsFailed > 0) summary += `\n${optionsFailed} imported categor${optionsFailed === 1 ? 'y/type could' : 'ies/types could'} not be saved to Supabase and remain available on this device only.`;
+                if (optionsFailed > 0) summary += `\n${optionsFailed} new categor${optionsFailed === 1 ? 'y/type was' : 'ies/types were'} saved on this device only (shared_options table missing or blocked in Supabase).`;
                 if (dbFailed > 0) summary += `\n${dbFailed} row(s) parsed fine but failed to save to Supabase — see the error above.`;
                 if (skipped > 0) summary += `\n${skipped} row(s) skipped — missing a Card name or a valid Amount.`;
                 showToast(summary, { tone: (dbFailed > 0 || optionsFailed > 0) ? 'error' : 'success', duration: (dbFailed > 0 || optionsFailed > 0) ? 10000 : 6000 });
@@ -3059,24 +2796,23 @@
                 const n = Number(raw);
                 return (Number.isInteger(n) && n >= 1 && n <= 31) ? n : NaN;
             };
-            const cardType = ((document.querySelector('input[name="card-type"]:checked') || {}).value === 'debit') ? 'debit' : 'credit';
-            const statementDay = cardType === 'debit' ? null : parseDay('card-statement-day');
-            const paymentDay = cardType === 'debit' ? null : parseDay('card-payment-day');
+            const statementDay = parseDay('card-statement-day');
+            const paymentDay = parseDay('card-payment-day');
             if (Number.isNaN(statementDay) || Number.isNaN(paymentDay)) {
                 alert('Statement Day and Payment Day must be whole numbers between 1 and 31, or left blank.');
                 return;
             }
-            const cashbackCreditMode = cardType === 'debit' ? 'monthly' : document.querySelector('input[name="card-cashback-mode"]:checked').value;
+            const cashbackCreditMode = document.querySelector('input[name="card-cashback-mode"]:checked').value;
             const cashbackCreditDayInput = document.getElementById('card-cashback-credit-day');
-            const cashbackCreditDay = cardType === 'debit' ? 1 : Number(cashbackCreditDayInput.value);
-            if (cardType !== 'debit' && cashbackCreditMode === 'monthly' &&
+            const cashbackCreditDay = Number(cashbackCreditDayInput.value);
+            if (cashbackCreditMode === 'monthly' &&
                 (!Number.isInteger(cashbackCreditDay) || cashbackCreditDay < 1 || cashbackCreditDay > 31)) {
                 alert('Cashback credit day must be a whole number between 1 and 31.');
                 cashbackCreditDayInput.focus();
                 return;
             }
 
-            const rates = cardType === 'debit' ? {} : getCardRatesFromForm();
+            const rates = getCardRatesFromForm();
             const colorGradient = document.getElementById('card-color-gradient').value || null;
             const network = document.getElementById('card-network').value;
             const netVariant = document.getElementById('card-network-variant').value.trim();
@@ -3096,7 +2832,6 @@
                     if (cards[index].name !== name) { nameChanged = true; renamedTx = transactions.filter(t => txBelongsToCard(t, cards[index])); }
                     cards[index].name = name;
                     cards[index].availableLimit = availableLimit;
-                    cards[index].cardType = cardType;
                     cards[index].rates = rates;
                     cards[index].cashbackCreditMode = cashbackCreditMode;
                     cards[index].cashbackCreditDay = cashbackCreditDay || 1;
@@ -3109,7 +2844,7 @@
                 }
             } else {
                 cardObj = {
-                    id: newId(), name, availableLimit, cardType, rates,
+                    id: newId(), name, availableLimit, rates,
                     cashbackCreditMode, cashbackCreditDay: cashbackCreditDay || 1,
                     statementDay, paymentDay, colorGradient, network, netVariant, tier, last4
                 };
@@ -3151,9 +2886,6 @@
             document.getElementById('editing-card-id').value = card.id;
             document.getElementById('card-name').value = card.name;
             document.getElementById('card-limit').value = card.availableLimit ?? '';
-            const typeRadio = document.querySelector(`input[name="card-type"][value="${isDebit(card) ? 'debit' : 'credit'}"]`);
-            if (typeRadio) typeRadio.checked = true;
-            toggleCardType();
             document.querySelector(`input[name="card-cashback-mode"][value="${cardCashbackMode(card)}"]`).checked = true;
             document.getElementById('card-cashback-credit-day').value = cardCashbackCreditDay(card);
             toggleCardCashbackCreditDay();
@@ -3188,164 +2920,21 @@
             document.getElementById('card-modal').classList.add('hidden');
         }
 
-        async function saveTransferFromForm() {
-            const sourceId = document.getElementById('exp-transfer-source').value;
-            const destinationId = document.getElementById('exp-transfer-destination').value;
-            const sourceCard = cards.find(card => String(card.id) === sourceId);
-            const destinationCard = cards.find(card => String(card.id) === destinationId);
-            const amount = Number(document.getElementById('exp-amount').value);
-            const editingOutId = document.getElementById('editing-tx-id').value;
-            const editingInId = document.getElementById('editing-transfer-peer-id').value;
-            const allowInactive = !!editingOutId && !!editingInId;
-            if (!sourceCard || !destinationCard || sourceId === destinationId ||
-                (!allowInactive && (!activeCards().includes(sourceCard) || !activeCards().includes(destinationCard)))) {
-                showToast('Choose two different active cards for the transfer.', { tone: 'error' });
-                return;
-            }
-            if (!Number.isFinite(amount) || amount <= 0) {
-                showToast('Enter a transfer amount above 0.', { tone: 'error' });
-                return;
-            }
-
-            const previousOut = editingOutId ? transactions.find(tx => tx.id === editingOutId) : null;
-            const previousIn = editingInId ? transactions.find(tx => tx.id === editingInId) : null;
-            if ((editingOutId && (!previousOut || !previousIn)) ||
-                (previousOut && previousOut.type !== TRANSFER_OUT_TYPE) ||
-                (previousIn && previousIn.type !== TRANSFER_IN_TYPE)) {
-                showToast('This transfer is incomplete and cannot be edited safely.', { tone: 'error' });
-                return;
-            }
-
-            const balance = debitBalance(sourceCard, localDateKey(), [editingOutId, editingInId]);
-            if (amount > balance + 0.005) {
-                const proceed = await showConfirm(
-                    'Not enough balance',
-                    `${sourceCard.name} has AED ${formatAED(balance)} ${isDebit(sourceCard) ? 'available in its balance' : 'available credit'} but this transfer needs AED ${formatAED(amount)}. Save it anyway?`,
-                    { confirmLabel: 'Save anyway' }
-                );
-                if (!proceed) return;
-            }
-
-            const groupId = transferGroupId(previousOut || previousIn) || newId();
-            const description = document.getElementById('exp-desc').value.trim();
-            const date = document.getElementById('exp-date').value;
-            const outTx = {
-                id: editingOutId || newId(),
-                date,
-                cardName: sourceCard.name,
-                cardId: sourceCard.id,
-                type: TRANSFER_OUT_TYPE,
-                desc: description,
-                category: '',
-                amount,
-                serviceCharge: 0,
-                cashback: 0,
-                notes: `${TRANSFER_NOTE_PREFIX}${groupId}`
-            };
-            const inTx = {
-                id: editingInId || newId(),
-                date,
-                cardName: destinationCard.name,
-                cardId: destinationCard.id,
-                type: TRANSFER_IN_TYPE,
-                desc: description,
-                category: '',
-                amount,
-                serviceCharge: 0,
-                cashback: 0,
-                notes: `${TRANSFER_NOTE_PREFIX}${groupId}`
-            };
-
-            const outIndex = previousOut ? transactions.indexOf(previousOut) : -1;
-            const inIndex = previousIn ? transactions.indexOf(previousIn) : -1;
-            if (previousOut) transactions[outIndex] = outTx;
-            if (previousIn) transactions[inIndex] = inTx;
-            if (!previousOut && !previousIn) transactions.unshift(outTx, inTx);
-            else if (!previousOut) transactions.unshift(outTx);
-            else if (!previousIn) transactions.unshift(inTx);
-
-            const submitBtn = document.getElementById('tx-submit-btn');
-            const originalLabel = submitBtn.textContent;
-            submitBtn.disabled = true;
-            submitBtn.textContent = 'Saving transfer…';
-            let outSaved = false;
-            let inSaved = false;
-            try {
-                outSaved = await saveTransactionToDB(outTx);
-                if (outSaved === false) throw new Error('The source-card side could not be saved.');
-                inSaved = await saveTransactionToDB(inTx);
-                if (inSaved === false) throw new Error('The destination-card side could not be saved.');
-                try { localStorage.setItem('lastUsedCardId', String(sourceCard.id)); } catch (error) { /* private mode */ }
-                showToast(previousOut ? 'Transfer updated.' : 'Transfer logged on both cards.', { tone: 'success' });
-                closeTxModal();
-            } catch (error) {
-                console.error('Saving paired transfer failed:', error);
-                if (previousOut && previousIn) {
-                    transactions[outIndex] = previousOut;
-                    transactions[inIndex] = previousIn;
-                    if (outSaved || inSaved) {
-                        try {
-                            const restoredOut = await saveTransactionToDB(previousOut);
-                            const restoredIn = await saveTransactionToDB(previousIn);
-                            if (restoredOut === false || restoredIn === false) {
-                                showToast('Could not fully restore the previous transfer; check both cards in transaction history.', { tone: 'error', duration: 10000 });
-                            }
-                        } catch (rollbackError) {
-                            console.error('Restoring previous transfer failed:', rollbackError);
-                            showToast('Could not fully restore the previous transfer; check both cards in transaction history.', { tone: 'error', duration: 10000 });
-                        }
-                    }
-                } else {
-                    transactions = transactions.filter(tx => tx.id !== outTx.id && tx.id !== inTx.id);
-                    let rollbackFailed = false;
-                    if (outSaved && await deleteTransactionFromDB(outTx.id) === false) rollbackFailed = true;
-                    if (inSaved && await deleteTransactionFromDB(inTx.id) === false) rollbackFailed = true;
-                    if (rollbackFailed) showToast('The transfer could not be fully rolled back; check both cards in transaction history.', { tone: 'error', duration: 10000 });
-                    render();
-                }
-                showToast(`Transfer was not fully saved: ${error.message || error}`, { tone: 'error', duration: 10000 });
-            } finally {
-                submitBtn.disabled = false;
-                submitBtn.textContent = originalLabel;
-            }
-        }
-
         document.getElementById('expense-form').addEventListener('submit', async (e) => {
             e.preventDefault();
-            if (transactionEntryKind === 'transfer') {
-                await saveTransferFromForm();
-                return;
-            }
-            if (!['income', 'expense'].includes(transactionEntryKind)) {
-                showToast('Choose Income, Expense, or Transfer before logging.', { tone: 'error' });
-                return;
-            }
             const editingTxId = document.getElementById('editing-tx-id').value;
             const date = document.getElementById('exp-date').value;
             const type = document.getElementById('exp-type').value;
             const desc = document.getElementById('exp-desc').value;
             const amount = parseFloat(document.getElementById('exp-amount').value) || 0;
             const category = document.getElementById('exp-category').value;
+            const serviceCharge = parseFloat(document.getElementById('exp-service').value) || 0;
+            const cashback = isRepaidType(type) ? 0 : (parseFloat(document.getElementById('exp-cashback').value) || 0);
             const cardId = document.getElementById('exp-card').value;
-            const cardForFees = cards.find(c => c.id === cardId);
-            const serviceCharge = isDebit(cardForFees) ? 0 : (parseFloat(document.getElementById('exp-service').value) || 0);
-            const cashback = (txKind(type) === 'Repaid' || isDebit(cardForFees)) ? 0 : (parseFloat(document.getElementById('exp-cashback').value) || 0);
 
             const selectedCard = cards.find(c => c.id === cardId);
 
-            if (isDebit(selectedCard) && isSpendKind(type)) {
-                const bal = debitBalance(selectedCard, localDateKey(), editingTxId);
-                const needed = amount + (INCLUDE_FEES_IN_OUTSTANDING ? serviceCharge : 0);
-                if (needed > bal + 0.005) {
-                    const proceed = await showConfirm(
-                        'Not enough balance',
-                        `${selectedCard.name} has AED ${formatAED(bal)} but this needs AED ${formatAED(needed)}. Save it anyway?`,
-                        { confirmLabel: 'Save anyway' }
-                    );
-                    if (!proceed) return;
-                }
-            }
-            if (selectedCard && !isDebit(selectedCard) && isSpendKind(type)) {
+            if (selectedCard && (isPurchaseType(type) || type === 'Cash Withdrawal')) {
                 const maxAllowedSpend = (selectedCard.availableLimit || 0) * 0.97;
                 const monthKey = date ? date.substring(0, 7) : new Date().toISOString().substring(0, 7);
                 
@@ -3353,7 +2942,7 @@
                     .filter(t => t.id !== editingTxId &&
                                  t.cardName.trim().toLowerCase() === selectedCard.name.trim().toLowerCase() && 
                                  t.date && t.date.startsWith(monthKey) && 
-                                 (txKind(t.type) === 'Purchase' || txKind(t.type) === 'Cash Withdrawal'))
+                                 (isPurchaseType(t.type) || t.type === 'Cash Withdrawal'))
                     .reduce((sum, t) => sum + (parseFloat(t.amount) || 0), 0);
 
                 if (currentMonthCardSpend + amount > maxAllowedSpend) {
@@ -3451,9 +3040,10 @@
                 }
             }
 
-            // Remember the last-used card; transaction kind must be chosen for each new entry.
+            // Remember the last-used card & type so the next new entry starts prefilled with them.
             try {
                 localStorage.setItem('lastUsedCardId', txObj.cardId || '');
+                localStorage.setItem('lastUsedType', txObj.type || '');
             } catch (err) { /* localStorage may be unavailable (e.g. private mode) — safe to skip */ }
 
             const submitBtn = document.getElementById('tx-submit-btn');
@@ -3481,44 +3071,12 @@
             return cards.find(c => tx.cardId && String(c.id) === String(tx.cardId)) || cards.find(c => normCardName(c.name) === normCardName(tx.cardName));
         }
 
-        function transferPairFor(tx) {
-            const groupId = transferGroupId(tx);
-            if (!groupId) return null;
-            const pair = transactions.filter(item => transferGroupId(item) === groupId);
-            return {
-                out: pair.find(item => item.type === TRANSFER_OUT_TYPE) || null,
-                incoming: pair.find(item => item.type === TRANSFER_IN_TYPE) || null
-            };
-        }
-
         function editTransaction(id) {
             const tx = transactions.find(t => t.id === id);
             if (!tx) return;
 
-            if (isTransferType(tx.type)) {
-                const pair = transferPairFor(tx);
-                if (!pair || !pair.out || !pair.incoming) {
-                    showToast('This transfer is missing its matching entry and cannot be edited safely.', { tone: 'error' });
-                    return;
-                }
-                document.getElementById('editing-tx-id').value = pair.out.id;
-                document.getElementById('editing-transfer-peer-id').value = pair.incoming.id;
-                document.getElementById('exp-date').value = pair.out.date;
-                document.getElementById('exp-desc').value = pair.out.desc;
-                document.getElementById('exp-amount').value = pair.out.amount || '';
-                setTransactionEntryKind('transfer');
-                populateTransferCardSelects(pair.out.cardId, pair.incoming.cardId, true);
-                document.getElementById('exp-form-title').innerHTML = `<span>✏️</span> Edit Transfer`;
-                document.getElementById('tx-form-subtitle').textContent = 'Update both sides of this card transfer';
-                document.getElementById('tx-submit-btn').textContent = 'Update Transfer';
-                openTxModal(false);
-                return;
-            }
-
             document.getElementById('editing-tx-id').value = tx.id;
-            document.getElementById('editing-transfer-peer-id').value = '';
             document.getElementById('exp-date').value = tx.date;
-            setTransactionEntryKind(entryKindForType(tx.type));
             document.getElementById('exp-type').value = tx.type;
             document.getElementById('exp-desc').value = tx.desc;
             document.getElementById('exp-amount').value = tx.amount || '';
@@ -3575,30 +3133,8 @@
             const tx = transactions.find(t => t.id === id);
             if (!tx) return;
 
-            if (isTransferType(tx.type)) {
-                const pair = transferPairFor(tx);
-                if (!pair || !pair.out || !pair.incoming) {
-                    showToast('This transfer is missing its matching entry and cannot be repeated safely.', { tone: 'error' });
-                    return;
-                }
-                document.getElementById('editing-tx-id').value = '';
-                document.getElementById('editing-transfer-peer-id').value = '';
-                document.getElementById('exp-date').value = new Date().toISOString().slice(0, 10);
-                document.getElementById('exp-desc').value = pair.out.desc;
-                document.getElementById('exp-amount').value = pair.out.amount || '';
-                setTransactionEntryKind('transfer');
-                populateTransferCardSelects(pair.out.cardId, pair.incoming.cardId);
-                document.getElementById('exp-form-title').innerHTML = `<span>↻</span> Repeat Transfer`;
-                document.getElementById('tx-form-subtitle').textContent = 'Review both cards before logging the transfer';
-                document.getElementById('tx-submit-btn').textContent = 'Log Transfer';
-                openTxModal(false);
-                return;
-            }
-
             document.getElementById('editing-tx-id').value = ""; // blank = this creates a NEW transaction, not an edit
-            document.getElementById('editing-transfer-peer-id').value = '';
             document.getElementById('exp-date').value = new Date().toISOString().slice(0, 10);
-            setTransactionEntryKind(entryKindForType(tx.type));
             document.getElementById('exp-type').value = tx.type;
             document.getElementById('exp-desc').value = tx.desc;
             document.getElementById('exp-amount').value = tx.amount || '';
@@ -3630,23 +3166,12 @@
         }
 
         async function deleteTransaction(id) {
-            const tx = transactions.find(transaction => String(transaction.id) === String(id));
-            const pair = tx && isTransferType(tx.type) ? transferPairFor(tx) : null;
-            if (tx && transferGroupId(tx) && (!pair || !pair.out || !pair.incoming)) {
-                showToast('This transfer is missing its matching entry; it cannot be deleted as a pair.', { tone: 'error' });
-                return;
-            }
-            const ids = pair ? [pair.out.id, pair.incoming.id] : [String(id)];
-            const ok = await showConfirm(
-                pair ? 'Delete this transfer?' : 'Delete this transaction?',
-                pair ? 'Both sides of the transfer will be deleted in 5 seconds. You can undo the deletion during that time.' : 'The transaction will be deleted in 5 seconds. You can undo the deletion during that time.',
-                { confirmLabel: 'Delete' }
-            );
+            const ok = await showConfirm('Delete this transaction?', 'The transaction will be deleted in 5 seconds. You can undo the deletion during that time.', { confirmLabel: 'Delete' });
             if (!ok) return;
-            if (ids.includes(document.getElementById('editing-tx-id').value)) {
+            if (document.getElementById('editing-tx-id').value === id) {
                 cancelEditTransaction();
             }
-            softDeleteTransactions(ids);
+            softDeleteTransactions([id]);
         }
 
         // Logs this month's installment on an EMI purchase as a Repaid transaction (the same
@@ -3726,16 +3251,10 @@
             const card = cards.find(c => c.id === id);
             if (!card) return;
             const isLinked = t => t.cardId ? t.cardId === card.id : (t.cardName || '').trim().toLowerCase() === card.name.trim().toLowerCase();
-            const linkedIds = new Set(transactions.filter(isLinked).map(t => String(t.id)));
-            transactions.filter(isLinked).forEach(tx => {
-                const groupId = transferGroupId(tx);
-                if (!groupId) return;
-                transactions.filter(item => transferGroupId(item) === groupId).forEach(item => linkedIds.add(String(item.id)));
-            });
-            const linked = transactions.filter(t => linkedIds.has(String(t.id)));
+            const linked = transactions.filter(isLinked);
 
             const message = linked.length > 0
-                ? `Deleting "${card.name}" will also permanently delete its ${linked.length} linked transaction(s), including both sides of any card transfers, along with its saved rules. This cannot be undone.`
+                ? `Deleting "${card.name}" will also permanently delete all ${linked.length} transaction(s) logged against it, along with its saved rules. This cannot be undone.`
                 : `Are you sure you want to delete "${card.name}"?`;
 
             const ok = await showConfirm('Delete this card and its transactions?', message, { confirmLabel: 'Delete all' });
@@ -3924,28 +3443,29 @@
                 const bCatLookup = new Map([...RATE_CATEGORIES, ...TX_ONLY_CATEGORIES].map(c => [c.toLowerCase(), c]));
                 const bTypeLookup = new Map(TYPE_FILTER_OPTIONS.map(t => [t.toLowerCase(), t]));
                 const bNewCats = [], bNewTypes = [];
-                const usedCategories = [], usedTypes = [];
                 for (const t of parsed.transactions) {
+                    if (transactions.some(existing => existing.id === t.id)) continue;
                     const cat = String(t.category || '').trim();
                     if (cat) {
                         t.category = bCatLookup.get(cat.toLowerCase()) || cat;
                         if (!bCatLookup.has(cat.toLowerCase())) { bCatLookup.set(cat.toLowerCase(), cat); bNewCats.push(cat); }
-                        usedCategories.push(t.category);
                     }
                     const typ = String(t.type || '').trim();
                     if (typ) {
                         t.type = bTypeLookup.get(typ.toLowerCase()) || typ;
-                        if (!bTypeLookup.has(typ.toLowerCase())) { bTypeLookup.set(typ.toLowerCase(), typ); bNewTypes.push(typ); }
-                        usedTypes.push(t.type);
+                        if (!bTypeLookup.has(typ.toLowerCase())) { bTypeLookup.set(typ.toLowerCase(), typ); bNewTypes.push(typ); const bb = askTypeBehavior(typ); if (bb) TYPE_BEHAVIOR[typ.toLowerCase()] = bb; }
                     }
-                    if (transactions.some(existing => existing.id === t.id)) continue;
                     transactions.push(t);
                     await saveTransactionToDB(t);
                 }
-                const optionsSync = await syncUsedSharedOptions(usedCategories, usedTypes);
-                showToast(optionsSync.failures
-                    ? `Backup imported, but ${optionsSync.failures} category/type option(s) could not be saved to Supabase.`
-                    : 'Backup imported.', { tone: optionsSync.failures ? 'error' : 'success', duration: optionsSync.failures ? 10000 : 4000 });
+                if (bNewCats.length || bNewTypes.length) {
+                    applyCustomSettings(bNewTypes, bNewCats);
+                    for (const name of bNewCats) await saveSharedOption('category', name);
+                    for (const name of bNewTypes) await saveSharedOption('transaction_type', name, typeBehavior(name));
+                    refreshOptionUI();
+                }
+
+                showToast('Backup imported.', { tone: 'success' });
                 e.target.value = '';
                 render();
             };
@@ -4095,25 +3615,16 @@
                 select.innerHTML = `<option value="">${cards.length === 0 ? 'No cards available' : 'No active cards (all disabled)'}</option>`;
                 return;
             }
-            select.innerHTML = groupedCardOptions(pool);
+            select.innerHTML = pool.map(c => `<option value="${c.id}">${escapeHtml(c.name)}</option>`).join('');
         }
         // Editing an old transaction that belongs to a disabled card: keep that card selectable for this edit only.
         function ensureCardOption(card) {
             const select = document.getElementById('exp-card');
             if (!card || !select || [...select.options].some(o => o.value === String(card.id))) return;
-            const type = isDebit(card) ? 'Debit' : 'Credit';
-            let group = [...select.querySelectorAll('optgroup')].find(optionGroup => optionGroup.label === type);
-            if (!group) {
-                group = document.createElement('optgroup');
-                group.label = type;
-                const creditGroup = [...select.querySelectorAll('optgroup')].find(optionGroup => optionGroup.label === 'Credit');
-                if (type === 'Debit' && creditGroup) select.insertBefore(group, creditGroup);
-                else select.appendChild(group);
-            }
             const opt = document.createElement('option');
             opt.value = card.id;
             opt.textContent = `${card.name} (disabled)`;
-            group.appendChild(opt);
+            select.appendChild(opt);
         }
 
         // ---- PREMIUM CARD TILE HELPERS ----
@@ -4291,11 +3802,11 @@
                 const label = k === 'All' ? 'overall monthly cashback' : escapeHtml(k);
                 L.push(`<span class="${left <= 0 ? 'text-red-400' : ''}">${left <= 0 ? '⛔ ' + label + ' cap reached' : 'AED ' + formatAED(left) + ' cap left on ' + label}</span>`);
             });
-            if (ddNum(r.minSpend)) { const sp = ddSum(mTx.filter(t => txKind(t.type) === 'Purchase' || txKind(t.type) === 'Cash Withdrawal'), t => t.amount); L.push(`Min spend: AED ${formatAED(sp)} / ${formatAED(ddNum(r.minSpend))}${sp >= ddNum(r.minSpend) ? ' ✓' : ''}`); }
+            if (ddNum(r.minSpend)) { const sp = ddSum(mTx.filter(t => isPurchaseType(t.type) || t.type === 'Cash Withdrawal'), t => t.amount); L.push(`Min spend: AED ${formatAED(sp)} / ${formatAED(ddNum(r.minSpend))}${sp >= ddNum(r.minSpend) ? ' ✓' : ''}`); }
             const ws = ddYearWindow(r);
             if (ddNum(r.fee)) {
                 const yt = txs.filter(t => t.date >= (ws || '0000'));
-                const sp = ddSum(yt.filter(t => txKind(t.type) === 'Purchase' || txKind(t.type) === 'Cash Withdrawal'), t => t.amount), cb = ddSum(yt, t => t.cashback);
+                const sp = ddSum(yt.filter(t => isPurchaseType(t.type) || t.type === 'Cash Withdrawal'), t => t.amount), cb = ddSum(yt, t => t.cashback);
                 if (ddNum(r.waiver)) L.push(`Fee waiver: AED ${formatAED(sp)} / ${formatAED(ddNum(r.waiver))} (${Math.min(100, sp / ddNum(r.waiver) * 100).toFixed(0)}%)${sp >= ddNum(r.waiver) ? ' ✓ waived' : ''}`);
                 if (cb < ddNum(r.fee) && !(ddNum(r.waiver) && sp >= ddNum(r.waiver))) L.push(`<span class="text-amber-400">⚠ Fee AED ${formatAED(ddNum(r.fee))} exceeds cashback AED ${formatAED(cb)} this year</span>`);
             }
@@ -4327,7 +3838,7 @@
             const limit = Math.max(0, ddNum(card.availableLimit));
             const usesMonthlySpend = ddRule(card).limitCashbackSpendToMonthlyLimit !== false;
             const used = usesMonthlySpend
-                ? ddSum(monthTxs.filter(t => txKind(t.type) === 'Purchase' || txKind(t.type) === 'Cash Withdrawal'), t => t.amount)
+                ? ddSum(monthTxs.filter(t => isPurchaseType(t.type) || t.type === 'Cash Withdrawal'), t => t.amount)
                 : Math.max(0, calculateOutstanding(cardTxList(card), localDateKey(), card).outstanding);
             return {
                 amount: Math.max(0, limit - used),
@@ -4445,7 +3956,7 @@
             const ym = localDateKey().slice(0, 7);
             const monthTxs = cardTxList(card).filter(t => (t.date || '').startsWith(ym));
             const monthSpend = ddSum(monthTxs.filter(t =>
-                txKind(t.type) === 'Purchase' || txKind(t.type) === 'Cash Withdrawal'
+                isPurchaseType(t.type) || t.type === 'Cash Withdrawal'
             ), t => t.amount);
             const limit = Math.max(0, ddNum(card.availableLimit));
             const availability = ddWithdrawalAvailability(card, monthTxs);
@@ -4805,7 +4316,7 @@
                 const need = Math.max(0, out - lim * target / 100);
                 const utilization = lim ? Math.min(100, out / lim * 100) : 0;
                 pay += `<tr class="border-t border-white/5"><td class="py-3 pr-4 font-medium text-slate-200">${escapeHtml(c.name)}</td><td class="w-2/5 py-3 pr-4"><div class="flex items-center gap-3"><div class="h-1.5 flex-1 overflow-hidden rounded-full bg-white/10"><div class="h-full rounded-full ${utilization >= 70 ? 'bg-rose-400' : utilization >= 30 ? 'bg-amber-300' : 'bg-emerald-400'}" style="width:${utilization}%"></div></div><span class="mono w-10 text-right text-[11px] text-slate-400">${utilization.toFixed(0)}%</span></div></td><td class="py-3 text-right mono text-xs ${need > 0 ? 'text-indigo-200' : 'text-emerald-300'}">${need > 0 ? 'AED ' + formatAED(need) : 'On target'}</td></tr>`;
-                const m = txs.filter(t => (t.date || '').startsWith(ym)), sp = ddSum(m.filter(t => txKind(t.type) === 'Purchase' || txKind(t.type) === 'Cash Withdrawal'), t => t.amount), cb = ddSum(m, t => t.cashback);
+                const m = txs.filter(t => (t.date || '').startsWith(ym)), sp = ddSum(m.filter(t => isPurchaseType(t.type) || t.type === 'Cash Withdrawal'), t => t.amount), cb = ddSum(m, t => t.cashback);
                 const pj = sp / d * dim, pc = cb / d * dim, ms = ddNum(r.minSpend);
                 projectedSpendTotal += pj;
                 projectedCashbackTotal += pc;
@@ -4829,10 +4340,10 @@
                 rc += `<tr class="border-t border-white/5"><td class="py-3 pr-3 font-medium text-slate-200">${escapeHtml(c.name)}</td><td class="py-3 pr-3 mono text-xs text-slate-300">AED ${formatAED(exp)}</td><td class="py-3 pr-3"><label class="sr-only" for="recon-${escapeHtml(c.id)}">Cashback received for ${escapeHtml(c.name)}</label><input id="recon-${escapeHtml(c.id)}" type="number" step="0.01" min="0" value="${got ?? ''}" onchange="ddSaveRecon('${c.id}','${pym}',this.value)" placeholder="Enter amount" class="w-28 rounded-lg border border-white/10 bg-black/20 px-2 py-1.5 text-xs text-slate-100 placeholder:text-slate-600"></td><td class="py-3 text-right mono text-xs ${diff !== null && Math.abs(diff) > .01 ? 'text-rose-300' : 'text-emerald-300'}">${diff === null ? '—' : (diff > 0 ? '+' : '') + formatAED(diff)}</td></tr>`;
                 const yt = txs.filter(t => (t.date || '').startsWith(String(now.getFullYear())));
                 c._yr = ddSum(yt, t => t.cashback);
-                c._ys = ddSum(yt.filter(t => txKind(t.type) === 'Purchase'), t => t.amount);
+                c._ys = ddSum(yt.filter(t => isPurchaseType(t.type)), t => t.amount);
             });
             const ranked = [...act].sort((a, b) => b._yr - a._yr);
-            const cats = {}; transactions.filter(t => txKind(t.type) === 'Purchase' && (t.date || '').startsWith(String(now.getFullYear()))).forEach(t => { const k = t.category || 'Uncategorised'; cats[k] = (cats[k] || 0) + ddNum(t.amount); });
+            const cats = {}; transactions.filter(t => isPurchaseType(t.type) && (t.date || '').startsWith(String(now.getFullYear()))).forEach(t => { const k = t.category || 'Uncategorised'; cats[k] = (cats[k] || 0) + ddNum(t.amount); });
             const totalCashback = ddSum(act, c => c._yr), totalYearSpend = ddSum(act, c => c._ys);
             const topCategories = Object.entries(cats).sort((a, b) => b[1] - a[1]).slice(0, 5);
             const section = (eyebrow, title, description, content) => `<section class="mt-6 rounded-2xl border border-white/[.07] bg-white/[.02] p-4 sm:p-5">
@@ -5027,10 +4538,6 @@
             document.getElementById('card-rules-section').open = hasAnnualFee || DD_RULE_FIELDS.some(k => r[k]) || Object.keys(caps).length > 0;
         }
         function ddSaveRulesFromForm(id) {
-            if (isDebit(cards.find(c => String(c.id) === String(id)))) { // debit cards: no fees, caps or cashback rules
-                const store = ddLoad('dd-card-rules'); delete store[id]; ddSave('dd-card-rules', store); ddPushRules(id, {});
-                return;
-            }
             const rules = {};
             DD_RULE_FIELDS.forEach(k => { rules[k] = document.getElementById('cr-' + k).value.trim(); });
             const annualFeeApplies = document.getElementById('cr-annual-fee-paid').checked;
@@ -5075,91 +4582,6 @@
                     ${networkMarkHtml(ident)}
                 </div>` : '';
             return { html: `<div class="cc-footer-main">${left}${badge}</div>${identity ? `<div class="cc-pay-row mt-2 justify-end">${identity}</div>` : ''}`, alert };
-        }
-
-        // Debit card tile: balance instead of outstanding / limit, no statement or payment dates.
-        function debitTileHtml(c, ob, balance, monthSpend) {
-            const theme = resolveCardColor(c.colorGradient);
-            const ident = parseCardIdentity(c.name, { network: c.network, netVariant: c.netVariant, tier: c.tier });
-            const chipClass = cardChipClass(theme);
-            const opening = Number(c.availableLimit) || 0;
-            const funds = balance + monthSpend; // money available at the start of this month
-            const pct = funds > 0 ? Math.min(100, Math.round(monthSpend / funds * 100)) : (monthSpend > 0 ? 100 : 0);
-            const barStyle = balance < 0 ? 'background: linear-gradient(90deg,#ef4444,#fb7185);'
-                           : pct >= 90 ? 'background: linear-gradient(90deg,#f59e0b,#fbbf24);' : '';
-            const balClass = balance < 0 ? 'text-red-400' : 'text-white';
-            const identityHtml = `
-                <div class="cc-footer-identity ml-auto">
-                    ${ident.tier ? `<span class="cc-pill">${escapeHtml(ident.tier)}</span>` : ''}
-                    ${networkMarkHtml(ident)}
-                </div>`;
-            const row = (label, value, sign, cls) => `
-                <div class="flex justify-between"><span class="text-slate-500 dark:text-slate-400">${label}</span>
-                <span class="font-medium ${cls || 'text-slate-700 dark:text-slate-300'}">${sign} ${formatAED(value)}</span></div>`;
-            return `
-                <div class="cc ${c.disabled ? 'cc-disabled' : ''} text-xs space-y-5" style="${cardThemeVars(theme)}">
-                    ${cardWatermarkHtml(theme)}
-                    <div class="cc-head flex flex-wrap items-center gap-x-3 gap-y-2">
-                        <span class="cc-title">${escapeHtml(ident.title)}</span>
-                        <button type="button" onclick="event.stopPropagation(); debitTopUp('${c.id}')" class="cc-pay-btn cc-pay-top text-[10px] font-semibold px-2.5 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 transition">Add money</button>
-                        ${c.disabled ? '<span class="cc-off-pill">Disabled</span>' : ''}
-                    </div>
-                    <div class="flex items-center gap-3">
-                        <span class="cc-chip ${chipClass}"></span>
-                        <div class="ml-auto flex items-center gap-1.5">
-                            <button type="button" onclick="toggleCardDetails('${c.id}', this)" aria-expanded="${openCardDetails.has(c.id)}" class="cc-btn">${openCardDetails.has(c.id) ? 'Less' : 'More'}</button>
-                            <button type="button" onclick="toggleCardMenu('${c.id}', event, this)" class="cc-btn cc-dots" aria-label="Card actions" aria-haspopup="menu" aria-expanded="false" title="Edit, disable or delete"><svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" aria-hidden="true"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg></button>
-                        </div>
-                    </div>
-                    <div class="cc-metrics">
-                        <div class="cc-metric">
-                            <p class="cc-lbl">Balance</p>
-                            <p class="cc-amt mt-1 ${balClass}"><span class="cc-currency">AED</span> ${formatAED(balance)}</p>
-                        </div>
-                        <div class="cc-metric cc-metric-limit">
-                            <p class="cc-lbl">Spent this month</p>
-                            <p class="cc-limit mt-1"><span class="cc-currency">AED</span> ${formatAED(monthSpend)}</p>
-                        </div>
-                    </div>
-                    <div class="cc-track" title="AED ${formatAED(monthSpend)} spent this month">
-                        <div class="cc-fill" style="width: ${pct}%; ${barStyle}"></div>
-                    </div>
-                    <div class="cc-footer-main"><span class="cc-foot">${c.last4 ? '•••• ' + escapeHtml(c.last4) : '&nbsp;'}</span>${balance < 0 ? '<span class="cc-badge red">Overdrawn</span>' : ''}</div>
-                    ${(ident.tier || ident.network) ? `<div class="cc-pay-row mt-2 justify-end">${identityHtml}</div>` : ''}
-                    <div id="card-details-${c.id}" class="${openCardDetails.has(c.id) ? '' : 'hidden'} cc-more pt-4 space-y-2">
-                        <details ${openCalcCards.has(c.id) ? 'open' : ''} ontoggle="setCalcOpen('${c.id}', this.open)">
-                            <summary class="cursor-pointer text-[11px] text-indigo-300 hover:text-indigo-200 font-medium select-none">How it's calculated</summary>
-                            <div class="mt-2 space-y-1 text-[11px]">
-                                ${row('Opening balance', opening, '')}
-                                ${row('Deposits / top-ups', ob.repaid, '+', 'text-emerald-600')}
-                                ${row('Purchases', ob.purchases, '−')}
-                                ${row('Cash withdrawals', ob.withdrawals, '−')}
-                                ${row('Transfers in', ob.transferIn, '+', 'text-emerald-600')}
-                                ${row('Transfers out', ob.transferOut, '−')}
-                                <div class="flex justify-between pt-1 mt-1 border-t border-slate-200 dark:border-slate-600 font-semibold text-slate-800 dark:text-slate-200">
-                                    <span>Balance today</span><span>= ${formatAED(balance)}</span>
-                                </div>
-                            </div>
-                        </details>
-                    </div>
-                </div>`;
-        }
-        // "Add money" on a debit card: logs a deposit (stored as a 'Repaid' row so every report keeps working).
-        async function debitTopUp(cardId) {
-            const c = cards.find(x => String(x.id) === String(cardId));
-            if (!c) return;
-            const input = prompt(`Add money to ${c.name}. Amount (AED):`, '');
-            if (input === null) return;
-            const amount = parseFloat(input);
-            if (isNaN(amount) || amount <= 0) { showToast('Enter an amount above 0.', { tone: 'error' }); return; }
-            const tx = {
-                id: newId(), date: localDateKey(), cardName: c.name, cardId: c.id, type: 'Repaid',
-                desc: 'Deposit / top-up', category: '', amount, serviceCharge: 0, cashback: 0, notes: 'Added to debit card balance'
-            };
-            transactions.unshift(tx);
-            const ok = await saveTransactionToDB(tx);
-            render();
-            if (ok !== false) showToast(`AED ${formatAED(amount)} added to ${c.name}.`, { tone: 'success' });
         }
 
         function renderCardsList() {
@@ -5226,7 +4648,6 @@
 
             let grandOutstanding = 0;
             let grandPending = 0;
-            let debitTotal = 0, debitCount = 0;
 
             const calcRow = (label, value, sign, cls = 'text-slate-700 dark:text-slate-300') => `
                 <div class="flex justify-between">
@@ -5234,9 +4655,7 @@
                     <span class="font-medium ${cls}">${sign} ${formatAED(value)}</span>
                 </div>`;
 
-            // Debit cards first, then credit cards; each group gets a heading when both kinds exist.
-            const orderedCards = [...visibleCards.filter(isDebit), ...visibleCards.filter(c => !isDebit(c))];
-            const tileHtml = orderedCards.map(c => {
+            container.innerHTML = visibleCards.map(c => {
                 const totalLimit = Number(c.availableLimit) || 0;
                 const targetLimit = totalLimit * 0.97;
 
@@ -5244,7 +4663,7 @@
 
                 const currentMonthSpend = cardTx
                     .filter(t => t.date && t.date.startsWith(currentMonthKey) &&
-                                 (txKind(t.type) === 'Purchase' || txKind(t.type) === 'Cash Withdrawal'))
+                                 (isPurchaseType(t.type) || t.type === 'Cash Withdrawal'))
                     .reduce((sum, t) => sum + (parseFloat(t.amount) || 0), 0);
 
                 const percentage = targetLimit > 0 ? Math.min(Math.round((currentMonthSpend / targetLimit) * 100), 100) : 0;
@@ -5258,11 +4677,6 @@
                 }
 
                 const ob = calculateOutstanding(cardTx, todayKey, c);
-                if (isDebit(c)) {
-                    const bal = totalLimit - ob.outstanding;
-                    if (!c.disabled) { debitTotal += bal; debitCount++; }
-                    return debitTileHtml(c, ob, bal, currentMonthSpend);
-                }
                 const dateInfo = getCardDateInfo(c);
                 grandOutstanding += ob.outstanding;
                 grandPending += ob.cashbackPending;
@@ -5366,8 +4780,6 @@
                                     ${calcRow('Cash withdrawals', ob.withdrawals, '+')}
                                     ${INCLUDE_FEES_IN_OUTSTANDING ? calcRow('Service fees', ob.fees, '+') : ''}
                                     ${calcRow('Repaid', ob.repaid, '−', 'text-emerald-600')}
-                                    ${calcRow('Transfers in', ob.transferIn, '−', 'text-emerald-600')}
-                                    ${calcRow('Transfers out', ob.transferOut, '+')}
                                     ${calcRow('Cashback already credited', ob.cashbackCredited, '−', 'text-emerald-600')}
                                     <div class="flex justify-between pt-1 mt-1 border-t border-slate-200 dark:border-slate-600 font-semibold text-slate-800 dark:text-slate-200">
                                         <span>Outstanding today</span>
@@ -5381,22 +4793,13 @@
                         </div>
                     </div>
                 `;
-            });
-            const hasBoth = orderedCards.some(isDebit) && orderedCards.some(c => !isDebit(c));
-            const groupHeading = text => `<div class="col-span-full text-[11px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">${text}</div>`;
-            let tilesOut = '';
-            orderedCards.forEach((c, i) => {
-                if (hasBoth && (i === 0 || isDebit(c) !== isDebit(orderedCards[i - 1]))) tilesOut += groupHeading(isDebit(c) ? 'Debit cards' : 'Credit cards');
-                tilesOut += tileHtml[i];
-            });
-            container.innerHTML = tilesOut;
+            }).join('');
 
-            const grandLimit = visibleCards.filter(c => !isDebit(c)).reduce((sum, c) => sum + (Number(c.availableLimit) || 0), 0);
+            const grandLimit = visibleCards.reduce((sum, c) => sum + (Number(c.availableLimit) || 0), 0);
             const hiddenOffCount = showDisabledCards ? 0 : disabledCount;
             totalLimitEl.innerHTML = `
                 <p class="text-[10px] font-semibold uppercase text-slate-500 dark:text-slate-400">Total Card Limit</p>
                 <p class="text-xl font-bold text-slate-900 dark:text-slate-100">AED ${formatAED(grandLimit)}</p>
-                ${debitCount > 0 ? `<p class="text-[10px] text-slate-500 dark:text-slate-400">Debit balance (${debitCount} card${debitCount === 1 ? '' : 's'}): AED ${formatAED(debitTotal)}</p>` : ''}
                 ${hiddenOffCount > 0 ? `<p class="text-[10px] text-amber-400/80">${hiddenOffCount} disabled card${hiddenOffCount === 1 ? '' : 's'} excluded</p>` : ''}
             `;
 
@@ -5592,7 +4995,7 @@
             if (col === 'card') return (t.cardName || '').trim().toLowerCase();
             if (col === 'amount') return parseFloat(t.amount) || 0;
             if (col === 'cashback') return parseFloat(t.cashback) || 0;
-            if (col === 'net') return (txKind(t.type) === 'Repaid') ? 0 : ((parseFloat(t.cashback) || 0) - (parseFloat(t.serviceCharge) || 0));
+            if (col === 'net') return (isRepaidType(t.type)) ? 0 : ((parseFloat(t.cashback) || 0) - (parseFloat(t.serviceCharge) || 0));
             return '';
         }
 
@@ -5727,9 +5130,9 @@
                 const amount = parseFloat(t.amount) || 0;
                 const cashback = isImmediateCashbackTransaction(t) ? amount : (parseFloat(t.cashback) || 0);
                 const fee = parseFloat(t.serviceCharge) || 0;
-                const netReward = (txKind(t.type) === 'Repaid') ? 0 : (cashback - fee);
+                const netReward = (isRepaidType(t.type)) ? 0 : (cashback - fee);
 
-                if (!isImmediateCashbackTransaction(t) && (txKind(t.type) === 'Purchase' || txKind(t.type) === 'Cash Withdrawal')) {
+                if (!isImmediateCashbackTransaction(t) && (isPurchaseType(t.type) || t.type === 'Cash Withdrawal')) {
                     totalSpend += amount;
 
                     // "Left on the table": what the best available card's rate would have
@@ -5760,9 +5163,9 @@
                     monthlyData[monthKey] = { purchase: 0, withdrawal: 0, repaid: 0, fee: 0, cashback: 0, netReward: 0 };
                 }
 
-                if (txKind(t.type) === 'Purchase') monthlyData[monthKey].purchase += amount;
-                if (txKind(t.type) === 'Cash Withdrawal') monthlyData[monthKey].withdrawal += amount;
-                if (txKind(t.type) === 'Repaid') monthlyData[monthKey].repaid += amount;
+                if (isPurchaseType(t.type)) monthlyData[monthKey].purchase += amount;
+                if (t.type === 'Cash Withdrawal') monthlyData[monthKey].withdrawal += amount;
+                if (isRepaidType(t.type)) monthlyData[monthKey].repaid += amount;
                 monthlyData[monthKey].fee += fee;
                 monthlyData[monthKey].cashback += cashback;
                 monthlyData[monthKey].netReward += netReward;
@@ -5793,7 +5196,7 @@
                     const amount = parseFloat(t.amount) || 0;
                     const cashback = isImmediateCashbackTransaction(t) ? amount : (parseFloat(t.cashback) || 0);
                     const fee = parseFloat(t.serviceCharge) || 0;
-                    const isRepaid = txKind(t.type) === 'Repaid';
+                    const isRepaid = isRepaidType(t.type);
                     const netReward = isRepaid ? 0 : (cashback - fee);
                     // Net Rewards = cashback − service fee (an amount, not a percentage)
                     const netCls = isRepaid ? 'muted' : netReward < 0 ? 'neg' : netReward === 0 ? 'muted' : 'pos';
@@ -5865,15 +5268,15 @@
                 const fee = parseFloat(transaction.serviceCharge) || 0;
                 const monthKey = transaction.date.substring(0, 7);
                 if (!monthlyData[monthKey]) monthlyData[monthKey] = { purchase: 0, withdrawal: 0, repaid: 0, fee: 0, cashback: 0, netReward: 0 };
-                if (txKind(transaction.type) === 'Purchase') {
+                if (isPurchaseType(transaction.type)) {
                     monthlyData[monthKey].purchase += amount;
                     totalSpend += amount;
                 }
-                if (txKind(transaction.type) === 'Cash Withdrawal') {
+                if (transaction.type === 'Cash Withdrawal') {
                     monthlyData[monthKey].withdrawal += amount;
                     totalSpend += amount;
                 }
-                if (txKind(transaction.type) === 'Repaid') monthlyData[monthKey].repaid += amount;
+                if (isRepaidType(transaction.type)) monthlyData[monthKey].repaid += amount;
                 monthlyData[monthKey].fee += fee;
                 monthlyData[monthKey].cashback += cashback;
                 monthlyData[monthKey].netReward += cashback - fee;
@@ -6146,11 +5549,11 @@
                     const amount = parseFloat(t.amount) || 0;
                     const cashback = isImmediateCashbackTransaction(t) ? amount : (parseFloat(t.cashback) || 0);
                     const fee = parseFloat(t.serviceCharge) || 0;
-                    const netReward = (txKind(t.type) === 'Repaid') ? 0 : (cashback - fee);
+                    const netReward = (isRepaidType(t.type)) ? 0 : (cashback - fee);
 
-                    if (!isImmediateCashbackTransaction(t) && txKind(t.type) === 'Purchase') cardAgg[cName].purchase += amount;
-                    if (!isImmediateCashbackTransaction(t) && txKind(t.type) === 'Cash Withdrawal') cardAgg[cName].withdrawal += amount;
-                    if (txKind(t.type) === 'Repaid') cardAgg[cName].repaid += amount;
+                    if (!isImmediateCashbackTransaction(t) && isPurchaseType(t.type)) cardAgg[cName].purchase += amount;
+                    if (!isImmediateCashbackTransaction(t) && t.type === 'Cash Withdrawal') cardAgg[cName].withdrawal += amount;
+                    if (isRepaidType(t.type)) cardAgg[cName].repaid += amount;
                     cardAgg[cName].fee += fee;
                     cardAgg[cName].cashback += cashback;
                     if (isCashbackCredited(t, summaryCurrentDate)) cardAgg[cName].cashbackCredited += cashback;
@@ -6197,11 +5600,11 @@
                     const amount = parseFloat(t.amount) || 0;
                     const cashback = isImmediateCashbackTransaction(t) ? amount : (parseFloat(t.cashback) || 0);
                     const fee = parseFloat(t.serviceCharge) || 0;
-                    const netReward = (txKind(t.type) === 'Repaid') ? 0 : (cashback - fee);
+                    const netReward = (isRepaidType(t.type)) ? 0 : (cashback - fee);
 
-                    if (!isImmediateCashbackTransaction(t) && txKind(t.type) === 'Purchase') catAgg[catName].purchase += amount;
-                    if (!isImmediateCashbackTransaction(t) && txKind(t.type) === 'Cash Withdrawal') catAgg[catName].withdrawal += amount;
-                    if (txKind(t.type) === 'Repaid') catAgg[catName].repaid += amount;
+                    if (!isImmediateCashbackTransaction(t) && isPurchaseType(t.type)) catAgg[catName].purchase += amount;
+                    if (!isImmediateCashbackTransaction(t) && t.type === 'Cash Withdrawal') catAgg[catName].withdrawal += amount;
+                    if (isRepaidType(t.type)) catAgg[catName].repaid += amount;
                     catAgg[catName].fee += fee;
                     catAgg[catName].cashback += cashback;
                     if (isCashbackCredited(t, summaryCurrentDate)) catAgg[catName].cashbackCredited += cashback;

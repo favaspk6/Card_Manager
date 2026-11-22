@@ -1071,57 +1071,6 @@
         #tx-form-subtitle { margin: .2rem 0 0; font-size: .75rem; color: #64748b; }
         html.dark #tx-form-subtitle { color: #94a3b8; }
         #expense-form { display: grid; gap: 1rem; }
-        #expense-form select optgroup {
-            color: #64748b;
-            font-size: .75rem;
-            font-style: italic;
-            font-weight: 400;
-        }
-        #expense-form select optgroup option {
-            color: #0f172a;
-            font-size: .875rem;
-            font-style: normal;
-            font-weight: 400;
-        }
-        html.dark #expense-form select optgroup { color: #94a3b8; }
-        html.dark #expense-form select optgroup option { color: #f1f5f9; }
-        #expense-form input[name="entry-kind"]:focus-visible + .entry-kind-option {
-            outline: 2px solid #6366f1;
-            outline-offset: 2px;
-        }
-        #expense-form input[name="entry-kind"][value="income"]:checked + .entry-kind-option {
-            border-color: #16a34a;
-            background-color: #dcfce7;
-            color: #166534;
-            box-shadow: 0 0 0 2px rgba(34,197,94,.28);
-        }
-        #expense-form input[name="entry-kind"][value="expense"]:checked + .entry-kind-option {
-            border-color: #ef4444;
-            background-color: #fee2e2;
-            color: #991b1b;
-            box-shadow: 0 0 0 2px rgba(239,68,68,.25);
-        }
-        #expense-form input[name="entry-kind"][value="transfer"]:checked + .entry-kind-option {
-            border-color: #6366f1;
-            background-color: #e0e7ff;
-            color: #3730a3;
-            box-shadow: 0 0 0 2px rgba(99,102,241,.25);
-        }
-        html.dark #expense-form input[name="entry-kind"][value="income"]:checked + .entry-kind-option {
-            border-color: #34d399;
-            background-color: rgba(16,185,129,.2);
-            color: #a7f3d0;
-        }
-        html.dark #expense-form input[name="entry-kind"][value="expense"]:checked + .entry-kind-option {
-            border-color: #fb7185;
-            background-color: rgba(244,63,94,.2);
-            color: #fecdd3;
-        }
-        html.dark #expense-form input[name="entry-kind"][value="transfer"]:checked + .entry-kind-option {
-            border-color: #818cf8;
-            background-color: rgba(99,102,241,.22);
-            color: #c7d2fe;
-        }
         #expense-form > div:not(#exp-emi-wrapper) {
             min-width: 0;
         }
@@ -2029,18 +1978,3 @@
             #sp-modal .sp-inbox-item { transition: none; }
             #sp-modal .sp-inbox-item:hover { transform: none; }
         }
-
-/* Radio buttons inside the settings window (e.g. "Feels like"): the generic text-input rules above
-   (46px min-height, glow ring) made them stretch into a tall oval, so reset them to normal radios. */
-#settings-modal input[type="radio"],
-html.dark #settings-modal input[type="radio"] {
-    min-height: 0 !important;
-    width: 16px;
-    height: 16px;
-    padding: 0;
-    background: transparent !important;
-    box-shadow: none !important;
-}
-#settings-modal input[type="radio"]:focus,
-html.dark #settings-modal input[type="radio"]:focus { box-shadow: none !important; }
-#settings-modal input[type="radio"]:focus-visible { outline: 2px solid rgba(99, 102, 241, .55); outline-offset: 2px; }
