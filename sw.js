@@ -1,6 +1,6 @@
 // DueDates service worker — makes the app open and run with no internet.
 // Bump VERSION on every deploy so installed devices download the new files.
-const VERSION = 'dd-v4';
+const VERSION = 'dd-v13';
 const SHELL = ['./', './index.html', './styles.css', './app.js', './offline.js', './ui.js', './effects.js',
   './manifest.webmanifest', './icon-192.png', './icon-512.png', './apple-touch-icon.png',
   './vendor/tailwind.css', './vendor/fonts.css', './vendor/chart.umd.js', './vendor/xlsx.full.min.js', './vendor/supabase.js',
